@@ -1653,34 +1653,6 @@ En cas de retard ou de problème, signalez-vous immédiatement à la vie scolair
         </div>
     </div>
 
-    <!-- Widget Feedback / Support -->
-    <div class="feedback-widget">
-        <div class="feedback-box" id="feedbackBox" style="display:none; flex-direction:column;">
-            <div class="feedback-header">
-                <span>💬 Aide & Support</span>
-                <span style="cursor:pointer; font-size:1.2rem;" onclick="toggleFeedback()">×</span>
-            </div>
-            <div class="feedback-body">
-                <label>Sujet :</label>
-                <select id="fbType" onchange="checkAttachmentHint()">
-                    <option value="BUG">🐛 Signaler un Bug</option>
-                    <option value="IDEE">💡 Proposer une amélioration</option>
-                    <option value="AIDE">❓ Demande d'aide</option>
-                </select>
-                <div id="pjHint" class="attachment-hint" style="display:none;">
-                    📎 <strong>Conseil :</strong> Une fois le mail ouvert, pensez à joindre votre fichier de sauvegarde (.data).
-                </div>
-                <label>Message :</label>
-                <textarea id="fbMessage" rows="5" placeholder="Décrivez le problème..."></textarea>
-            </div>
-            <div class="feedback-footer">
-                <button class="btn btn-secondary" onclick="toggleFeedback()" style="margin-right:5px; font-size:0.9rem;">Fermer</button>
-                <button class="btn btn-primary" onclick="sendFeedbackEmail()" style="font-size:0.9rem;">Préparer l'email 🚀</button>
-            </div>
-        </div>
-        <button class="feedback-btn" onclick="toggleFeedback()" title="Contact Support">💬</button>
-    </div>
-
     <script src="js/globals.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/data_import.js"></script>

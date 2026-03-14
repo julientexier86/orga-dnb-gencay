@@ -109,3 +109,7 @@ orga-dnb-gencay/
 | [Chart.js](https://www.chartjs.org/) | Graphiques statistiques |
 
 ---
+
+## 📄 Licence
+
+Usage interne — Non destiné à une distribution publique.

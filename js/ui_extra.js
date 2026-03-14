@@ -37,43 +37,6 @@ function generateTableLabelsPDF(nbCols, nbRows) {
     doc.save("Etiquettes_Table.pdf");
 }
 
-// --- WIDGET FEEDBACK ---
-function toggleFeedback() {
-    const box = document.getElementById('feedbackBox');
-    const isHidden = (getComputedStyle(box).display === 'none');
-    box.style.display = isHidden ? 'flex' : 'none';
-    if (isHidden) { setTimeout(() => document.getElementById('fbMessage').focus(), 100); }
-}
-
-function checkAttachmentHint() {
-    const typeVal = document.getElementById('fbType').value;
-    const hint = document.getElementById('pjHint');
-    if (hint) hint.style.display = (typeVal === 'BUG') ? 'block' : 'none';
-}
-
-function sendFeedbackEmail() {
-    const typeSelect = document.getElementById('fbType');
-    const typeLabel = typeSelect.options[typeSelect.selectedIndex].text;
-    const msg = document.getElementById('fbMessage').value;
-    if(!msg.trim()) { showToast("Merci de saisir un message avant d'envoyer.", 'warning'); return; }
-    const screenRes = `${window.screen.width} x ${window.screen.height}`;
-    const windowSize = `${window.innerWidth} x ${window.innerHeight}`;
-    const userAgent = navigator.userAgent;
-    let schoolName = "Non défini";
-    let schoolCity = "Non défini";
-    if (typeof DB !== 'undefined' && DB.config) {
-        schoolName = DB.config.schoolName || "Nom manquant";
-        schoolCity = DB.config.schoolCity || DB.config.city || DB.config.commune || DB.config.ville || "Ville manquante";
-    }
-    const destEmail = "frederic.vedrenne3@ac-bordeaux.fr";
-    const subject = encodeURIComponent(`[Orga DNB] ${typeLabel} - ${schoolCity}`);
-    const bodyContent = `Bonjour,\n\n${msg}\n\n` +
-        `--------------------------------\nINFOS CONTEXTE (AUTO) :\n` +
-        `🏫 Établissement : ${schoolName}\n📍 Ville : ${schoolCity}\n` +
-        `🖥️ Résolution : ${screenRes}\n📏 Fenêtre : ${windowSize}\n🌍 Navigateur : ${userAgent}`;
-    window.location.href = `mailto:${destEmail}?subject=${subject}&body=${encodeURIComponent(bodyContent)}`;
-    toggleFeedback();
-}
 
 // --- SYNCHRONISATION DONNÉES DE RÉPARTITION ---
 window.syncDistributionData = function() {
