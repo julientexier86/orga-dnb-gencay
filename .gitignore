@@ -1,0 +1,27 @@
+# Dépendances Node.js
+node_modules/
+
+# Fichiers système macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Fichiers système Windows
+Thumbs.db
+Desktop.ini
+
+# Sauvegardes locales (fichiers .data générés par l'appli)
+*.data
+
+# Fichiers temporaires
+*.tmp
+*.log
+
+# Éditeurs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Claude
+.claude/settings.local.json
