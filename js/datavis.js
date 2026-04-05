@@ -613,38 +613,42 @@ function exportSimulationXLSX() {
     // 3. On récupère la configuration des sciences
     const activeSciences = DB.config.scienceSubjects || ['SVT', 'PC', 'TECH'];
 
-    // 4. On boucle sur chaque élève pour recalculer les notes (exactement comme l'affichage)
+    // 4. On boucle sur chaque élève (calculs identiques à renderSimulation)
     DB.students.forEach(s => {
         if (!s.grades) return;
-
-        // --- Calculs identiques à renderSimulation ---
+        const vn = (v) => { if (v == null || v === "") return null; const n = parseFloat(v); return isNaN(n) ? null : n; };
 
         // Calcul Sciences
-        let sumSci = 0, countSci = 0;
-        if (activeSciences.includes('SVT') && s.grades.svt !== null) { sumSci += s.grades.svt; countSci++; }
-        if (activeSciences.includes('PC') && s.grades.pc !== null) { sumSci += s.grades.pc; countSci++; }
-        if (activeSciences.includes('TECH') && s.grades.tech !== null) { sumSci += s.grades.tech; countSci++; }
+        let sumSci = 0, countSci = 0, vv;
+        if (activeSciences.includes('SVT') && (vv = vn(s.grades.svt)) !== null) { sumSci += vv; countSci++; }
+        if (activeSciences.includes('PC') && (vv = vn(s.grades.pc)) !== null) { sumSci += vv; countSci++; }
+        if (activeSciences.includes('TECH') && (vv = vn(s.grades.tech)) !== null) { sumSci += vv; countSci++; }
         const moySci = countSci > 0 ? (sumSci / countSci) : null;
 
-        // Calcul Écrits
+        // Calcul Écrits (avec HG/EMC pondéré si séparé)
         let sumEcrit = 0, countEcrit = 0;
-        if (s.grades.fr !== null) { sumEcrit += s.grades.fr; countEcrit++; }
-        if (s.grades.math !== null) { sumEcrit += s.grades.math; countEcrit++; }
-        if (s.grades.hg !== null) { sumEcrit += s.grades.hg; countEcrit++; }
+        if ((vv = vn(s.grades.fr)) !== null) { sumEcrit += vv; countEcrit++; }
+        if ((vv = vn(s.grades.math)) !== null) { sumEcrit += vv; countEcrit++; }
+        if (typeof getDetailHGEMC === 'function') {
+            const resHG = getDetailHGEMC(s);
+            if (resHG.average !== null && !isNaN(resHG.average)) { sumEcrit += resHG.average; countEcrit++; }
+        } else {
+            if ((vv = vn(s.grades.hg)) !== null) { sumEcrit += vv; countEcrit++; }
+        }
         if (moySci !== null) { sumEcrit += moySci; countEcrit++; }
         const moyEcritsVal = countEcrit > 0 ? (sumEcrit / countEcrit) : 0;
 
         // Calcul Épreuves (Écrits + Oral)
         let sumEpreuves = sumEcrit;
         let countEpreuves = countEcrit;
-        if (s.grades.oral !== null && s.grades.oral !== undefined) {
-            sumEpreuves += s.grades.oral;
+        if ((vv = vn(s.grades.oral)) !== null) {
+            sumEpreuves += vv;
             countEpreuves++;
         }
         const moyEpreuves = countEpreuves > 0 ? (sumEpreuves / countEpreuves) : 0;
 
         // Calcul Final
-        const moyGen = (s.grades.genAvg !== null) ? s.grades.genAvg : 0;
+        const moyGen = vn(s.grades.genAvg) || 0;
         let finalAvg = 0;
         if (moyGen > 0 && moyEpreuves > 0) finalAvg = (moyGen * 0.4) + (moyEpreuves * 0.6);
         else if (moyEpreuves > 0) finalAvg = moyEpreuves;
@@ -664,9 +668,9 @@ function exportSimulationXLSX() {
             s.prenom,
             s.classe,
             parseFloat(moyEcritsVal.toFixed(2)),       // Moyenne Écrits
-            s.grades.oral !== null ? s.grades.oral : "", // Note Oral
+            vn(s.grades.oral) !== null ? vn(s.grades.oral) : "", // Note Oral
             parseFloat(moyEpreuves.toFixed(2)),      // Moyenne Épreuves
-            s.grades.genAvg !== null ? s.grades.genAvg : "", // Moyenne Générale
+            vn(s.grades.genAvg) !== null ? vn(s.grades.genAvg) : "", // Moyenne Générale
             parseFloat(finalAvg.toFixed(2)),         // NOTE FINALE
             mention                                  // Mention
         ]);
