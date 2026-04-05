@@ -3,7 +3,7 @@
 
 // Fonction de calcul statistique
 function calculateStats(students) {
-    const subjects = ['total', 'fr', 'math', 'hg', 'sci', 'moy20'];
+    const subjects = ['total', 'fr', 'math', 'hg', 'sci', 'oral', 'moy20'];
     let result = {};
 
     subjects.forEach(sub => {
@@ -20,6 +20,7 @@ function calculateStats(students) {
             if (sub === 'math') return s.grades.math;
             if (sub === 'hg') return s.grades.hg;
             if (sub === 'sci') return sciScore;
+            if (sub === 'oral') return s.grades.oral;
 
             if (sub === 'total') {
                 let t = 0;
@@ -27,6 +28,7 @@ function calculateStats(students) {
                 if (s.grades.math != null) t += s.grades.math;
                 if (s.grades.hg != null) t += s.grades.hg;
                 if (sciScore != null) t += sciScore;
+                if (s.grades.oral != null) t += s.grades.oral;
                 return t;
             }
 
@@ -36,6 +38,7 @@ function calculateStats(students) {
                 if (s.grades.math != null) { sum += s.grades.math; count++; }
                 if (s.grades.hg != null) { sum += s.grades.hg; count++; }
                 if (sciScore != null) { sum += sciScore; count++; }
+                if (s.grades.oral != null) { sum += s.grades.oral; count++; }
                 return count > 0 ? (sum / count) : null;
             }
         }).filter(v => v !== null && v !== undefined);
@@ -67,6 +70,99 @@ function calculateStats(students) {
         }
     });
     return result;
+}
+
+// Calcul de la répartition des mentions
+function calculateMentions(students) {
+    const activeSciences = DB.config.scienceSubjects || ['SVT', 'PC', 'TECH'];
+    const mentions = { 'Refusé': 0, 'Admis': 0, 'Assez Bien': 0, 'Bien': 0, 'Très Bien': 0 };
+    let total = 0;
+
+    students.forEach(s => {
+        if (!s.grades) return;
+        const vn = (v) => { if (v == null || v === "") return null; const n = parseFloat(v); return isNaN(n) ? null : n; };
+
+        // Sciences
+        let sumSci = 0, cSci = 0;
+        if (activeSciences.includes('SVT') && vn(s.grades.svt) !== null) { sumSci += vn(s.grades.svt); cSci++; }
+        if (activeSciences.includes('PC') && vn(s.grades.pc) !== null) { sumSci += vn(s.grades.pc); cSci++; }
+        if (activeSciences.includes('TECH') && vn(s.grades.tech) !== null) { sumSci += vn(s.grades.tech); cSci++; }
+        const moySci = cSci > 0 ? (sumSci / cSci) : null;
+
+        // Écrits
+        let sumEcrit = 0, cEcrit = 0;
+        if (vn(s.grades.fr) !== null) { sumEcrit += vn(s.grades.fr); cEcrit++; }
+        if (vn(s.grades.math) !== null) { sumEcrit += vn(s.grades.math); cEcrit++; }
+        if (typeof getDetailHGEMC === 'function') {
+            const resHG = getDetailHGEMC(s);
+            if (resHG.average !== null && !isNaN(resHG.average)) { sumEcrit += resHG.average; cEcrit++; }
+        } else {
+            if (vn(s.grades.hg) !== null) { sumEcrit += vn(s.grades.hg); cEcrit++; }
+        }
+        if (moySci !== null) { sumEcrit += moySci; cEcrit++; }
+
+        // Épreuves (écrits + oral)
+        let sumEpr = sumEcrit, cEpr = cEcrit;
+        if (vn(s.grades.oral) !== null) { sumEpr += vn(s.grades.oral); cEpr++; }
+        const moyEpr = cEpr > 0 ? (sumEpr / cEpr) : 0;
+
+        // Note finale
+        const moyGen = vn(s.grades.genAvg) || 0;
+        let finalAvg = 0;
+        if (moyGen > 0 && moyEpr > 0) finalAvg = (moyGen * 0.4) + (moyEpr * 0.6);
+        else if (moyEpr > 0) finalAvg = moyEpr;
+        else if (moyGen > 0) finalAvg = moyGen;
+        else return; // pas de notes du tout
+
+        total++;
+        if (finalAvg >= 16) mentions['Très Bien']++;
+        else if (finalAvg >= 14) mentions['Bien']++;
+        else if (finalAvg >= 12) mentions['Assez Bien']++;
+        else if (finalAvg >= 10) mentions['Admis']++;
+        else mentions['Refusé']++;
+    });
+
+    return { mentions, total };
+}
+
+// Génère le HTML de la répartition des mentions
+function buildMentionsHtml(students) {
+    const { mentions, total } = calculateMentions(students);
+    if (total === 0) return '';
+
+    const pct = (n) => total > 0 ? (n / total * 100).toFixed(1) : '0';
+    const data = [
+        { label: 'Très Bien', count: mentions['Très Bien'], color: '#8e44ad' },
+        { label: 'Bien', count: mentions['Bien'], color: '#3498db' },
+        { label: 'Assez Bien', count: mentions['Assez Bien'], color: '#f39c12' },
+        { label: 'Admis', count: mentions['Admis'], color: '#27ae60' },
+        { label: 'Refusé', count: mentions['Refusé'], color: '#e74c3c' }
+    ];
+
+    let html = `<div style="margin-bottom:25px; padding:20px; background:#f8f9fa; border-radius:12px; border:1px solid #eee;">
+        <h4 style="margin:0 0 15px 0; color:#2c3e50;">🏅 Répartition des Mentions (${total} élèves)</h4>
+        <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center;">`;
+
+    data.forEach(d => {
+        const isRefuse = d.label === 'Refusé';
+        const borderStyle = isRefuse ? 'border:2px solid #e74c3c;' : 'border:1px solid #eee;';
+        const bgStyle = isRefuse ? 'background:#fff5f5;' : 'background:white;';
+        html += `<div style="flex:1; min-width:120px; padding:15px; border-radius:10px; text-align:center; ${borderStyle} ${bgStyle}">
+            <div style="font-size:2rem; font-weight:bold; color:${d.color};">${pct(d.count)}%</div>
+            <div style="font-size:0.85rem; font-weight:bold; color:${d.color};">${d.label}</div>
+            <div style="font-size:0.8rem; color:${isRefuse ? '#e74c3c' : '#999'}; font-weight:${isRefuse ? 'bold' : 'normal'};">${d.count} élève${d.count > 1 ? 's' : ''}</div>
+        </div>`;
+    });
+
+    // Barre de progression
+    html += `</div><div style="margin-top:15px; height:24px; border-radius:12px; overflow:hidden; display:flex; background:#eee;">`;
+    data.forEach(d => {
+        const w = total > 0 ? (d.count / total * 100) : 0;
+        if (w > 0) html += `<div style="width:${w}%; background:${d.color}; display:flex; align-items:center; justify-content:center; color:white; font-size:0.7rem; font-weight:bold;">${w >= 5 ? pct(d.count) + '%' : ''}</div>`;
+    });
+    html += `</div></div>`;
+
+    return html;
 }
 
 // Gestion des onglets
@@ -120,12 +216,32 @@ function renderDatavisStats() {
                 <div class="stat-row"><span>🔢 Maths :</span> <b>${stats.math.moy} / 20</b></div>
                 <div class="stat-row"><span>🏛️ Hist-Géo :</span> <b>${stats.hg.moy} / 20</b></div>
                 <div class="stat-row"><span>🧪 Sciences :</span> <b>${stats.sci.moy} / 20</b></div>
+                <div class="stat-row"><span>🎤 Oral :</span> <b>${stats.oral.moy !== '-' ? stats.oral.moy + ' / 20' : '-'}</b></div>
                 <div class="stat-footer">
                     🎓 Moyenne : ${stats.moy20.moy} / 20
                 </div>
             </div>`;
     });
     viewChartsHtml += `</div>`;
+
+    // A-bis. Répartition des mentions (global)
+    viewChartsHtml += buildMentionsHtml(DB.students);
+
+    // A-ter. Répartition des mentions par classe
+    classes.forEach(cls => {
+        const classStudents = DB.students.filter(s => s.classe === cls);
+        const { mentions: cMentions, total: cTotal } = calculateMentions(classStudents);
+        if (cTotal === 0) return;
+        const pct = (n) => cTotal > 0 ? (n / cTotal * 100).toFixed(1) : '0';
+        viewChartsHtml += `<div style="margin-bottom:15px; padding:12px 18px; background:#f8f9fa; border-radius:10px; border:1px solid #eee;">
+            <b>${cls}</b> — ${cTotal} élèves :
+            <span style="color:#8e44ad;">TB ${pct(cMentions['Très Bien'])}%</span> ·
+            <span style="color:#3498db;">B ${pct(cMentions['Bien'])}%</span> ·
+            <span style="color:#f39c12;">AB ${pct(cMentions['Assez Bien'])}%</span> ·
+            <span style="color:#27ae60;">Admis ${pct(cMentions['Admis'])}%</span> ·
+            <span style="color:#e74c3c; font-weight:bold;">Refusé ${cMentions['Refusé']} (${pct(cMentions['Refusé'])}%)</span>
+        </div>`;
+    });
 
     // B. Graphiques
     viewChartsHtml += `
@@ -134,6 +250,7 @@ function renderDatavisStats() {
                 <div class="chart-box"><div class="chart-header">🔢 Mathématiques (Répartition)</div><div class="chart-container"><canvas id="chartMath"></canvas></div></div>
                 <div class="chart-box"><div class="chart-header">🏛️ Hist-Géo (Répartition)</div><div class="chart-container"><canvas id="chartHg"></canvas></div></div>
                 <div class="chart-box"><div class="chart-header">🧪 Sciences (Répartition)</div><div class="chart-container"><canvas id="chartSci"></canvas></div></div>
+                <div class="chart-box"><div class="chart-header">🎤 Oral (Répartition)</div><div class="chart-container"><canvas id="chartOral"></canvas></div></div>
             </div>
         `;
     viewChartsHtml += `</div>`;
@@ -152,8 +269,10 @@ function renderDatavisStats() {
                             <th colspan="5" style="text-align:center; background:#fef9e7;">Maths</th>
                             <th colspan="5" style="text-align:center; background:#fef9e7;">Hist-Géo</th>
                             <th colspan="5" style="text-align:center; background:#fef9e7;">Sciences</th>
+                            <th colspan="5" style="text-align:center; background:#f5eef8;">Oral</th>
                         </tr>
                         <tr style="font-size:0.8rem">
+                            <th>Min</th><th>Moy</th><th>Max</th><th>Med</th><th>Ec-T</th>
                             <th>Min</th><th>Moy</th><th>Max</th><th>Med</th><th>Ec-T</th>
                             <th>Min</th><th>Moy</th><th>Max</th><th>Med</th><th>Ec-T</th>
                             <th>Min</th><th>Moy</th><th>Max</th><th>Med</th><th>Ec-T</th>
@@ -181,15 +300,58 @@ function renderDatavisStats() {
                 <td>${stats.math.min}</td><td style="font-weight:bold">${stats.math.moy}</td><td>${stats.math.max}</td><td>${stats.math.med}</td><td style="color:#777">${stats.math.ecart}</td>
                 <td>${stats.hg.min}</td><td style="font-weight:bold">${stats.hg.moy}</td><td>${stats.hg.max}</td><td>${stats.hg.med}</td><td style="color:#777">${stats.hg.ecart}</td>
                 <td>${stats.sci.min}</td><td style="font-weight:bold">${stats.sci.moy}</td><td>${stats.sci.max}</td><td>${stats.sci.med}</td><td style="color:#777">${stats.sci.ecart}</td>
+                <td>${stats.oral.min}</td><td style="font-weight:bold">${stats.oral.moy}</td><td>${stats.oral.max}</td><td>${stats.oral.med}</td><td style="color:#777">${stats.oral.ecart}</td>
             </tr>`;
     });
+    viewTableHtml += `</tbody></table></div>`;
+
+    // --- Tableau des mentions par groupe ---
+    viewTableHtml += `
+        <div style="margin-top:30px;">
+            <h4 style="color:#2c3e50; margin-bottom:15px;">🏅 Répartition des Mentions par Groupe</h4>
+            <div style="overflow-x:auto;">
+                <table class="table-striped">
+                    <thead>
+                        <tr>
+                            <th>Groupe</th>
+                            <th style="text-align:center; background:#8e44ad; color:white;">Très Bien</th>
+                            <th style="text-align:center; background:#3498db; color:white;">Bien</th>
+                            <th style="text-align:center; background:#f39c12; color:white;">Assez Bien</th>
+                            <th style="text-align:center; background:#27ae60; color:white;">Admis</th>
+                            <th style="text-align:center; background:#e74c3c; color:white;">Refusé</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+    groups.forEach(g => {
+        const groupStudents = DB.students.filter(g.filter);
+        const { mentions: gMentions, total: gTotal } = calculateMentions(groupStudents);
+        const pct = (n) => gTotal > 0 ? (n / gTotal * 100).toFixed(1) : '0';
+        const mentionCell = (n, isRefuse) => {
+            const style = isRefuse ? 'color:#e74c3c; font-weight:bold;' : '';
+            return `<td style="text-align:center; ${style}">${n} <span style="font-size:0.8rem; color:${isRefuse ? '#e74c3c' : '#999'};">(${pct(n)}%)</span></td>`;
+        };
+        viewTableHtml += `
+            <tr>
+                <td style="font-weight:bold;">${g.name}</td>
+                ${mentionCell(gMentions['Très Bien'], false)}
+                ${mentionCell(gMentions['Bien'], false)}
+                ${mentionCell(gMentions['Assez Bien'], false)}
+                ${mentionCell(gMentions['Admis'], false)}
+                ${mentionCell(gMentions['Refusé'], true)}
+            </tr>`;
+    });
+
     viewTableHtml += `</tbody></table></div></div>`;
+
+    viewTableHtml += `</div>`;
     container.innerHTML += viewTableHtml;
 
     renderHistogram('chartFr', 'fr', 20, 1);
     renderHistogram('chartMath', 'math', 20, 1);
     renderHistogram('chartHg', 'hg', 20, 1);
     renderHistogram('chartSci', 'sci', 20, 1);
+    renderHistogram('chartOral', 'oral', 20, 1);
 }
 
 function renderHistogram(canvasId, subject, maxScore, step) {
@@ -211,6 +373,7 @@ function renderHistogram(canvasId, subject, maxScore, step) {
         if (subject === 'fr') val = s.grades.fr;
         if (subject === 'math') val = s.grades.math;
         if (subject === 'hg') val = s.grades.hg;
+        if (subject === 'oral') val = s.grades.oral;
         if (subject === 'sci') {
             let sc = 0, c = 0;
             if (s.grades.svt != null) { sc += s.grades.svt; c++ }
@@ -297,17 +460,62 @@ function exportDatavisPDF() {
     yPos += 6;
     doc.text(`• Hist-Géo : ${stats.hg.moy} / 20`, leftX, yPos);
     doc.text(`• Sciences : ${stats.sci.moy} / 20`, rightX, yPos);
+    yPos += 6;
+    doc.text(`• Oral : ${stats.oral.moy !== '-' ? stats.oral.moy + ' / 20' : '-'}`, leftX, yPos);
 
     yPos += 15;
 
-    // --- 2. GRAPHIQUES ---
-    const chartsIds = ['chartFr', 'chartMath', 'chartHg', 'chartSci'];
-    const chartTitles = ['Français', 'Maths', 'Hist-Géo', 'Sciences'];
+    // --- 1b. MENTIONS ---
+    const { mentions, total: mentionTotal } = calculateMentions(DB.students);
+    if (mentionTotal > 0) {
+        doc.setFontSize(14); doc.setTextColor(41, 128, 185);
+        doc.text("2. Répartition des Mentions", 14, yPos);
+        yPos += 10;
+
+        const mentionData = [
+            { label: 'Très Bien', count: mentions['Très Bien'], color: [142, 68, 173] },
+            { label: 'Bien', count: mentions['Bien'], color: [52, 152, 219] },
+            { label: 'Assez Bien', count: mentions['Assez Bien'], color: [243, 156, 18] },
+            { label: 'Admis', count: mentions['Admis'], color: [39, 174, 96] },
+            { label: 'Refusé', count: mentions['Refusé'], color: [231, 76, 60] }
+        ];
+
+        const barX = 20, barW = 170, barH = 10;
+        mentionData.forEach(m => {
+            const pct = (m.count / mentionTotal * 100).toFixed(1);
+            const isRefuse = m.label === 'Refusé';
+
+            doc.setFontSize(11);
+            doc.setTextColor(isRefuse ? 231 : 0, isRefuse ? 76 : 0, isRefuse ? 60 : 0);
+            doc.setFont("helvetica", isRefuse ? "bold" : "normal");
+            doc.text(`${m.label} : ${pct}% (${m.count} élève${m.count > 1 ? 's' : ''})`, barX, yPos);
+            yPos += 5;
+
+            // Barre de fond
+            doc.setFillColor(230, 230, 230);
+            doc.rect(barX, yPos, barW, barH, 'F');
+            // Barre colorée
+            const w = (m.count / mentionTotal) * barW;
+            if (w > 0) {
+                doc.setFillColor(m.color[0], m.color[1], m.color[2]);
+                doc.rect(barX, yPos, w, barH, 'F');
+            }
+            yPos += barH + 5;
+        });
+
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(0);
+        yPos += 5;
+    }
+
+    // --- 3. GRAPHIQUES ---
+    const chartsIds = ['chartFr', 'chartMath', 'chartHg', 'chartSci', 'chartOral'];
+    const chartTitles = ['Français', 'Maths', 'Hist-Géo', 'Sciences', 'Oral'];
 
     const firstCanvas = document.getElementById(chartsIds[0]);
     if (firstCanvas && firstCanvas.width > 0) {
         doc.setFontSize(14); doc.setTextColor(41, 128, 185); // Bleu
-        doc.text("2. Distribution des Notes (Graphiques)", 14, yPos);
+        doc.text("3. Distribution des Notes (Graphiques)", 14, yPos);
         yPos += 10;
         let x = 15;
         chartsIds.forEach((id, idx) => {
@@ -328,11 +536,11 @@ function exportDatavisPDF() {
         yPos += 10;
     }
 
-    // --- 3. TABLEAU ---
-    if (yPos > 220) { doc.addPage(); yPos = 20; } else { yPos += 10; }
+    // --- 4. TABLEAU (nouvelle page) ---
+    doc.addPage(); yPos = 20;
 
     doc.setFontSize(14); doc.setTextColor(41, 128, 185); // Bleu
-    doc.text("3. Détail par Groupe", 14, yPos);
+    doc.text("4. Détail par Groupe", 14, yPos);
     yPos += 10;
 
     const classes = [...new Set(DB.students.map(s => s.classe).filter(c => c))].sort();
@@ -342,18 +550,55 @@ function exportDatavisPDF() {
     let body = [];
     groups.forEach(g => {
         const gStats = calculateStats(groupStudents = DB.students.filter(g.filter));
-        body.push([g.name, gStats.moy20.moy, gStats.fr.moy, gStats.math.moy, gStats.hg.moy, gStats.sci.moy]);
+        body.push([g.name, gStats.moy20.moy, gStats.fr.moy, gStats.math.moy, gStats.hg.moy, gStats.sci.moy, gStats.oral.moy]);
     });
 
     doc.autoTable({
-        head: [['Groupe', 'Moy. Générale', 'Français', 'Maths', 'Hist-Géo', 'Sciences']],
+        head: [['Groupe', 'Moy. Générale', 'Français', 'Maths', 'Hist-Géo', 'Sciences', 'Oral']],
         body: body,
         startY: yPos,
         theme: 'grid',
-        headStyles: { fillColor: [41, 128, 185] }, // En-tête Bleu
+        headStyles: { fillColor: [41, 128, 185] },
         styles: { halign: 'center' },
         columnStyles: { 0: { halign: 'left', fontStyle: 'bold' } }
     });
+
+    // --- 5. TABLEAU MENTIONS PAR GROUPE ---
+    yPos = doc.lastAutoTable.finalY + 15;
+    if (yPos > 220) { doc.addPage(); yPos = 20; }
+
+    doc.setFontSize(14); doc.setTextColor(41, 128, 185);
+    doc.text("5. Répartition des Mentions par Groupe", 14, yPos);
+    yPos += 10;
+
+    let mentionBody = [];
+    groups.forEach(g => {
+        const groupStudents = DB.students.filter(g.filter);
+        const { mentions: gM, total: gT } = calculateMentions(groupStudents);
+        const pct = (n) => gT > 0 ? (n / gT * 100).toFixed(1) + '%' : '-';
+        mentionBody.push([
+            g.name,
+            gM['Très Bien'] + ' (' + pct(gM['Très Bien']) + ')',
+            gM['Bien'] + ' (' + pct(gM['Bien']) + ')',
+            gM['Assez Bien'] + ' (' + pct(gM['Assez Bien']) + ')',
+            gM['Admis'] + ' (' + pct(gM['Admis']) + ')',
+            gM['Refusé'] + ' (' + pct(gM['Refusé']) + ')'
+        ]);
+    });
+
+    doc.autoTable({
+        head: [['Groupe', 'Très Bien', 'Bien', 'Assez Bien', 'Admis', 'Refusé']],
+        body: mentionBody,
+        startY: yPos,
+        theme: 'grid',
+        headStyles: { fillColor: [41, 128, 185] },
+        styles: { halign: 'center', fontSize: 9 },
+        columnStyles: {
+            0: { halign: 'left', fontStyle: 'bold' },
+            5: { textColor: [231, 76, 60], fontStyle: 'bold' }
+        }
+    });
+
     doc.save("Rapport_Statistiques.pdf");
 }
 function exportSimulationXLSX() {
@@ -441,7 +686,7 @@ function exportDatavisXLSX() {
     // 1. Préparation des colonnes
     // On crée un tableau avec une ligne d'en-tête
     const data = [
-        ["Groupe", "Effectif", "Moyenne Générale /20", "Français /20", "Maths /20", "Hist-Géo /20", "Sciences /20"]
+        ["Groupe", "Effectif", "Moyenne Générale /20", "Français /20", "Maths /20", "Hist-Géo /20", "Sciences /20", "Oral /20"]
     ];
 
     // 2. Définition des groupes à analyser
@@ -475,11 +720,12 @@ function exportDatavisXLSX() {
                 parseFloat(stats.fr.moy),    // Français
                 parseFloat(stats.math.moy),  // Maths
                 parseFloat(stats.hg.moy),    // Hist-Géo
-                parseFloat(stats.sci.moy)    // Sciences
+                parseFloat(stats.sci.moy),   // Sciences
+                stats.oral.moy !== '-' ? parseFloat(stats.oral.moy) : "-" // Oral
             ]);
         } else {
             // Si le groupe est vide (ex: une classe sans élèves importés)
-            data.push([g.name, 0, "-", "-", "-", "-", "-"]);
+            data.push([g.name, 0, "-", "-", "-", "-", "-", "-"]);
         }
     });
 
@@ -494,7 +740,8 @@ function exportDatavisXLSX() {
         { wch: 15 }, // Largeur Fr
         { wch: 15 }, // Largeur Math
         { wch: 15 }, // Largeur HG
-        { wch: 15 }  // Largeur Sci
+        { wch: 15 }, // Largeur Sci
+        { wch: 15 }  // Largeur Oral
     ];
 
     const wb = XLSX.utils.book_new();

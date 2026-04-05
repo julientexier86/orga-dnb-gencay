@@ -2653,3 +2653,206 @@ function generateBordereauxPDF(data, rne) {
     if (count === 0) return alert("Aucune donnée trouvée pour ce RNE dans le fichier Excel ! Vérifiez que le RNE est correct.");
     doc.save(`Bordereaux_Lots_${rne}_${examYear}.pdf`);
 }
+
+// ============================================================
+// MOTEUR D'IMPORT DES BORDEREAUX ET GESTION DES CONFLITS
+// ============================================================
+
+window.pendingConflicts = [];
+window.currentConflictIndex = 0;
+window.directImportsCount = 0;
+
+window.processImportBordereaux = async function(event) {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    const subj = document.getElementById('importBordereauSubject').value;
+    const feedback = document.getElementById('importBordereauxFeedback');
+    feedback.innerHTML = '<span style="color: #2980b9;">⏳ Lecture et analyse des fichiers en cours...</span>';
+
+    if (typeof XLSX === 'undefined') {
+        feedback.innerHTML = '<span style="color: red;">❌ Erreur : SheetJS non chargé.</span>';
+        return;
+    }
+
+    window.pendingConflicts = [];
+    window.directImportsCount = 0;
+    let errors = [];
+
+    const subjectLabels = { 'hg': 'Histoire-Géographie', 'emc': 'EMC', 'fr': 'Français', 'math': 'Mathématiques', 'svt': 'SVT', 'pc': 'Physique-Chimie', 'tech': 'Technologie' };
+
+    const queueNote = (student, subjectKey, newNote) => {
+        const oldNote = student.grades ? student.grades[subjectKey] : undefined;
+
+        if (oldNote !== undefined && Math.abs(oldNote - newNote) > 0.001) {
+            window.pendingConflicts.push({
+                student: student,
+                subjectKey: subjectKey,
+                subjectLabel: subjectLabels[subjectKey] || subjectKey,
+                oldNote: oldNote,
+                newNote: newNote
+            });
+        } else {
+            if (!student.grades) student.grades = {};
+            if (oldNote !== newNote) {
+                student.grades[subjectKey] = newNote;
+                window.directImportsCount++;
+            }
+        }
+    };
+
+    for (let i = 0; i < files.length; i++) {
+        try {
+            const data = await files[i].arrayBuffer();
+            const workbook = XLSX.read(data, { type: 'array' });
+
+            workbook.SheetNames.forEach(sheetName => {
+                const sheet = workbook.Sheets[sheetName];
+                const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+                let headerRowIdx = rows.findIndex(r => r && r.some(cell => String(cell).includes('Code Anonymat')));
+                if (headerRowIdx === -1) return;
+
+                const headers = rows[headerRowIdx];
+                const idxAnon = headers.findIndex(h => String(h).includes('Code Anonymat'));
+                const idxNoteGlobale = headers.findIndex(h => String(h).includes('Note Globale'));
+                const idxNoteHG = headers.findIndex(h => String(h).includes('Note HG'));
+                const idxNoteEMC = headers.findIndex(h => String(h).includes('Note EMC'));
+
+                for (let r = headerRowIdx + 1; r < rows.length; r++) {
+                    const row = rows[r];
+                    if (!row || !row[idxAnon]) continue;
+
+                    const student = DB.students.find(s => s.anonymat === String(row[idxAnon]).trim());
+                    if (student) {
+                        if (subj === 'hg') {
+                            let noteHG = parseFloat(String(row[idxNoteHG] || "").replace(',', '.'));
+                            let noteEMC = parseFloat(String(row[idxNoteEMC] || "").replace(',', '.'));
+                            if (!isNaN(noteHG)) queueNote(student, 'hg', noteHG);
+                            if (!isNaN(noteEMC)) queueNote(student, 'emc', noteEMC);
+                        } else {
+                            let note = parseFloat(String(row[idxNoteGlobale] || "").replace(',', '.'));
+                            if (!isNaN(note)) queueNote(student, subj, note);
+                        }
+                    }
+                }
+            });
+        } catch (err) {
+            errors.push(files[i].name);
+        }
+    }
+
+    event.target.value = '';
+
+    if (window.pendingConflicts.length > 0) {
+        document.getElementById('conflictSummaryCount').innerText = window.pendingConflicts.length;
+        document.getElementById('conflictSummaryModal').style.display = 'flex';
+    } else {
+        finishImportBordereaux(errors);
+    }
+};
+
+window.resolveAllConflicts = function() {
+    window.pendingConflicts.forEach(conflict => {
+        conflict.student.grades[conflict.subjectKey] = conflict.newNote;
+        window.directImportsCount++;
+    });
+
+    document.getElementById('conflictSummaryModal').style.display = 'none';
+    finishImportBordereaux([]);
+};
+
+window.startManualConflictResolution = function() {
+    document.getElementById('conflictSummaryModal').style.display = 'none';
+    window.currentConflictIndex = 0;
+    showConflictResolutionStep();
+};
+
+window.showConflictResolutionStep = function() {
+    const conflict = window.pendingConflicts[window.currentConflictIndex];
+
+    document.getElementById('conflictProgress').innerText = `${window.currentConflictIndex + 1} / ${window.pendingConflicts.length}`;
+    document.getElementById('conflictAnonymat').innerText = conflict.student.anonymat;
+
+    const nomComplet = `${conflict.student.nom || ''} ${conflict.student.prenom || ''}`.trim();
+    const classe = conflict.student.classe || 'Non classé';
+    document.getElementById('conflictStudentIdentity').innerText = `${nomComplet} (Classe : ${classe})`;
+
+    document.getElementById('conflictSubjLabel').innerText = conflict.subjectLabel;
+    document.getElementById('conflictOldNote').innerText = conflict.oldNote;
+    document.getElementById('conflictNewNote').innerText = conflict.newNote;
+
+    document.getElementById('conflictResolutionModal').style.display = 'flex';
+};
+
+window.resolveConflict = function(choice) {
+    const conflict = window.pendingConflicts[window.currentConflictIndex];
+
+    if (choice === 'overwrite') {
+        conflict.student.grades[conflict.subjectKey] = conflict.newNote;
+        window.directImportsCount++;
+    }
+
+    window.currentConflictIndex++;
+
+    if (window.currentConflictIndex < window.pendingConflicts.length) {
+        showConflictResolutionStep();
+    } else {
+        document.getElementById('conflictResolutionModal').style.display = 'none';
+        finishImportBordereaux([]);
+    }
+};
+
+window.finishImportBordereaux = function(errors = []) {
+    if (typeof autoSave === 'function') autoSave();
+    else if (typeof saveDB === 'function') saveDB();
+    if (typeof renderGrades === 'function') renderGrades();
+
+    const feedback = document.getElementById('importBordereauxFeedback');
+    let msg = `<span style="color: #27ae60;">✅ Import réussi : ${window.directImportsCount} notes ajoutées/mises à jour.</span>`;
+
+    if (errors.length > 0) {
+        msg += `<br><span style="color: #e67e22;">⚠️ Erreur de lecture sur : ${errors.join(', ')}</span>`;
+    }
+
+    feedback.innerHTML = msg;
+    setTimeout(() => { feedback.innerHTML = ''; }, 6000);
+};
+
+// Export global des notes en Excel
+window.exportAllGradesExcel = function() {
+    if (!DB.students || DB.students.length === 0) {
+        showToast("Aucun élève à exporter.", "warning");
+        return;
+    }
+    const activeSciences = DB.config.scienceSubjects || ['SVT', 'PC', 'TECH'];
+    const data = [["Nom", "Prénom", "Classe", "Français", "Mathématiques", "Hist-Géo", "SVT", "Phys-Chi", "Techno", "Moy. Sciences", "Moy. Examen"]];
+
+    DB.students.forEach(s => {
+        if (!s.grades) return;
+        let sumSci = 0, countSci = 0;
+        if (activeSciences.includes('SVT') && s.grades.svt != null) { sumSci += s.grades.svt; countSci++; }
+        if (activeSciences.includes('PC') && s.grades.pc != null) { sumSci += s.grades.pc; countSci++; }
+        if (activeSciences.includes('TECH') && s.grades.tech != null) { sumSci += s.grades.tech; countSci++; }
+        const moySci = countSci > 0 ? (sumSci / countSci) : null;
+        let sumGen = 0, countGen = 0;
+        if (s.grades.fr != null) { sumGen += s.grades.fr; countGen++; }
+        if (s.grades.math != null) { sumGen += s.grades.math; countGen++; }
+        if (s.grades.hg != null) { sumGen += s.grades.hg; countGen++; }
+        if (moySci !== null) { sumGen += moySci; countGen++; }
+        const moyDNB = countGen > 0 ? (sumGen / countGen) : null;
+        data.push([
+            s.nom || "", s.prenom || "", s.classe || "",
+            s.grades.fr ?? "", s.grades.math ?? "", s.grades.hg ?? "",
+            s.grades.svt ?? "", s.grades.pc ?? "", s.grades.tech ?? "",
+            moySci !== null ? moySci.toFixed(2) : "",
+            moyDNB !== null ? moyDNB.toFixed(2) : ""
+        ]);
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Notes");
+    XLSX.writeFile(wb, "Export_Notes_Global.xlsx");
+    showToast("Export Excel des notes généré !", "success");
+};

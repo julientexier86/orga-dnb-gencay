@@ -54,7 +54,8 @@ function finalizeGradesImport(data) {
         { key: 'emc', label: 'EMC', keywords: ['emc', 'moral'] },
         { key: 'svt', label: 'SVT', keywords: ['svt', 'vie'] },
         { key: 'pc', label: 'Physique-Chimie', keywords: ['phys', 'pc', 'chimie'] },
-        { key: 'tech', label: 'Technologie', keywords: ['tech', 'techno'] }
+        { key: 'tech', label: 'Technologie', keywords: ['tech', 'techno'] },
+        { key: 'oral', label: 'Oral / Soutenance', keywords: ['oral', 'soutenance', 'stage'] }
     ];
     const row0 = data[0];
     const headers = Object.keys(row0);
@@ -248,7 +249,8 @@ function executeImport(data, mapping, isStrictReplace) {
             student.grades = {
                 ...student.grades,
                 fr: resolve('fr'), math: resolve('math'), hg: resolve('hg'),
-                emc: resolve('emc'), svt: resolve('svt'), pc: resolve('pc'), tech: resolve('tech')
+                emc: resolve('emc'), svt: resolve('svt'), pc: resolve('pc'), tech: resolve('tech'),
+                oral: resolve('oral')
             };
             countSuccess++;
         } else {

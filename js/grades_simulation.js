@@ -2,20 +2,36 @@
 // Contient : renderGrades, renderSimulation, sortGrades, filterSimulation,
 //            openReleveOptions, validateConvocOptions, exportRelevesNotes
 
+// Helper : retourne un nombre valide ou null
+function validNum(v) { if (v == null || v === "") return null; const n = parseFloat(v); return isNaN(n) ? null : n; }
+
 function renderGrades() {
-    if (select && select.options.length === 1 && uniqueClasses.length > 0) { uniqueClasses.forEach(c => { let opt = document.createElement('option'); opt.value = c; opt.text = c; select.appendChild(opt); }); }
+    const tbody = document.querySelector('#tableGradesPreview tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    const activeSciences = DB.config.scienceSubjects || ['SVT', 'PC', 'TECH'];
+    const searchInput = document.getElementById('searchGradesInput');
+    const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
     let displayList = DB.students.map(s => {
         if (!s.grades) return null;
-        if (filterVal !== "all" && s.classe !== filterVal) return null;
+        if (searchTerm && !(s.nom || '').toLowerCase().includes(searchTerm) && !(s.prenom || '').toLowerCase().includes(searchTerm)) return null;
         let sumSci = 0, countSci = 0;
-        if (activeSciences.includes('SVT') && s.grades.svt !== null) { sumSci += s.grades.svt; countSci++; }
-        if (activeSciences.includes('PC') && s.grades.pc !== null) { sumSci += s.grades.pc; countSci++; }
-        if (activeSciences.includes('TECH') && s.grades.tech !== null) { sumSci += s.grades.tech; countSci++; }
+        let v;
+        if (activeSciences.includes('SVT') && (v = validNum(s.grades.svt)) !== null) { sumSci += v; countSci++; }
+        if (activeSciences.includes('PC') && (v = validNum(s.grades.pc)) !== null) { sumSci += v; countSci++; }
+        if (activeSciences.includes('TECH') && (v = validNum(s.grades.tech)) !== null) { sumSci += v; countSci++; }
         const moySci = countSci > 0 ? (sumSci / countSci) : null;
         let sumGen = 0, countGen = 0;
-        if (s.grades.fr !== null) { sumGen += s.grades.fr; countGen++; }
-        if (s.grades.math !== null) { sumGen += s.grades.math; countGen++; }
-        if (s.grades.hg !== null) { sumGen += s.grades.hg; countGen++; }
+        if ((v = validNum(s.grades.fr)) !== null) { sumGen += v; countGen++; }
+        if ((v = validNum(s.grades.math)) !== null) { sumGen += v; countGen++; }
+        // HG/EMC : utilise getDetailHGEMC si disponible
+        if (typeof getDetailHGEMC === 'function') {
+            const resHG = getDetailHGEMC(s);
+            if (resHG.average !== null && !isNaN(resHG.average)) { sumGen += resHG.average; countGen++; }
+        } else {
+            if ((v = validNum(s.grades.hg)) !== null) { sumGen += v; countGen++; }
+        }
         if (moySci !== null) { sumGen += moySci; countGen++; }
         const moyDNB = countGen > 0 ? (sumGen / countGen) : null;
         return { ...s, moySciVal: moySci, moyDNBVal: moyDNB };
@@ -23,7 +39,7 @@ function renderGrades() {
     const k = gradeSortState.key; const o = gradeSortState.order === 'asc' ? 1 : -1;
     displayList.sort((a, b) => { let valA, valB; if (k === 'nom') { valA = a.nom; valB = b.nom; } else if (k === 'moyDNB') { valA = a.moyDNBVal || -1; valB = b.moyDNBVal || -1; } else { valA = a.grades[k] || -1; valB = b.grades[k] || -1; } if (valA < valB) return -1 * o; if (valA > valB) return 1 * o; return 0; });
     const totalCount = displayList.length;
-    if (filterVal === 'all' && displayList.length > 30) { displayList = displayList.slice(0, 30); document.getElementById('gradeCountLabel').innerText = `Affichage: 30 / ${totalCount} élèves (Utilisez le filtre pour tout voir)`; } else { document.getElementById('gradeCountLabel').innerText = `${totalCount} élèves affichés`; }
+    if (!searchTerm && displayList.length > 30) { displayList = displayList.slice(0, 30); document.getElementById('gradeCountLabel').innerText = `Affichage: 30 / ${totalCount} élèves (Utilisez la recherche pour tout voir)`; } else { document.getElementById('gradeCountLabel').innerText = `${totalCount} élèves affichés`; }
     displayList.forEach(s => { const ms = s.moySciVal !== null ? s.moySciVal.toFixed(2) : "-"; const md = s.moyDNBVal !== null ? s.moyDNBVal.toFixed(2) : "-"; tbody.innerHTML += `<tr><td>${s.nom} ${s.prenom}</td><td>${s.classe || ""}</td><td style="background:#e8f8f5; font-weight:bold; color:#145a32;">${md}</td><td>${s.grades.fr || "-"}</td><td>${s.grades.math || "-"}</td><td>${s.grades.hg || "-"}</td><td>${s.grades.svt || "-"}</td><td>${s.grades.pc || "-"}</td><td>${s.grades.tech || "-"}</td><td style="background:#eaf2f8; font-weight:bold;">${ms}</td></tr>`; });
 }
 function sortGrades(key) { if (gradeSortState.key === key) { gradeSortState.order = gradeSortState.order === 'asc' ? 'desc' : 'asc'; } else { gradeSortState.key = key; gradeSortState.order = 'desc'; } renderGrades(); }
@@ -39,34 +55,39 @@ function renderSimulation() {
         if (simulSearchTerm && !s.nom.toLowerCase().includes(simulSearchTerm) && !s.prenom.toLowerCase().includes(simulSearchTerm)) return null;
 
         // 1. Calcul Moyenne Sciences
-        let sumSci = 0, countSci = 0;
-        if (activeSciences.includes('SVT') && s.grades.svt !== null) { sumSci += s.grades.svt; countSci++; }
-        if (activeSciences.includes('PC') && s.grades.pc !== null) { sumSci += s.grades.pc; countSci++; }
-        if (activeSciences.includes('TECH') && s.grades.tech !== null) { sumSci += s.grades.tech; countSci++; }
+        let sumSci = 0, countSci = 0, vv;
+        if (activeSciences.includes('SVT') && (vv = validNum(s.grades.svt)) !== null) { sumSci += vv; countSci++; }
+        if (activeSciences.includes('PC') && (vv = validNum(s.grades.pc)) !== null) { sumSci += vv; countSci++; }
+        if (activeSciences.includes('TECH') && (vv = validNum(s.grades.tech)) !== null) { sumSci += vv; countSci++; }
         const moySci = countSci > 0 ? (sumSci / countSci) : null;
 
-        // 2. Calcul Somme Écrits
+        // 2. Calcul Somme Écrits (avec HG/EMC pondéré si séparé)
         let sumEcrit = 0, countEcrit = 0;
-        if (s.grades.fr !== null) { sumEcrit += s.grades.fr; countEcrit++; }
-        if (s.grades.math !== null) { sumEcrit += s.grades.math; countEcrit++; }
-        if (s.grades.hg !== null) { sumEcrit += s.grades.hg; countEcrit++; }
+        if ((vv = validNum(s.grades.fr)) !== null) { sumEcrit += vv; countEcrit++; }
+        if ((vv = validNum(s.grades.math)) !== null) { sumEcrit += vv; countEcrit++; }
+        // HG/EMC : utilise getDetailHGEMC si disponible (gère le mode séparé HG+EMC)
+        if (typeof getDetailHGEMC === 'function') {
+            const resHG = getDetailHGEMC(s);
+            if (resHG.average !== null && !isNaN(resHG.average)) { sumEcrit += resHG.average; countEcrit++; }
+        } else {
+            if ((vv = validNum(s.grades.hg)) !== null) { sumEcrit += vv; countEcrit++; }
+        }
         if (moySci !== null) { sumEcrit += moySci; countEcrit++; }
 
         const moyEcritsVal = countEcrit > 0 ? (sumEcrit / countEcrit) : 0;
 
         // 3. Calcul Moyenne Épreuves (Écrits + Oral)
-        // CORRECTION ICI : on ne multiplie plus par countEcrit
         let sumEpreuves = sumEcrit;
         let countEpreuves = countEcrit;
 
-        if (s.grades.oral !== null && s.grades.oral !== undefined) {
-            sumEpreuves += s.grades.oral;
+        if ((vv = validNum(s.grades.oral)) !== null) {
+            sumEpreuves += vv;
             countEpreuves++;
         }
         const moyEpreuves = countEpreuves > 0 ? (sumEpreuves / countEpreuves) : 0;
 
         // 4. Calcul Moyenne DNB (60% Épreuves / 40% Contrôle Continu)
-        const moyGen = (s.grades.genAvg !== null) ? s.grades.genAvg : 0;
+        const moyGen = validNum(s.grades.genAvg) || 0;
         let finalAvg = 0;
         if (moyGen > 0 && moyEpreuves > 0) finalAvg = (moyGen * 0.4) + (moyEpreuves * 0.6);
         else if (moyEpreuves > 0) finalAvg = moyEpreuves;
@@ -240,11 +261,12 @@ function validateConvocOptions() {
     document.getElementById('printType').value = 'convoc';
 }
 
-// 4. RELEVÉS DE NOTES (Corrigé, Complet avec Calculs)
+// 4. RELEVÉS DE NOTES (Complet avec Oral + Contrôle Continu)
 window.exportRelevesNotes = function (sortMode, targetId) {
     DB.config.schoolName = document.getElementById('schoolName').value;
     DB.config.year = document.getElementById('sessionYear').value;
     const activeSciences = DB.config.scienceSubjects || ['SVT', 'PC', 'TECH'];
+    const examTitle = typeof getExamTitle === 'function' ? getExamTitle() : "DNB Blanc";
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('p', 'mm', 'a4');
     let count = 0;
@@ -256,83 +278,222 @@ window.exportRelevesNotes = function (sortMode, targetId) {
         studentsToPrint = [...DB.students];
     }
 
-    // Tri
     studentsToPrint.sort((a, b) => {
         if (sortMode === 'class') {
-            if (a.classe < b.classe) return -1;
-            if (a.classe > b.classe) return 1;
+            if ((a.classe || "") < (b.classe || "")) return -1;
+            if ((a.classe || "") > (b.classe || "")) return 1;
         }
-        return a.nom.localeCompare(b.nom);
+        return (a.nom || "").localeCompare(b.nom || "");
     });
 
-    studentsToPrint.forEach((student, idx) => {
-        if (!student.grades) student.grades = { fr: null, math: null, hg: null, svt: null, pc: null, tech: null };
+    studentsToPrint.forEach((student) => {
+        if (!student.grades) student.grades = {};
         if (count > 0) doc.addPage(); count++;
 
-        // --- LOGO ---
-        addSmartLogo(doc, 15, 10, 45);
+        // --- EN-TÊTE ---
+        if (typeof addSmartLogo === 'function') addSmartLogo(doc, 15, 10, 45);
 
         doc.setFontSize(10); doc.setTextColor(100);
-        doc.text("DNB BLANC", 195, 15, { align: 'right' });
+        doc.text(examTitle, 195, 15, { align: 'right' });
         doc.text(`Session ${DB.config.year}`, 195, 20, { align: 'right' });
 
         doc.setFontSize(14); doc.setTextColor(44, 62, 80); doc.setFont("helvetica", "bold");
-        doc.text(DB.config.schoolName || "Collège", 105, 18, { align: 'center' });
-        doc.setFontSize(18); doc.setTextColor(0); doc.text("RELEVÉ DE NOTES", 105, 35, { align: 'center' });
+        doc.text(DB.config.schoolName || "Collège", 105, 22, { align: 'center' });
+        doc.setFontSize(18); doc.setTextColor(0); doc.text("RELEVÉ DE NOTES", 105, 38, { align: 'center' });
 
-        doc.setFillColor(248, 249, 250); doc.setDrawColor(44, 62, 80); doc.setLineWidth(0.5);
-        doc.rect(15, 45, 180, 20, 'FD');
-
+        // --- BLOC CANDIDAT ---
+        doc.setDrawColor(200); doc.setLineWidth(0.2);
+        doc.rect(15, 48, 180, 18);
         doc.setFontSize(12); doc.setTextColor(0); doc.setFont("helvetica", "bold");
-        const fullName = `${student.nom} ${student.prenom}`;
-        doc.text(`Candidat(e) :  ${fullName}`, 20, 53);
-        doc.text(`Classe :  ${student.classe}`, 150, 53);
+        doc.text(`Candidat(e) : ${student.nom.toUpperCase()} ${student.prenom}`, 20, 59);
+        doc.text(`Classe : ${student.classe || "N/C"}`, 155, 59);
 
-        if (student.tt) {
-            doc.setFontSize(10); doc.setTextColor(100);
-            doc.text("(Bénéficie d'un Tiers-Temps)", 20, 60);
+        // --- CALCULS ---
+        const parse = (v) => { let n = parseFloat(v); return isNaN(n) ? null : n; };
+
+        const nFR = parse(student.grades.fr);
+        const nMA = parse(student.grades.math);
+
+        // HG-EMC avec détail
+        let nHG = null, detailHG = "HG: - | EMC: -";
+        if (typeof getDetailHGEMC === "function") {
+            const resHG = getDetailHGEMC(student);
+            nHG = parse(resHG.average);
+            detailHG = (resHG.detail || "").replace(/NaN/g, "-");
+        } else {
+            nHG = parse(student.grades.hg);
         }
 
-        // --- CALCULS (CRITIQUE : RE-AJOUTÉ) ---
-        const getRaw = (v) => (v !== null && v !== undefined && v !== "") ? parseFloat(v) : null;
-        let sumSci = 0, cSci = 0; let details = [];
+        // Sciences
+        let sSum = 0, sCount = 0, detSci = [];
+        if (activeSciences.includes('SVT')) { let v = parse(student.grades.svt); if (v !== null) { sSum += v; sCount++; detSci.push("SVT: " + v.toFixed(1)); } else { detSci.push("SVT: -"); } }
+        if (activeSciences.includes('PC')) { let v = parse(student.grades.pc); if (v !== null) { sSum += v; sCount++; detSci.push("PC: " + v.toFixed(1)); } else { detSci.push("PC: -"); } }
+        if (activeSciences.includes('TECH')) { let v = parse(student.grades.tech); if (v !== null) { sSum += v; sCount++; detSci.push("Tech: " + v.toFixed(1)); } else { detSci.push("Tech: -"); } }
+        const nSCI = sCount > 0 ? (sSum / sCount) : null;
 
-        if (activeSciences.includes('SVT')) { if (getRaw(student.grades.svt) != null) { sumSci += getRaw(student.grades.svt); cSci++ } details.push("SVT"); }
-        if (activeSciences.includes('PC')) { if (getRaw(student.grades.pc) != null) { sumSci += getRaw(student.grades.pc); cSci++ } details.push("PC"); }
-        if (activeSciences.includes('TECH')) { if (getRaw(student.grades.tech) != null) { sumSci += getRaw(student.grades.tech); cSci++ } details.push("Tech"); }
-        const moySci = cSci > 0 ? (sumSci / cSci) : null;
+        // Oral
+        const nOral = parse(student.grades.oral);
 
-        const getNote = (v) => (v !== null && v !== undefined && v !== "") ? parseFloat(v).toFixed(1) : "Abs";
+        const getNote = (v) => v !== null ? v.toFixed(1) + " / 20" : "Abs";
 
-        const body = [
-            ["Français", getNote(student.grades.fr) + " / 20"],
-            ["Mathématiques", getNote(student.grades.math) + " / 20"],
-            ["Hist-Géo / EMC", getNote(student.grades.hg) + " / 20"],
-            [`Sciences (${details.join('+')})`, moySci !== null ? moySci.toFixed(1) + " / 20" : "Abs"]
+        // --- TABLEAU ÉPREUVES ÉCRITES ---
+        const bodyEcrits = [
+            ["Français", getNote(nFR), "Épreuve unique"],
+            ["Mathématiques", getNote(nMA), "Épreuve unique"],
+            ["Hist-Géo / EMC", getNote(nHG), detailHG],
+            ["Sciences", getNote(nSCI), detSci.join(' | ')]
         ];
 
         doc.autoTable({
-            head: [['Épreuves Écrites', 'Note Obtenue']],
-            body: body,
-            startY: 80,
+            startY: 75,
+            head: [['Épreuves Écrites', 'Note / 20', 'Détails']],
+            body: bodyEcrits,
             theme: 'grid',
-            headStyles: { fillColor: [44, 62, 80], halign: 'left' }
+            headStyles: { fillColor: [44, 62, 80], halign: 'center' },
+            styles: { fontSize: 10, cellPadding: 4 },
+            columnStyles: { 1: { halign: 'center', fontStyle: 'bold', cellWidth: 30 } }
         });
 
-        let finalY = doc.lastAutoTable.finalY + 30; if (finalY > 250) { doc.addPage(); finalY = 40; }
-        doc.setFontSize(11); doc.text(`Fait à ${DB.config.city || "SJI"}, le ${new Date().toLocaleDateString()}`, 130, finalY, { align: 'center' });
-        doc.setFont("helvetica", "bold"); doc.text(DB.config.director.civ || "Le Chef", 130, finalY + 5, { align: 'center' });
-        doc.text(DB.config.director.name || "", 130, finalY + 10, { align: 'center' });
+        let yPos = doc.lastAutoTable.finalY + 3;
+
+        // --- ÉPREUVE ORALE ---
+        doc.autoTable({
+            startY: yPos,
+            head: [['Épreuve Orale', 'Note / 20', '']],
+            body: [["Oral de soutenance", getNote(nOral), ""]],
+            theme: 'grid',
+            headStyles: { fillColor: [41, 128, 185], halign: 'center' },
+            styles: { fontSize: 10, cellPadding: 4 },
+            columnStyles: { 1: { halign: 'center', fontStyle: 'bold', cellWidth: 30 } }
+        });
+
+        yPos = doc.lastAutoTable.finalY + 8;
+
+        // --- MOYENNE DES ÉPREUVES ---
+        const notesEpreuves = [nFR, nMA, nHG, nSCI, nOral].filter(v => v !== null);
+        const moyEpreuves = notesEpreuves.length > 0 ? (notesEpreuves.reduce((a, b) => a + b, 0) / notesEpreuves.length) : null;
+
+        doc.setFontSize(12); doc.setFont("helvetica", "bold"); doc.setTextColor(44, 62, 80);
+        doc.text(`Moyenne des épreuves : ${moyEpreuves !== null ? moyEpreuves.toFixed(2) + " / 20" : "-"}`, 105, yPos, { align: 'center' });
+
+        yPos += 10;
+
+        // --- CONTRÔLE CONTINU (SIMULATION) ---
+        const moyGenAvg = parse(student.grades.genAvg);
+
+        if (moyGenAvg !== null) {
+            doc.autoTable({
+                startY: yPos,
+                head: [['Contrôle Continu (Simulation)', 'Note / 20']],
+                body: [["Moyenne générale annuelle", moyGenAvg.toFixed(1) + " / 20"]],
+                theme: 'grid',
+                headStyles: { fillColor: [142, 68, 173], halign: 'center' },
+                styles: { fontSize: 10, cellPadding: 4 },
+                columnStyles: { 1: { halign: 'center', fontStyle: 'bold', cellWidth: 35 } }
+            });
+
+            yPos = doc.lastAutoTable.finalY + 8;
+
+            // --- NOTE FINALE SIMULÉE ---
+            let finalAvg = 0;
+            if (moyGenAvg > 0 && moyEpreuves !== null && moyEpreuves > 0) {
+                finalAvg = (moyGenAvg * 0.4) + (moyEpreuves * 0.6);
+            } else if (moyEpreuves !== null) {
+                finalAvg = moyEpreuves;
+            } else if (moyGenAvg > 0) {
+                finalAvg = moyGenAvg;
+            }
+
+            let mention = "";
+            if (finalAvg >= 18) mention = "Très Bien (Félicitations)";
+            else if (finalAvg >= 16) mention = "Très Bien";
+            else if (finalAvg >= 14) mention = "Bien";
+            else if (finalAvg >= 12) mention = "Assez Bien";
+            else if (finalAvg >= 10) mention = "Admis";
+            else mention = "Non admis";
+
+            doc.setFillColor(240, 248, 255); doc.setDrawColor(41, 128, 185); doc.setLineWidth(0.5);
+            doc.rect(30, yPos, 150, 18, 'FD');
+            doc.setFontSize(13); doc.setFont("helvetica", "bold"); doc.setTextColor(0);
+            doc.text(`NOTE FINALE SIMULÉE : ${finalAvg.toFixed(2)} / 20`, 105, yPos + 8, { align: 'center' });
+            doc.setFontSize(10); doc.setTextColor(100);
+            doc.text(`Mention estimée : ${mention}  (60% épreuves + 40% contrôle continu)`, 105, yPos + 15, { align: 'center' });
+
+            yPos += 25;
+        } else {
+            // Pas de contrôle continu : juste afficher la moyenne épreuves en gras
+            doc.setFillColor(240, 248, 255); doc.setDrawColor(41, 128, 185); doc.setLineWidth(0.5);
+            doc.rect(30, yPos, 150, 12, 'FD');
+            doc.setFontSize(13); doc.setFont("helvetica", "bold"); doc.setTextColor(0);
+            doc.text(`MOYENNE GÉNÉRALE : ${moyEpreuves !== null ? moyEpreuves.toFixed(2) + " / 20" : "-"}`, 105, yPos + 8, { align: 'center' });
+            yPos += 20;
+        }
+
+        // --- SIGNATURE ---
+        if (yPos > 245) { doc.addPage(); yPos = 40; }
+        doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.setTextColor(0);
+        doc.text(`Fait à ${DB.config.city || ""}, le ${new Date().toLocaleDateString()}`, 130, yPos);
+        yPos += 8;
+        doc.setFont("helvetica", "bold");
+        doc.text(DB.config.director?.civ || "Le Principal", 130, yPos);
+        doc.text(DB.config.director?.name || "", 130, yPos + 5);
 
         if (DB.config.signature) {
-            try {
-                const imgProps = doc.getImageProperties(DB.config.signature);
-                const ratio = imgProps.width / imgProps.height;
-                doc.addImage(DB.config.signature, 'PNG', 110, finalY + 15, 20 * ratio, 20);
-            } catch (e) { }
+            try { doc.addImage(DB.config.signature, 'PNG', 130, yPos + 10, 45, 20, undefined, 'FAST'); } catch (e) { }
         }
     });
 
-    doc.save("Releves_Notes.pdf");
+    const yearSuffix = DB.config.year || "";
+    doc.save(`Releves_Notes_${examTitle.replace(/\s+/g, '')}_${yearSuffix}.pdf`);
+};
+
+// 5. POCHETTES DE CLASSE POUR RELEVÉS DE NOTES (A3 paysage)
+window.exportFolderCoversNotes = function () {
+    if (!DB.students || DB.students.length === 0) return showToast("Veuillez d'abord charger la liste des élèves.", "error");
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('l', 'mm', 'a3');
+    const examTitle = typeof getExamTitle === 'function' ? getExamTitle() : "DNB Blanc";
+
+    const classes = [...new Set(DB.students.map(s => s.classe))].sort();
+    const year = DB.config.year || "";
+    const schoolName = DB.config.schoolName || "Établissement";
+
+    const HALF_W = 210;
+    const M = 15;
+
+    classes.forEach((className, idx) => {
+        if (idx > 0) doc.addPage("a3", "l");
+
+        // --- RECTO (DROITE) : COUVERTURE ---
+        const covX = HALF_W + M;
+        const covW = HALF_W - (2 * M);
+        const covCenterX = covX + (covW / 2);
+
+        if (typeof addSmartLogo === "function") addSmartLogo(doc, covX, 15, 45);
+        doc.setFontSize(18); doc.setFont("helvetica", "bold"); doc.setTextColor(0);
+        doc.text(schoolName, covX + 65, 25);
+
+        doc.setFontSize(28); doc.setTextColor(44, 62, 80);
+        doc.text("RELEVÉS DE NOTES", covCenterX, 95, { align: 'center' });
+        doc.setFontSize(20);
+        doc.text(`${examTitle} - SESSION ${year}`, covCenterX, 110, { align: 'center' });
+
+        doc.setDrawColor(44, 62, 80); doc.setLineWidth(1.5);
+        doc.rect(covX + 35, 135, covW - 70, 55);
+        doc.setFontSize(75);
+        doc.text(className, covCenterX, 178, { align: 'center' });
+
+        // Effectif de la classe
+        const effectif = DB.students.filter(s => s.classe === className).length;
+        doc.setFontSize(14); doc.setTextColor(100); doc.setFont("helvetica", "normal");
+        doc.text(`${effectif} élèves`, covCenterX, 200, { align: 'center' });
+
+        // Ligne de pliure centrale
+        doc.setDrawColor(220); doc.setLineDash([5, 5], 0);
+        doc.line(HALF_W, 0, HALF_W, 297); doc.setLineDash([]);
+    });
+
+    doc.save(`Pochettes_Releves_Notes_${year}.pdf`);
 };
 
