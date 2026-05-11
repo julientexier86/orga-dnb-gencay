@@ -1356,10 +1356,11 @@ window.auditLanguageCapacity = function() {
     // S'il n'y a aucune demande en langue, l'audit est validé d'office
     if (languesDemandees.size === 0) return true;
 
-    // 2. Recensement des langues proposées par les jurys (professeurs assignés)
+    // 2. Recensement des langues proposées : tout prof avec langue renseignée
+    // (on ne requiert plus de jury assigné — la langue seule suffit pour valider)
     let languesProposees = new Set();
     teachers.forEach(t => {
-        if (t.jury && t.langue && t.langue.trim() !== "") {
+        if (t.langue && t.langue.trim() !== "") {
             languesProposees.add(t.langue.trim().toUpperCase());
         }
     });
@@ -1461,10 +1462,28 @@ function runOralAlgorithm() {
     const uniqueJurys = [...new Set(syntheticTeachers.map(t => t.jury).filter(Boolean))];
     if (uniqueJurys.length === 0) return alert("Erreur : Aucun jury n'a pu être déterminé. Configurez vos jurys dans l'onglet Jurys ou vérifiez votre ancien module Oraux.");
 
-    // Audit linguistique uniquement si des langues sont vraiment configurées
-    const languesDemandees = new Set(sourceStudents.filter(s => s.langue).map(s => s.langue.trim().toUpperCase()));
-    if (languesDemandees.size > 0 && typeof auditLanguageCapacity === 'function') {
-        if (!auditLanguageCapacity()) return;
+    // Audit linguistique — basé sur syntheticTeachers (la liste réellement utilisée)
+    // On ne bloque que si AUCUN prof parmi les jurys effectifs ne parle la langue demandée
+    const languesDemandees = new Set(
+        sourceStudents.filter(s => s.langue && s.langue.trim() !== "")
+                      .map(s => s.langue.trim().toUpperCase())
+    );
+    if (languesDemandees.size > 0) {
+        // Langues disponibles : tout prof avec une langue renseignée (jury requis OU non)
+        const languesProposees = new Set(
+            syntheticTeachers
+                .filter(t => t.langue && t.langue.trim() !== "")
+                .map(t => t.langue.trim().toUpperCase())
+        );
+        const manquantes = [...languesDemandees].filter(l => !languesProposees.has(l));
+        if (manquantes.length > 0) {
+            const msgs = manquantes.map(lang => {
+                const nb = sourceStudents.filter(s => s.langue && s.langue.trim().toUpperCase() === lang).length;
+                return `- ${nb} élève(s) en ${lang}`;
+            });
+            alert(`🚨 AUDIT LINGUISTIQUE ÉCHOUÉ :\n\nAucun jury ne parle : ${manquantes.join(', ')}\n${msgs.join('\n')}\n\n👉 Renseignez la "Langue évaluée" pour au moins un membre de jury dans l'onglet Jurys.`);
+            return;
+        }
     }
 
     // Réinitialisation de la distribution
