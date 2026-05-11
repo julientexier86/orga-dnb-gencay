@@ -5615,8 +5615,12 @@ function exportOralSimpleConvocs(params) {
         Y += 10;
 
         // --- DESTINATAIRE ---
-        const civDest = t.civ ? t.civ + " " : "";
-        const nomComplet = isGeneric ? t.nom : `${civDest}${t.nom.toUpperCase()}${t.prenom ? " " + t.prenom : ""}`;
+        const civDest = (t.civ || "").trim();
+        const nomAffiche   = (t.nom || "").toUpperCase();
+        const prenomAffiche = (t.prenom || "").trim();
+        const nomComplet = isGeneric
+            ? t.nom
+            : [civDest, nomAffiche, prenomAffiche].filter(Boolean).join(" ");
         doc.setFont("helvetica", "normal").setFontSize(10).setTextColor(0);
         doc.text(nomComplet, ML, Y);
         if (!isGeneric && t.jury) {
