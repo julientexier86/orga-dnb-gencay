@@ -5501,3 +5501,176 @@ function refreshOralConfigUI() {
 
     console.log("Interface de configuration orale synchronisée.");
 }
+
+// ============================================================
+// CONVOCATIONS SIMPLES (Lettre officielle sans planning)
+// ============================================================
+
+const DEFAULT_SIMPLE_CONVOC_BODY = `Vous êtes convoqué(e) en qualité de membre du jury pour l'épreuve orale du diplôme national du brevet.
+
+Vous voudrez bien vous présenter à l'accueil de l'établissement 15 minutes avant le début des épreuves, afin de prendre connaissance de l'organisation retenue, des documents nécessaires et de la répartition des candidats.
+
+Votre participation au jury, qui est une obligation de service, est indispensable au bon déroulement de cet examen. En cas d'empêchement majeur, je vous remercie de bien vouloir prévenir sans délai le secrétariat de direction.
+
+Je vous remercie par avance pour votre engagement au service de la réussite des élèves.`;
+
+const DEFAULT_SIMPLE_CONVOC_POLITESSE = "Veuillez agréer, Madame, Monsieur, l'expression de mes salutations distinguées.";
+
+/**
+ * Ouvre la modale "Convocations Simples" pré-remplie.
+ */
+window.openOralSimpleConvocModal = function() {
+    if (typeof setupOralDatabase === 'function') setupOralDatabase();
+    const modal = document.getElementById('modal-oral-simple-convoc');
+    if (!modal) return alert("Erreur : modal introuvable. Veuillez rafraîchir la page (F5).");
+
+    const saved = (DB.oralConfig && DB.oralConfig.simpleConvocParams) || {};
+    document.getElementById('simple-convoc-body').value      = saved.body      || DEFAULT_SIMPLE_CONVOC_BODY;
+    document.getElementById('simple-convoc-politesse').value = saved.politesse || DEFAULT_SIMPLE_CONVOC_POLITESSE;
+    modal.style.display = 'flex';
+};
+
+/**
+ * Sauvegarde les paramètres et lance la génération.
+ */
+window.confirmOralSimpleConvocGeneration = function() {
+    const body      = document.getElementById('simple-convoc-body').value.trim();
+    const politesse = document.getElementById('simple-convoc-politesse').value.trim();
+
+    // Persistance
+    if (DB.oralConfig) {
+        DB.oralConfig.simpleConvocParams = { body, politesse };
+        if (typeof saveDB === 'function') saveDB();
+    }
+
+    document.getElementById('modal-oral-simple-convoc').style.display = 'none';
+    exportOralSimpleConvocs({ body, politesse });
+};
+
+/**
+ * Génère les convocations simples (1 page = 1 enseignant).
+ * Fonctionne même sans distribution configurée (lettre générique si aucun enseignant).
+ */
+function exportOralSimpleConvocs(params) {
+    if (!window.jspdf) return alert("Librairie jsPDF manquante.");
+    const { jsPDF } = window.jspdf;
+
+    // --- Récupération des destinataires ---
+    let teachers = (DB.oralConfig && DB.oralConfig.teachers) || [];
+    // Filtre : seulement ceux avec un jury OU en réserve (comme la convoc détaillée)
+    let recipients = teachers.filter(t => (t.jury && t.jury !== "") || t.isReserve);
+
+    // Fallback : si aucun enseignant configuré, on génère une lettre générique
+    const isGeneric = (recipients.length === 0);
+    if (isGeneric) {
+        recipients = [{ nom: "Madame / Monsieur", prenom: "", jury: "" }];
+    }
+
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const schoolName = DB.config.schoolName || "Établissement";
+    const city       = DB.config.city || "";
+    const sessionYear = DB.config.year || new Date().getFullYear();
+    const dirCiv     = DB.config.director?.civ || "Le Chef d'Établissement";
+    const dirName    = DB.config.director?.name || "";
+    const rawDate    = DB.oralConfig?.general?.date || "";
+    const oralDate   = formatDateFR(rawDate);
+
+    const PAGE_W = 210;
+    const ML = 20; // marge gauche
+    const MR = 20; // marge droite
+    const TW  = PAGE_W - ML - MR; // largeur de texte
+
+    let isFirstPage = true;
+
+    recipients.forEach(t => {
+        if (!isFirstPage) doc.addPage();
+        isFirstPage = false;
+
+        let Y = 18;
+
+        // --- EN-TÊTE : Logo + Établissement ---
+        if (DB.config.logo) {
+            try {
+                const props = doc.getImageProperties(DB.config.logo);
+                const ratio = Math.min(25 / props.width, 20 / props.height);
+                doc.addImage(DB.config.logo, 'PNG', ML, Y, props.width * ratio, props.height * ratio);
+            } catch(e) {}
+        }
+
+        doc.setFont("helvetica", "bold").setFontSize(11).setTextColor(44, 62, 80);
+        doc.text(schoolName, PAGE_W - MR, Y + 4, { align: 'right' });
+        doc.setFont("helvetica", "normal").setFontSize(9).setTextColor(80, 80, 80);
+        doc.text(`DNB — Session ${sessionYear}`, PAGE_W - MR, Y + 10, { align: 'right' });
+        if (oralDate) doc.text(`Épreuve orale du ${oralDate}`, PAGE_W - MR, Y + 16, { align: 'right' });
+
+        // Ligne séparatrice
+        Y += 26;
+        doc.setDrawColor(44, 62, 80).setLineWidth(0.5);
+        doc.line(ML, Y, PAGE_W - MR, Y);
+        Y += 10;
+
+        // --- OBJET ---
+        doc.setFont("helvetica", "bold").setFontSize(10).setTextColor(0);
+        doc.text("Objet : Convocation — Épreuve orale du DNB", ML, Y);
+        Y += 10;
+
+        // --- DESTINATAIRE ---
+        const civDest = t.civ ? t.civ + " " : "";
+        const nomComplet = isGeneric ? t.nom : `${civDest}${t.nom.toUpperCase()}${t.prenom ? " " + t.prenom : ""}`;
+        doc.setFont("helvetica", "normal").setFontSize(10).setTextColor(0);
+        doc.text(nomComplet, ML, Y);
+        if (!isGeneric && t.jury) {
+            Y += 6;
+            doc.setFontSize(9).setTextColor(100);
+            doc.text(`Affectation : Jury ${t.jury}`, ML, Y);
+            doc.setTextColor(0);
+        }
+        Y += 12;
+
+        // --- CORPS DU TEXTE ---
+        doc.setFont("helvetica", "normal").setFontSize(10).setTextColor(30, 30, 30);
+        const bodyText  = params.body || DEFAULT_SIMPLE_CONVOC_BODY;
+        const paragraphs = bodyText.split('\n');
+        paragraphs.forEach(para => {
+            if (para.trim() === '') {
+                Y += 4; // saut de paragraphe
+                return;
+            }
+            const lines = doc.splitTextToSize(para, TW);
+            doc.text(lines, ML, Y);
+            Y += lines.length * 6;
+        });
+
+        Y += 10;
+
+        // --- FORMULE DE POLITESSE ---
+        const politesse = params.politesse || DEFAULT_SIMPLE_CONVOC_POLITESSE;
+        const politesseLines = doc.splitTextToSize(politesse, TW);
+        doc.setFont("helvetica", "italic").setFontSize(10);
+        doc.text(politesseLines, ML, Y);
+        Y += politesseLines.length * 6 + 4;
+
+        // --- BLOC SIGNATURE ---
+        const sigX = PAGE_W - MR;
+        const sigY = Math.max(Y + 10, 215); // au minimum en bas de page
+        const dateTxt = city ? `Fait à ${city}, le ${new Date().toLocaleDateString('fr-FR')}` : `Le ${new Date().toLocaleDateString('fr-FR')}`;
+        doc.setFont("helvetica", "normal").setFontSize(10).setTextColor(0);
+        doc.text(dateTxt, sigX, sigY, { align: 'right' });
+        doc.setFont("helvetica", "bold");
+        doc.text(dirCiv, sigX, sigY + 7, { align: 'right' });
+        if (dirName) doc.text(dirName, sigX, sigY + 14, { align: 'right' });
+
+        if (DB.config.signature) {
+            try {
+                doc.addImage(DB.config.signature, 'PNG', sigX - 45, sigY + 18, 45, 0);
+            } catch(e) {}
+        }
+    });
+
+    // --- Sauvegarde ---
+    const safeName = schoolName.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-zA-Z0-9]/g, '_');
+    doc.save(`Convocations_Simples_Oral_${safeName}_${sessionYear}.pdf`);
+    if (isGeneric) {
+        showToast("⚠️ Aucun enseignant configuré : lettre générique générée.", "warning");
+    }
+}
