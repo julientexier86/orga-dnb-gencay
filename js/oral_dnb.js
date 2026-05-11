@@ -4394,10 +4394,13 @@ function drawOfficialHeader(doc, title, startY = 15) {
     doc.text(`Session ${sessionYear} - ${schoolName} | Date de l'épreuve : ${oralDate}`, 105, startY + 16, { align: 'center' });
 }
 
-// Logique d'affichage conditionnel du champ minutes
-    document.getElementById('convoc-check-accueil').addEventListener('change', function(e) {
-        document.getElementById('convoc-offset-container').style.display = e.target.checked ? 'block' : 'none';
-    });
+// Logique d'affichage conditionnel du champ minutes (guard null : modal chargée après le script)
+    const _chkAccueil = document.getElementById('convoc-check-accueil');
+    if (_chkAccueil) {
+        _chkAccueil.addEventListener('change', function(e) {
+            document.getElementById('convoc-offset-container').style.display = e.target.checked ? 'block' : 'none';
+        });
+    }
 	
 	
 	/**
