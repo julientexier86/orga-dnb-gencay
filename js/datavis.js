@@ -872,6 +872,12 @@ window.addEventListener('load', function () {
                             document.getElementById('chkTech').checked = DB.config.scienceSubjects.includes('TECH');
                         }
 
+                        // Restauration module Oral V2.7
+                        if (typeof setupOralDatabase === 'function') setupOralDatabase();
+                        if (typeof refreshOralConfigUI === 'function') refreshOralConfigUI();
+                        if (typeof renderOralStudentsTable === 'function') renderOralStudentsTable();
+                        if (typeof renderOralTeachersTable === 'function') renderOralTeachersTable();
+
                         showToast("✅ Session restaurée avec succès !", 'success');
                         btn.remove();
                     } catch (e) {

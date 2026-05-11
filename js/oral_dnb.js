@@ -1393,33 +1393,96 @@ window.auditLanguageCapacity = function() {
  */
 function runOralAlgorithm() {
     // --- 0. SÉCURITÉ ET PARAMÈTRES ---
-    if (typeof auditLanguageCapacity === 'function' && !auditLanguageCapacity()) return; 
 
     const durIndiv = parseInt(document.getElementById('oral-dur-indiv')?.value) || 15;
     const durGroup = parseInt(document.getElementById('oral-dur-group')?.value) || 25;
     const durHarm = parseInt(document.getElementById('oral-dur-harm')?.value) || 5;
-    const stratGroup = document.getElementById('oral-strat-group')?.value || 'start'; 
-    const stratTheme = document.getElementById('oral-strat-theme')?.value || 'homogenous'; 
+    const stratGroup = document.getElementById('oral-strat-group')?.value || 'start';
+    const stratTheme = document.getElementById('oral-strat-theme')?.value || 'homogenous';
     const breaks = DB.oralConfig.pauses || [];
 
-    DB.oralConfig.distribution = {};
-    const jurysInfos = {}; 
+    // --- AUTO-FALLBACK ÉLÈVES ---
+    // Si le module oral V2 n'a pas encore d'élèves configurés, on utilise DB.students
+    let sourceStudents = DB.oralConfig.students || [];
+    if (sourceStudents.length === 0 && DB.students && DB.students.length > 0) {
+        sourceStudents = DB.students.map(s => ({
+            id: s.id,
+            nom: s.nom || "",
+            prenom: s.prenom || "",
+            classe: s.classe || "",
+            groupId: null,
+            langue: null,
+            parcours: "Général",
+            sujet: null,
+            isPriority: !!s.tt
+        }));
+    }
+    if (sourceStudents.length === 0) return alert("Erreur : Aucun élève trouvé. Importez vos élèves dans la section Données > Élèves ou dans l'onglet Candidats.");
 
-    const uniqueJurys = [...new Set(DB.oralConfig.teachers.map(t => t.jury).filter(Boolean))];
-    if (uniqueJurys.length === 0) return alert("Erreur : Aucun jury n'a été défini dans l'onglet Jurys.");
+    // --- AUTO-FALLBACK JURYS ---
+    // Priorité : jurys configurés dans le module oral V2
+    // Fallback 1 : jurys de DB.stage (ancien module)
+    // Fallback 2 : création automatique depuis la config du nombre de jurys
+    let syntheticTeachers = DB.oralConfig.teachers ? [...DB.oralConfig.teachers] : [];
+    const oralStart = DB.oralConfig.general?.start || DB.stage?.config?.start || "08:30";
+    const oralEnd   = DB.oralConfig.general?.end   || DB.stage?.config?.end   || "17:00";
+
+    const hasConfiguredJurys = syntheticTeachers.some(t => t.jury);
+    if (!hasConfiguredJurys) {
+        // Fallback sur DB.stage.juries
+        const stageJuries = DB.stage?.juries || [];
+        if (stageJuries.length > 0) {
+            stageJuries.forEach(j => {
+                syntheticTeachers.push({
+                    id: 'auto_' + j.id,
+                    nom: j.name || ("Jury " + j.id),
+                    jury: j.name || ("Jury " + j.id),
+                    langue: null,
+                    startTime: j.startTime || oralStart,
+                    endTime: j.endTime || oralEnd
+                });
+            });
+        } else {
+            // Dernier recours : créer des jurys depuis le nombre configuré
+            const nbJurys = DB.stage?.config?.juryCount || 5;
+            for (let i = 1; i <= nbJurys; i++) {
+                syntheticTeachers.push({
+                    id: 'auto_' + i,
+                    nom: "Jury " + i,
+                    jury: "Jury " + i,
+                    langue: null,
+                    startTime: oralStart,
+                    endTime: oralEnd
+                });
+            }
+        }
+    }
+
+    const uniqueJurys = [...new Set(syntheticTeachers.map(t => t.jury).filter(Boolean))];
+    if (uniqueJurys.length === 0) return alert("Erreur : Aucun jury n'a pu être déterminé. Configurez vos jurys dans l'onglet Jurys ou vérifiez votre ancien module Oraux.");
+
+    // Audit linguistique uniquement si des langues sont vraiment configurées
+    const languesDemandees = new Set(sourceStudents.filter(s => s.langue).map(s => s.langue.trim().toUpperCase()));
+    if (languesDemandees.size > 0 && typeof auditLanguageCapacity === 'function') {
+        if (!auditLanguageCapacity()) return;
+    }
+
+    // Réinitialisation de la distribution
+    DB.oralConfig.distribution = {};
+    const jurysInfos = {};
 
     // --- 1. INITIALISATION DES JURYS (PLAGES HORAIRES SPÉCIFIQUES) ---
     uniqueJurys.forEach(juryName => {
         DB.oralConfig.distribution[juryName] = [];
-        
-        // On récupère les horaires saisis dans le tableau des jurys
-        const members = DB.oralConfig.teachers.filter(t => t.jury === juryName);
-        const specificStart = members.find(m => m.startTime)?.startTime || DB.oralConfig.general.start || "08:00";
-        const specificEnd = members.find(m => m.endTime)?.endTime || "17:00";
+
+        // On récupère les horaires saisis dans le tableau des jurys (syntheticTeachers = V2 ou fallback)
+        const members = syntheticTeachers.filter(t => t.jury === juryName);
+        const specificStart = members.find(m => m.startTime)?.startTime || oralStart;
+        const specificEnd   = members.find(m => m.endTime)?.endTime   || oralEnd;
 
         jurysInfos[juryName] = {
-            currentTime: specificStart, 
-            maxTime: specificEnd, // Borne de fin de service
+            currentTime: specificStart,
+            maxTime: specificEnd,
             themes: new Set(),
             languages: new Set(members.map(t => t.langue?.trim().toUpperCase()).filter(Boolean)),
             langCounts: {}
@@ -1430,19 +1493,19 @@ function runOralAlgorithm() {
     let passages = [];
     let processedStudentIds = new Set();
 
-    DB.oralConfig.students.forEach(student => {
+    sourceStudents.forEach(student => {
         if (processedStudentIds.has(student.id)) return;
 
         let currentPassage = {
             students: [student],
             theme: student.parcours || "Général",
-            langue: student.langue ? student.langue.trim().toUpperCase() : null, 
+            langue: student.langue ? student.langue.trim().toUpperCase() : null,
             isGroup: false,
             duration: durIndiv
         };
 
         if (student.groupId) {
-            const groupMembers = DB.oralConfig.students.filter(s => s.groupId === student.groupId);
+            const groupMembers = sourceStudents.filter(s => s.groupId === student.groupId);
             currentPassage.students = groupMembers;
             currentPassage.isGroup = true;
             currentPassage.duration = durGroup;
@@ -1542,15 +1605,18 @@ function runOralAlgorithm() {
     // --- 4. FINALISATION ---
     const modalWizard = document.getElementById('modal-oral-wizard');
     if (modalWizard) modalWizard.style.display = 'none';
-    
+
     if (typeof renderOralVisualDistribution === 'function') renderOralVisualDistribution();
-    
+
+    // Sauvegarde automatique immédiate après la répartition
+    if (typeof autoSave === 'function') autoSave();
+
     // Vérification si des élèves n'ont pas été placés
     const totalPlaced = Object.values(DB.oralConfig.distribution).reduce((sum, list) => sum + list.length, 0);
     if (totalPlaced < passages.length) {
         alert(`⚠️ Attention : Seuls ${totalPlaced} passages sur ${passages.length} ont pu être placés. Vérifiez les disponibilités horaires de vos jurys.`);
     } else {
-        alert("✅ Répartition terminée avec succès !");
+        alert(`✅ Répartition terminée ! ${totalPlaced} passages répartis sur ${uniqueJurys.length} jury(s).`);
     }
 }
 /**
