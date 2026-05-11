@@ -20,11 +20,12 @@ const DEFAULT_LABELS = [
 
 var DB = {
     config: { schoolName: "", year: "2026", logo: "", nbSurv: 1, director: { civ: "M. le Principal", name: "" }, signature: "", scienceSubjects: ['SVT', 'PC', 'TECH'] }, students: [], rooms: [], teachers: [], distribution: {}, planning: {},
-    stage: { // NOUVEAU MODULE STAGE
+    stage: { // MODULE STAGE (Ancien)
         config: { date: "2026-06-01", start: "08:00", end: "17:00", duration: 20, break: 0, lunchStart: "12:00", lunchEnd: "13:30" },
         juries: [], // { id, name, room, members: [] }
         planning: [] // { juryId, time, studentId }
     },
+    oralConfig: null, // MODULE ORAL V2.7 — initialisé par setupOralDatabase() au chargement de oral_dnb.js
     uiState: { locked: { students: false, rooms: false, teachers: false, distrib: false, grades: false, simul: false } },
     exams: [
         { name: "Français (Grammaire)", date: "2026-04-16", time: "09:00", timeTT: "09:00", durStd: 90, durTT: 120 },

@@ -2856,3 +2856,359 @@ window.exportAllGradesExcel = function() {
     XLSX.writeFile(wb, "Export_Notes_Global.xlsx");
     showToast("Export Excel des notes généré !", "success");
 };
+
+// ============================================================
+// === GESTION LOTS COMMISSIONS V2.7 (3 types de documents) ===
+// ============================================================
+
+window.processLotsExcel = function(docType) {
+    const rneInput = document.getElementById('inputRneCe').value.trim().toUpperCase();
+    const fileInput = document.getElementById('excelLotsInput');
+    const feedback = document.getElementById('lotsFeedback');
+
+    if (!rneInput) return alert("Veuillez saisir le RNE de votre établissement.");
+    if (!fileInput.files || fileInput.files.length === 0) return alert("Veuillez sélectionner le fichier Excel.");
+    if (typeof XLSX === 'undefined') return alert("Erreur : La librairie SheetJS n'est pas chargée.");
+
+    feedback.innerHTML = "<span style='color: blue;'>Analyse du fichier Excel en cours...</span>";
+
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+
+    reader.onload = function(e) {
+        try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, {type: 'array'});
+            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+            const rows = XLSX.utils.sheet_to_json(worksheet, {header: 1, defval: ""});
+
+            let headerIndex = -1;
+            let headers = [];
+
+            for (let i = 0; i < Math.min(20, rows.length); i++) {
+                const rowStr = rows[i].join(" ");
+                if (rowStr.includes("RNE CE") || rowStr.includes("Numéro lot")) {
+                    headerIndex = i;
+                    headers = rows[i];
+                    break;
+                }
+            }
+
+            if (headerIndex === -1) {
+                feedback.innerHTML = "<span style='color: red;'>Erreur : En-tête introuvable.</span>";
+                return;
+            }
+
+            const findIndexPartial = (arr, searchStr) => arr.findIndex(h => typeof h === 'string' && h.includes(searchStr));
+            const idxRneCE = findIndexPartial(headers, "RNE CE");
+            const idxComCor = findIndexPartial(headers, "Com Cor");
+            const idxLot = findIndexPartial(headers, "Numéro lot");
+            const idxRang = findIndexPartial(headers, "rang");
+            const idxEpreuve = findIndexPartial(headers, "Libellé épreuve");
+
+            // 1. Structure pour les Bordereaux (A3)
+            const matieresData = {
+                "FRANCAIS": { commissions: new Set(), sousLots: { "Dictée": new Set(), "Grammaire": new Set(), "Rédaction": new Set() }, lotSizes: {} },
+                "MATHEMATIQUES": { commissions: new Set(), lots: new Set(), lotSizes: {} },
+                "HISTOIRE GEOGRAPHIE EMC": { commissions: new Set(), lots: new Set(), lotSizes: {} },
+                "SCIENCES": { commissions: new Set(), lots: new Set(), lotSizes: {} }
+            };
+
+            // 2. Structure pour les Pochettes Commissions
+            const commissionsData = {};
+
+            for (let i = headerIndex + 1; i < rows.length; i++) {
+                const row = rows[i];
+                if (!row || row.length <= Math.max(idxRneCE, idxEpreuve)) continue;
+
+                const rowRne = String(row[idxRneCE]).trim().toUpperCase();
+                if (rowRne !== rneInput) continue;
+
+                const comCor = String(row[idxComCor]).trim();
+                const lotNum = String(row[idxLot]).trim();
+                const rang = parseInt(String(row[idxRang]).trim(), 10);
+                const epreuveBrut = String(row[idxEpreuve]).trim().toLowerCase();
+
+                if (isNaN(rang)) continue;
+
+                // Nettoyage du nom de l'épreuve
+                let cleanEpreuve = "";
+                if (epreuveBrut.includes("dictée")) cleanEpreuve = "Dictée";
+                else if (epreuveBrut.includes("grammaire")) cleanEpreuve = "Grammaire et compréhension";
+                else if (epreuveBrut.includes("rédaction")) cleanEpreuve = "Rédaction";
+                else if (epreuveBrut.includes("math")) cleanEpreuve = "Mathématiques";
+                else if (epreuveBrut.includes("histoire") || epreuveBrut.includes("géo") || epreuveBrut.includes("emc")) cleanEpreuve = "Histoire Géographie EMC";
+                else if (epreuveBrut.includes("science") || epreuveBrut.includes("svt") || epreuveBrut.includes("physique") || epreuveBrut.includes("technologie")) cleanEpreuve = "Sciences";
+                else cleanEpreuve = String(row[idxEpreuve]).trim();
+
+                // Peuplement Bordereaux (A3)
+                if (cleanEpreuve === "Dictée" || cleanEpreuve === "Grammaire et compréhension" || cleanEpreuve === "Rédaction") {
+                    let sousMat = cleanEpreuve === "Grammaire et compréhension" ? "Grammaire" : cleanEpreuve;
+                    matieresData["FRANCAIS"].commissions.add(comCor);
+                    matieresData["FRANCAIS"].sousLots[sousMat].add(lotNum);
+                    if (!matieresData["FRANCAIS"].lotSizes[lotNum] || rang > matieresData["FRANCAIS"].lotSizes[lotNum]) matieresData["FRANCAIS"].lotSizes[lotNum] = rang;
+                } else if (cleanEpreuve === "Mathématiques") {
+                    matieresData["MATHEMATIQUES"].commissions.add(comCor);
+                    matieresData["MATHEMATIQUES"].lots.add(lotNum);
+                    if (!matieresData["MATHEMATIQUES"].lotSizes[lotNum] || rang > matieresData["MATHEMATIQUES"].lotSizes[lotNum]) matieresData["MATHEMATIQUES"].lotSizes[lotNum] = rang;
+                } else if (cleanEpreuve === "Histoire Géographie EMC") {
+                    matieresData["HISTOIRE GEOGRAPHIE EMC"].commissions.add(comCor);
+                    matieresData["HISTOIRE GEOGRAPHIE EMC"].lots.add(lotNum);
+                    if (!matieresData["HISTOIRE GEOGRAPHIE EMC"].lotSizes[lotNum] || rang > matieresData["HISTOIRE GEOGRAPHIE EMC"].lotSizes[lotNum]) matieresData["HISTOIRE GEOGRAPHIE EMC"].lotSizes[lotNum] = rang;
+                } else if (cleanEpreuve === "Sciences") {
+                    matieresData["SCIENCES"].commissions.add(comCor);
+                    matieresData["SCIENCES"].lots.add(lotNum);
+                    if (!matieresData["SCIENCES"].lotSizes[lotNum] || rang > matieresData["SCIENCES"].lotSizes[lotNum]) matieresData["SCIENCES"].lotSizes[lotNum] = rang;
+                }
+
+                // Peuplement Pochettes Commissions
+                if (!commissionsData[comCor]) commissionsData[comCor] = { lots: {} };
+                if (!commissionsData[comCor].lots[lotNum]) commissionsData[comCor].lots[lotNum] = { label: cleanEpreuve, maxRang: 0 };
+                if (rang > commissionsData[comCor].lots[lotNum].maxRang) commissionsData[comCor].lots[lotNum].maxRang = rang;
+            }
+
+            feedback.innerHTML = "<span style='color: green;'>Génération du PDF...</span>";
+
+            // Routage selon le type de document
+            if (docType === 'bordereaux') {
+                generateBordereauxPDF(matieresData, rneInput);
+            } else if (docType === 'pochettes') {
+                generatePochettesCommissionsPDF(commissionsData, rneInput);
+            } else if (docType === 'enveloppes') {
+                generateCouverturesEnveloppesPDF(commissionsData, rneInput);
+            }
+
+            setTimeout(() => { feedback.innerHTML = ""; }, 3000);
+
+        } catch (err) {
+            console.error(err);
+            feedback.innerHTML = "<span style='color: red;'>Erreur de lecture. Le fichier Excel est peut-être corrompu.</span>";
+        }
+    };
+    reader.readAsArrayBuffer(file);
+};
+
+/**
+ * Génère les Pochettes par Commission (A3 Portrait)
+ */
+function generatePochettesCommissionsPDF(commissions, rne) {
+    if (typeof window.jspdf === 'undefined') return alert("Erreur : jsPDF non chargé.");
+    const { jsPDF } = window.jspdf;
+
+    const doc = new jsPDF('p', 'mm', 'a3');
+    const PAGE_W = 297;
+    const M = 20;
+    // Décalage pour imprimer sur la moitié basse (couverture une fois pliée)
+    const Y_OFFSET = 210;
+
+    const examType = (typeof DB !== 'undefined' && DB.config && DB.config.examType) ? DB.config.examType : "DNB";
+    const examYear = (typeof DB !== 'undefined' && DB.config && DB.config.examYear) ? DB.config.examYear : new Date().getFullYear();
+
+    let schoolName = "Établissement non configuré";
+    if (typeof DB !== 'undefined' && DB.config) {
+        const possibleKeys = ['nomEtablissement', 'nomEtab', 'etablissement', 'etabName', 'schoolName', 'college'];
+        for (const key of possibleKeys) { if (DB.config[key]) { schoolName = DB.config[key]; break; } }
+    }
+    const schoolCity = (typeof DB !== 'undefined' && DB.config && DB.config.city) ? DB.config.city : "";
+    const schoolFullName = `${rne} ${schoolName}` + (schoolCity ? ` - ${schoolCity}` : "");
+
+    let count = 0;
+
+    Object.keys(commissions).sort().forEach(comCor => {
+        if (count > 0) doc.addPage("a3", "p");
+        count++;
+
+        const comm = commissions[comCor];
+
+        // Regroupement des lots par épreuve
+        const epreuvesGrouped = {};
+        Object.keys(comm.lots).sort().forEach(lotNum => {
+            const lotInfo = comm.lots[lotNum];
+            if (!epreuvesGrouped[lotInfo.label]) epreuvesGrouped[lotInfo.label] = { lots: [], totalRang: 0 };
+            epreuvesGrouped[lotInfo.label].lots.push(lotNum);
+            epreuvesGrouped[lotInfo.label].totalRang += lotInfo.maxRang;
+        });
+
+        // Calcul du total de copies
+        let totalCopies = 0;
+        const isFrancais = !!epreuvesGrouped["Dictée"] || !!epreuvesGrouped["Grammaire et compréhension"] || !!epreuvesGrouped["Rédaction"];
+        if (isFrancais) {
+            if (epreuvesGrouped["Dictée"]) totalCopies = epreuvesGrouped["Dictée"].totalRang;
+            else totalCopies = Object.values(epreuvesGrouped)[0].totalRang;
+        } else {
+            Object.values(epreuvesGrouped).forEach(g => { totalCopies += g.totalRang; });
+        }
+
+        // Bloc en-tête gauche (Logo + Nom Collège)
+        if (typeof addSmartLogo === 'function') addSmartLogo(doc, M, Y_OFFSET + 15, 50);
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(0);
+        doc.text(schoolFullName, M, Y_OFFSET + 65);
+
+        // Bloc en-tête droit (Infos Commission)
+        const rightBlockX = 160;
+        let rightBlockY = Y_OFFSET + 30;
+        doc.setFontSize(22);
+        doc.setFont("helvetica", "bold");
+        doc.text(`${examType} SESSION ${examYear}`, rightBlockX, rightBlockY);
+        rightBlockY += 12;
+        doc.setFontSize(20);
+        doc.setFont("helvetica", "normal");
+        doc.text(`Commission ${comCor}`, rightBlockX, rightBlockY);
+        rightBlockY += 12;
+        doc.setFontSize(20);
+        doc.text(`Nb Copies : ${totalCopies}`, rightBlockX, rightBlockY);
+
+        // Tableau des lots
+        let tableY = Y_OFFSET + 85;
+        const col1X = M;
+        const col2X = M + 45;
+        const tableW = PAGE_W - (2 * M);
+        const col3X = M + tableW;
+
+        doc.setDrawColor(0);
+        doc.setLineWidth(0.4);
+        doc.line(col1X, tableY, col3X, tableY);
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "bold");
+        doc.text("Lot(s)", col1X + 3, tableY + 6);
+        doc.text("Epreuve(s)", col2X + 3, tableY + 6);
+        tableY += 9;
+        doc.line(col1X, tableY, col3X, tableY);
+
+        const topTableY = Y_OFFSET + 85;
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "normal");
+
+        Object.keys(epreuvesGrouped).forEach(label => {
+            const lotText = epreuvesGrouped[label].lots.join(" + ");
+            const lotLines = doc.splitTextToSize(lotText, 40);
+            const labelLines = doc.splitTextToSize(label, tableW - 45 - 5);
+            const nbLines = Math.max(lotLines.length, labelLines.length);
+            const rowHeight = (nbLines * 7) + 4;
+            doc.text(lotLines, col1X + 3, tableY + 6);
+            doc.text(labelLines, col2X + 3, tableY + 6);
+            tableY += rowHeight;
+            doc.line(col1X, tableY, col3X, tableY);
+        });
+
+        doc.line(col1X, topTableY, col1X, tableY);
+        doc.line(col2X, topTableY, col2X, tableY);
+        doc.line(col3X, topTableY, col3X, tableY);
+    });
+
+    if (count === 0) return alert("Aucune donnée trouvée !");
+    doc.save(`Pochettes_Commissions_A3_${rne}_${examYear}.pdf`);
+}
+
+/**
+ * Génère les Couvertures d'Enveloppes (A4 Paysage)
+ */
+function generateCouverturesEnveloppesPDF(commissions, rne) {
+    if (typeof window.jspdf === 'undefined') return alert("Erreur : jsPDF non chargé.");
+    const { jsPDF } = window.jspdf;
+
+    const doc = new jsPDF('l', 'mm', 'a4');
+    const PAGE_W = 297;
+    const M = 20;
+    const Y_OFFSET = 0;
+
+    const examType = (typeof DB !== 'undefined' && DB.config && DB.config.examType) ? DB.config.examType : "DNB";
+    const examYear = (typeof DB !== 'undefined' && DB.config && DB.config.examYear) ? DB.config.examYear : new Date().getFullYear();
+
+    let schoolName = "Établissement non configuré";
+    if (typeof DB !== 'undefined' && DB.config) {
+        const possibleKeys = ['nomEtablissement', 'nomEtab', 'etablissement', 'etabName', 'schoolName', 'college'];
+        for (const key of possibleKeys) { if (DB.config[key]) { schoolName = DB.config[key]; break; } }
+    }
+    const schoolCity = (typeof DB !== 'undefined' && DB.config && DB.config.city) ? DB.config.city : "";
+    const schoolFullName = `${rne} ${schoolName}` + (schoolCity ? ` - ${schoolCity}` : "");
+
+    let count = 0;
+
+    Object.keys(commissions).sort().forEach(comCor => {
+        if (count > 0) doc.addPage("a4", "l");
+        count++;
+
+        const comm = commissions[comCor];
+        const epreuvesGrouped = {};
+
+        Object.keys(comm.lots).sort().forEach(lotNum => {
+            const lotInfo = comm.lots[lotNum];
+            if (!epreuvesGrouped[lotInfo.label]) epreuvesGrouped[lotInfo.label] = { lots: [], totalRang: 0 };
+            epreuvesGrouped[lotInfo.label].lots.push(lotNum);
+            epreuvesGrouped[lotInfo.label].totalRang += lotInfo.maxRang;
+        });
+
+        let totalCopies = 0;
+        const isFrancais = !!epreuvesGrouped["Dictée"] || !!epreuvesGrouped["Grammaire et compréhension"] || !!epreuvesGrouped["Rédaction"];
+        if (isFrancais) {
+            if (epreuvesGrouped["Dictée"]) totalCopies = epreuvesGrouped["Dictée"].totalRang;
+            else totalCopies = Object.values(epreuvesGrouped)[0].totalRang;
+        } else {
+            Object.values(epreuvesGrouped).forEach(g => { totalCopies += g.totalRang; });
+        }
+
+        // Bloc en-tête gauche
+        if (typeof addSmartLogo === 'function') addSmartLogo(doc, M, Y_OFFSET + 15, 50);
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(0);
+        doc.text(schoolFullName, M, Y_OFFSET + 65);
+
+        // Bloc en-tête droit
+        const rightBlockX = 160;
+        let rightBlockY = Y_OFFSET + 30;
+        doc.setFontSize(22);
+        doc.setFont("helvetica", "bold");
+        doc.text(`${examType} SESSION ${examYear}`, rightBlockX, rightBlockY);
+        rightBlockY += 12;
+        doc.setFontSize(20);
+        doc.setFont("helvetica", "normal");
+        doc.text(`Commission ${comCor}`, rightBlockX, rightBlockY);
+        rightBlockY += 12;
+        doc.setFontSize(20);
+        doc.text(`Nb Copies : ${totalCopies}`, rightBlockX, rightBlockY);
+
+        // Tableau des lots
+        let tableY = Y_OFFSET + 85;
+        const col1X = M;
+        const col2X = M + 45;
+        const tableW = PAGE_W - (2 * M);
+        const col3X = M + tableW;
+
+        doc.setDrawColor(0);
+        doc.setLineWidth(0.4);
+        doc.line(col1X, tableY, col3X, tableY);
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "bold");
+        doc.text("Lot(s)", col1X + 3, tableY + 6);
+        doc.text("Epreuve(s)", col2X + 3, tableY + 6);
+        tableY += 9;
+        doc.line(col1X, tableY, col3X, tableY);
+
+        const topTableY = Y_OFFSET + 85;
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "normal");
+
+        Object.keys(epreuvesGrouped).forEach(label => {
+            const lotText = epreuvesGrouped[label].lots.join(" + ");
+            const lotLines = doc.splitTextToSize(lotText, 40);
+            const labelLines = doc.splitTextToSize(label, tableW - 45 - 5);
+            const nbLines = Math.max(lotLines.length, labelLines.length);
+            const rowHeight = (nbLines * 7) + 4;
+            doc.text(lotLines, col1X + 3, tableY + 6);
+            doc.text(labelLines, col2X + 3, tableY + 6);
+            tableY += rowHeight;
+            doc.line(col1X, tableY, col3X, tableY);
+        });
+
+        doc.line(col1X, topTableY, col1X, tableY);
+        doc.line(col2X, topTableY, col2X, tableY);
+        doc.line(col3X, topTableY, col3X, tableY);
+    });
+
+    if (count === 0) return alert("Aucune donnée trouvée !");
+    doc.save(`Couvertures_Enveloppes_A4_${rne}_${examYear}.pdf`);
+}

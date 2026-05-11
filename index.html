@@ -49,7 +49,20 @@
             <button class="menu-item" onclick="nav('organization', this)"><i class="fas fa-puzzle-piece"></i>
                 Répartition</button>
             <button class="menu-item" onclick="nav('stage-orals', this)"><i class="fas fa-microphone"></i>
-                Oraux</button>
+                Oraux (Ancien)</button>
+            <button class="menu-item" id="btnOralDNB" onclick="toggleSubmenu('oralDNBMenu', this)"><i class="fas fa-microphone-alt"></i> Oraux DNB V2</button>
+            <div id="oralDNBMenu" class="submenu">
+                <button class="submenu-item" onclick="nav('sec-oral-config', this); if(typeof refreshOralConfigUI==='function') refreshOralConfigUI();"><i class="fas fa-cog"></i> Configuration</button>
+                <button class="submenu-item" onclick="nav('sec-oral-eleves', this); if(typeof renderOralStudentsTable==='function') renderOralStudentsTable();"><i class="fas fa-user-graduate"></i> Candidats</button>
+                <button class="submenu-item" onclick="nav('sec-oral-jurys', this); if(typeof renderOralTeachersTable==='function') renderOralTeachersTable();"><i class="fas fa-gavel"></i> Jurys</button>
+                <button class="submenu-item" onclick="nav('sec-oral-repart', this); if(typeof renderOralVisualDistribution==='function') renderOralVisualDistribution();"><i class="fas fa-random"></i> Répartition</button>
+                <button class="submenu-item" onclick="nav('sec-oral-grille', this); if(typeof renderOralGrilleConfig==='function') renderOralGrilleConfig();"><i class="fas fa-table"></i> Grille Évaluation</button>
+                <button class="submenu-item" onclick="nav('sec-oral-secretariat', this);"><i class="fas fa-print"></i> Secrétariat</button>
+                <button class="submenu-item" onclick="nav('sec-oral-import', this);"><i class="fas fa-file-import"></i> Import Notes</button>
+                <button class="submenu-item" onclick="nav('sec-oral-resultats', this); if(typeof initOralNotesMenu==='function') initOralNotesMenu();"><i class="fas fa-list-ol"></i> Résultats</button>
+                <button class="submenu-item" onclick="nav('sec-oral-harmonisation', this); if(typeof renderOralHarmonisation==='function') renderOralHarmonisation();"><i class="fas fa-balance-scale"></i> Harmonisation</button>
+                <button class="submenu-item" onclick="nav('sec-oral-dataviz', this); if(typeof renderOralDataViz==='function') renderOralDataViz();"><i class="fas fa-chart-pie"></i> DataViz</button>
+            </div>
             <button class="menu-item" id="btnPlanning" onclick="toggleSubmenu('planningMenu', this)"><i
                     class="far fa-calendar-alt"></i> Planning</button>
             <div id="planningMenu" class="submenu">
@@ -1079,8 +1092,8 @@ Aucune sortie anticipée n'est autorisée. Vous devez rester assis et silencieux
             <!-- SECTION LOTS DE COPIES -->
             <div id="sec-lots" class="section">
                 <div class="card">
-                    <h2><i class="fas fa-box"></i> Bordereaux d'envoi au centre de correction (A3)</h2>
-                    <p>Générez les chemises A3 récapitulatives pour l'envoi de vos lots de copies. Importez <b>directement le fichier Excel (.xlsx)</b> fourni par le rectorat.</p>
+                    <h2><i class="fas fa-box"></i> Gestion des Lots et Commissions d'anonymat</h2>
+                    <p>Importez <b>directement le fichier Excel (.xlsx)</b> fourni par le rectorat pour générer vos documents d'expédition.</p>
                     <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 20px;">
                         <fieldset style="flex: 1; min-width: 300px; border: 1px solid #ccc; padding: 20px; border-radius: 8px; background-color: #f8f9fa;">
                             <legend style="font-weight: bold; padding: 0 10px; font-size: 1.1rem;">1. Configuration</legend>
@@ -1099,9 +1112,17 @@ Aucune sortie anticipée n'est autorisée. Vous devez rester assis et silencieux
                                     <label style="font-weight: bold; display: block; margin-bottom: 5px;">Fichier Correspondance Anonymat (.xlsx) :</label>
                                     <input type="file" id="excelLotsInput" accept=".xlsx, .xls" class="form-control" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px;">
                                 </div>
-                                <button class="btn btn-dark" style="font-size: 1.1rem; padding: 12px; border-radius: 8px; margin-top: 10px;" onclick="processLotsExcelAndGeneratePDF()">
-                                    <i class="fas fa-cog"></i> Traiter l'Excel et Générer les Pochettes
-                                </button>
+                                <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+                                    <button class="btn btn-dark" style="font-size: 1rem; padding: 10px; border-radius: 8px;" onclick="processLotsExcel('bordereaux')">
+                                        <i class="fas fa-print"></i> Générer les Bordereaux d'Envoi (A3 Paysage)
+                                    </button>
+                                    <button class="btn btn-dark" style="font-size: 1rem; padding: 10px; border-radius: 8px;" onclick="processLotsExcel('pochettes')">
+                                        <i class="fas fa-print"></i> Générer les Pochettes par Commission (A3 Portrait)
+                                    </button>
+                                    <button class="btn btn-dark" style="font-size: 1rem; padding: 10px; border-radius: 8px;" onclick="processLotsExcel('enveloppes')">
+                                        <i class="fas fa-envelope"></i> Générer les Couvertures d'Enveloppes (A4 Paysage)
+                                    </button>
+                                </div>
                             </div>
                         </fieldset>
                     </div>
@@ -1650,6 +1671,680 @@ En cas de retard ou de problème, signalez-vous immédiatement à la vie scolair
 
                 </div>
             </div>
+
+            <!-- MODULE ORAL DNB V2.7 (DB.oralConfig) -->
+<div id="sec-oral-config" class="section">
+
+    <div id="oral-config-panel" style="width: 100%; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background-color: #fcfcfc;">
+        
+        <h2 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-bottom: 25px;">⚙️ Configuration de l'épreuve Orale</h2>
+
+        <fieldset style="margin-bottom: 30px; padding: 20px; border: 1px solid #dcdde1; border-radius: 8px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+            <legend style="font-weight: bold; color: #2f3640; background: #f1f2f6; padding: 5px 15px; border-radius: 20px; border: 1px solid #dcdde1;">1. Modalités et Temps</legend>
+            
+            <div style="display: grid; grid-template-columns: 2fr 1fr 1.5fr; gap: 20px; margin-bottom: 25px;">
+                <div>
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px;">Nom de l'épreuve *</label>
+                    <input type="text" id="oral-name" placeholder="Ex: Oral du DNB - Session 2026" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+                </div>
+                <div>
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px;">Date *</label>
+                    <input type="date" id="oral-date" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+                </div>
+                <div>
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px;">Amplitude horaire *</label>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <input type="time" id="oral-start" style="padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+                        <span style="color: #7f8c8d; font-weight: bold;">à</span>
+                        <input type="time" id="oral-end" style="padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+                    </div>
+                </div>
+            </div>
+
+            <div style="background: #fdfdfd; padding: 15px; border: 1px dashed #bdc3c7; border-radius: 6px;">
+                <span style="font-weight: 600; display: block; margin-bottom: 12px; color: #2c3e50;">☕ Gestion des pauses (Repas, Récréations...)</span>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <input type="time" id="pause-start" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                    <span style="color: #7f8c8d; font-weight: bold;">à</span>
+                    <input type="time" id="pause-end" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                    <input type="text" id="pause-label" placeholder="Libellé (ex: Repas du midi)" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                    <button id="btn-add-pause" style="background: #f39c12; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;">+ Ajouter</button>
+                </div>
+                <div id="pause-list" style="margin-top: 10px; display: flex; flex-direction: column; gap: 5px;"></div>
+            </div>
+        </fieldset>
+
+        <fieldset style="margin-bottom: 30px; padding: 20px; border: 1px solid #dcdde1; border-radius: 8px; background: white;">
+            <legend style="font-weight: bold; color: #2f3640; background: #f1f2f6; padding: 5px 15px; border-radius: 20px; border: 1px solid #dcdde1;">2. Langues vivantes</legend>
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="new-language-input" placeholder="Saisir une langue (Anglais, Espagnol, LSF...)" style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+                <button id="btn-add-language" style="background: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold;">Ajouter à la liste</button>
+            </div>
+            <div id="language-list" style="margin-top: 15px; display: flex; flex-wrap: wrap; gap: 10px;"></div>
+        </fieldset>
+
+        <fieldset style="margin-bottom: 30px; padding: 20px; border: 1px solid #dcdde1; border-radius: 8px; background: white;">
+            <legend style="font-weight: bold; color: #2f3640; background: #f1f2f6; padding: 5px 15px; border-radius: 20px; border: 1px solid #dcdde1;">3. Thématiques et Parcours</legend>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: #ebf5fb; padding: 15px; border-radius: 6px;">
+                <span style="font-size: 0.95em; color: #2980b9;">Créez vos intitulés personnalisés (EPI, projets...) si besoin.</span>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="new-main-theme-input" placeholder="Nom du nouveau parcours/EPI" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 250px;">
+                    <button id="btn-add-main-theme" style="background: #27ae60; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;">+ Créer l'intitulé</button>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 250px 1fr; gap: 20px; padding: 10px; border-bottom: 2px solid #eee; font-weight: bold; color: #7f8c8d;">
+                <div>Intitulé du Parcours / Projet</div>
+                <div>Sujets et Problématiques associés</div>
+            </div>
+
+            <div id="themes-grid-container" style="display: flex; flex-direction: column;"></div>
+        </fieldset>
+    </div>
+</div>
+
+<div id="sec-oral-eleves" class="section">
+    <div id="oral-students-container" style="width: 100%; padding: 20px; box-sizing: border-box; font-family: 'Segoe UI', sans-serif;">
+        <h2 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px;">👥 Gestion des Candidats (Oral)</h2>
+
+        <div style="display: flex; gap: 15px; margin-bottom: 20px; background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+            <button onclick="openIntegrationModal()" style="background: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">
+                📥 Étape 1 : Intégrer les élèves de la base
+            </button>
+			<button onclick="exportOralDataEntryTemplate()" style="background: #8e44ad; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px;">
+        <span>📝</span> Étape 2 : Générer un fichier de saisie (Excel)
+    </button>
+            <button onclick="document.getElementById('excel-import-oral').click()" style="background: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">
+                📊 Étape 3 : Importer les données élèves (Excel)
+            </button>
+<input type="file" id="excel-import-oral" style="display: none;" accept=".xlsx, .xls, .csv" onchange="processOralExcelImport(event)">
+            <button onclick="exportOralStudentsData()" style="background: #e67e22; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px;" aria-label="Exporter toutes les données des candidats au format Excel">
+        <span>💾</span> Étape 4 : Exporter les données (Excel)
+    </button>
+            <div style="flex: 1;"></div> 
+            <div style="position: relative;">
+                <input type="text" id="search-oral-student" placeholder="Filtrer par nom ou classe..." oninput="renderOralStudentsTable()" style="padding: 10px; width: 300px; border: 1px solid #ccc; border-radius: 5px;">
+            </div>
+        </div>
+
+        <div style="background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; min-width: 1000px;">
+                <thead>
+                    <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6; text-align: left;">
+                        <th style="padding: 12px;">Nom / Prénom</th>
+                        <th style="padding: 12px;">Classe</th>
+                        <th style="padding: 12px;">Sexe</th>
+						<th style="padding: 12px; text-align: center;">⭐</th>
+                        <th style="padding: 12px;">Langue</th>
+                        <th style="padding: 12px;">Groupe</th>
+                        <th style="padding: 12px;">Parcours</th>
+                        <th style="padding: 12px;">Sujet</th>
+                        <th style="padding: 12px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="oral-students-body">
+                </tbody>
+            </table>
+        </div>
+
+        <div id="modal-edit-student" style="display: none; position: fixed; top:0; left:0; width: 100%; height:100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center;">
+            <div style="background: white; width: 600px; padding: 30px; border-radius: 10px; max-height: 90vh; overflow-y: auto;">
+                <h3 id="edit-modal-title" style="margin-top: 0; color: #2c3e50;">Modifier l'élève</h3>
+                <hr>
+                <form id="form-edit-student" style="display: grid; gap: 15px; margin-top: 20px;">
+                    <input type="hidden" id="edit-student-id">
+                    
+					<div style="background: #fff4e6; padding: 12px; border-radius: 8px; border: 1px solid #ffe8cc;">
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: bold; color: #d9480f;">
+                            <input type="checkbox" id="edit-oral-priority" style="width: 18px; height: 18px;">
+                            ⭐ Élève prioritaire (passage en début d'épreuve)
+                        </label>
+                    </div>
+					
+                    <div>
+                        <label style="display: block; font-weight: bold;">Langue choisie</label>
+                        <select id="edit-oral-lang" style="width: 100%; padding: 8px;"></select>
+                    </div>
+
+                    <div>
+                        <label style="display: block; font-weight: bold;">Parcours / EPI</label>
+                        <select id="edit-oral-parcours" onchange="updateSubThemeDropdown()" style="width: 100%; padding: 8px;"></select>
+                    </div>
+
+                    <div>
+                        <label style="display: block; font-weight: bold;">Sujet / Problématique</label>
+                        <select id="edit-oral-sujet" style="width: 100%; padding: 8px;"></select>
+                    </div>
+
+                    <div style="background: #f1f2f6; padding: 15px; border-radius: 5px; border: 1px solid #dcdde1;">
+                        <label style="display: block; font-weight: bold; margin-bottom: 10px; color: #2c3e50;">👥 Composition du groupe</label>
+                        
+                        <div id="group-members-list" style="margin-bottom: 15px; display: flex; flex-wrap: wrap; gap: 8px; min-height: 30px; padding: 5px; background: #fff; border-radius: 4px; border: 1px inset #eee;">
+                        </div>
+
+                        <div style="display: flex; gap: 8px;">
+                            <select id="add-to-group-select" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                <option value="">Sélectionner un élève à ajouter...</option>
+                            </select>
+                            <button type="button" onclick="handleAddMemberClick()" style="background: #3498db; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;">
+                                Ajouter
+                            </button>
+                        </div>
+                        <p style="font-size: 0.8em; color: #7f8c8d; margin-top: 8px; font-style: italic;">Note : Les infos (langue, sujet) seront identiques pour tout le groupe.</p>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                        <button type="button" onclick="closeEditModal()" style="padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">Annuler</button>
+                        <button type="submit" style="padding: 10px 20px; background: #27ae60; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">Enregistrer les modifications</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div> 
+
+<div id="sec-oral-jurys" class="section">
+    <div id="oral-jurys-panel" style="width: 100%; padding: 20px; box-sizing: border-box;">
+        <h2 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px;">🧑‍🏫 Gestion des Professeurs & Jurys</h2>
+
+        <div style="display: flex; gap: 15px; margin-bottom: 20px; background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #eee;">
+            <button onclick="openTeacherImportModal()" style="background: #9b59b6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">
+                ➕ Récupérer et sélectionner les professeurs
+            </button>
+			        <button onclick="document.getElementById('modal-manual-teacher').style.display='flex'" style="background: #f39c12; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; box-shadow: 0 2px 4px rgba(243,156,18,0.3);">
+                ✍️ Ajout manuel
+            </button>
+<button onclick="exportOralJurysPDF()" class="btn btn-dark" aria-label="Exporter la composition des jurys au format PDF" style="font-weight: bold; cursor: pointer;">
+    📄 Exporter les Jurys
+</button>
+            <input type="text" id="search-oral-teacher" placeholder="Rechercher un prof..." oninput="renderOralTeachersTable()" style="padding: 10px; width: 300px; border: 1px solid #ccc; border-radius: 5px;">
+
+		</div>
+
+        <table style="width: 100%; border-collapse: collapse; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+<thead>
+    <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6; text-align: left;">
+        <th style="padding: 12px; width: 18%;">Nom / Prénom</th>
+        <th style="padding: 12px; width: 14%;">Matière(s)</th>
+        <th style="padding: 12px; width: 20%;">Disponibilité</th>
+        <th style="padding: 12px; width: 8%; text-align: center;">Réserve</th>
+        <th style="padding: 12px; width: 12%;">Langue évaluée</th>
+        <th style="padding: 12px; width: 8%;">Jury (N°)</th>
+        <th style="padding: 12px; width: 8%;">Salle</th>
+        <th style="padding: 12px; width: 12%; text-align: center;">Actions</th>
+    </tr>
+</thead>
+            <tbody id="oral-teachers-body">
+            </tbody>
+        </table>
+
+<div id="modal-manual-teacher" style="display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999; justify-content:center; align-items:center; backdrop-filter: blur(2px);">
+            <div style="background: white; width: 400px; padding: 25px; border-radius: 10px; box-shadow: 0 15px 30px rgba(0,0,0,0.3); font-family: 'Segoe UI', sans-serif;">
+                <h3 style="margin-top: 0; color: #2c3e50; border-bottom: 2px solid #f39c12; padding-bottom: 10px;">✍️ Ajouter un membre (Externe)</h3>
+                <p style="font-size: 0.85em; color: #7f8c8d; margin-bottom: 15px;">Cet ajout ne modifiera pas la base de données principale du collège.</p>
+                
+                <form id="form-manual-teacher" onsubmit="addManualTeacher(event)" style="display: flex; flex-direction: column; gap: 15px;">
+                    <div>
+                        <label style="font-weight: bold; font-size: 0.9em; color: #34495e;">Nom <span style="color:red">*</span></label>
+                        <input type="text" id="manual-teacher-nom" required placeholder="Ex: DUPONT" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; margin-top: 5px; box-sizing: border-box;">
+                    </div>
+                    <div>
+                        <label style="font-weight: bold; font-size: 0.9em; color: #34495e;">Prénom</label>
+                        <input type="text" id="manual-teacher-prenom" placeholder="Ex: Jean" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; margin-top: 5px; box-sizing: border-box;">
+                    </div>
+                    <div>
+                        <label style="font-weight: bold; font-size: 0.9em; color: #34495e;">Fonction / Matière</label>
+                        <input type="text" id="manual-teacher-matiere" placeholder="Ex: AESH, Documentaliste..." style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; margin-top: 5px; box-sizing: border-box;">
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px;">
+                        <button type="button" onclick="document.getElementById('modal-manual-teacher').style.display='none'" style="padding: 8px 15px; border-radius: 5px; border: 1px solid #ccc; background: #f8f9fa; cursor: pointer;">Annuler</button>
+                        <button type="submit" style="padding: 8px 15px; background: #f39c12; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">Ajouter au jury</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+
+        <div id="modal-import-teachers" style="display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:9999; justify-content:center; align-items:center; backdrop-filter: blur(2px);">
+    <div style="background: white; width: 850px; max-width: 95vw; max-height: 90vh; display: flex; flex-direction: column; border-radius: 12px; box-shadow: 0 15px 50px rgba(0,0,0,0.3); overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+        
+        <div style="padding: 20px 25px; background: #f8f9fa; border-bottom: 1px solid #e9ecef; display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0; color: #2c3e50; font-size: 1.4em;">🧑‍🏫 Sélection des professeurs pour l'épreuve</h3>
+            <span onclick="document.getElementById('modal-import-teachers').style.display='none'" style="cursor: pointer; font-size: 1.5em; color: #95a5a6;">&times;</span>
+        </div>
+
+        <div style="padding: 15px 25px; background: #fff;">
+            <p style="margin: 0 0 15px 0; color: #7f8c8d; font-size: 0.95em;">Cochez les membres de l'équipe à intégrer aux jurys. Vous pourrez définir leurs salles et langues après l'import.</p>
+            
+            <div style="background: #eef2f7; padding: 12px 15px; border-radius: 8px; display: flex; align-items: center; border: 1px solid #d1d9e6;">
+                <label style="font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 12px; color: #34495e;">
+                    <input type="checkbox" id="chk-all-teachers" onchange="toggleAllTeachers(this.checked)" style="width: 18px; height: 18px; cursor: pointer;"> 
+                    Sélectionner tous les professeurs de la base
+                </label>
+            </div>
+        </div>
+
+        <div style="padding: 0 25px; flex: 1; overflow: hidden; display: flex; flex-direction: column;">
+            <div style="display: grid; grid-template-columns: 50px 250px 1fr; padding: 10px 15px; background: #f1f2f6; font-weight: bold; font-size: 0.85em; color: #7f8c8d; text-transform: uppercase; border-radius: 4px 4px 0 0;">
+                <div></div>
+                <div>Identité</div>
+                <div>Matières / Spécialités</div>
+            </div>
+            
+            <div id="import-teachers-list" style="overflow-y: auto; border: 1px solid #eee; border-top: none; background: #fff;">
+                </div>
+        </div>
+
+        <div style="padding: 20px 25px; background: #f8f9fa; border-top: 1px solid #e9ecef; display: flex; justify-content: space-between; align-items: center;">
+            <button type="button" onclick="document.getElementById('modal-import-teachers').style.display='none'" style="padding: 10px 20px; cursor: pointer; background: white; border: 1px solid #ced4da; border-radius: 6px; color: #495057; font-weight: 600; transition: all 0.2s;">
+                Annuler
+            </button>
+            
+            <div style="display: flex; gap: 12px;">
+                <button type="button" onclick="importTeachersToOral('overwrite')" style="background:#e74c3c; color:white; border:none; padding:12px 20px; border-radius:6px; font-weight:bold; cursor:pointer; box-shadow: 0 4px 10px rgba(231,76,60,0.2);">
+                    🗑️ Remplacer la liste actuelle
+                </button>
+                <button type="button" onclick="importTeachersToOral('append')" style="background:#27ae60; color:white; border:none; padding:12px 20px; border-radius:6px; font-weight:bold; cursor:pointer; box-shadow: 0 4px 10px rgba(39,174,96,0.2);">
+                    ✅ Compléter la liste
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+</div>
+
+<div id="sec-oral-repart" class="section">
+    <div class="card">
+        <div class="card-header-flex">
+            <h3>📅 Répartition Interactive (Oral)</h3>
+            <button class="lock-btn" id="lock-oral-distrib" onclick="toggleLock('oralDistrib')">🔓 Verrouiller</button>
+        </div>
+        
+<!-- Barre d'outils -->
+        <div class="action-bar" style="display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap; align-items: center;">
+            <button class="btn btn-success" onclick="openOralDistribWizard()">🚀 Assistant de Répartition</button>
+            <button class="btn btn-danger" onclick="clearOralDistribution()">🗑️ Vider</button>
+			<button onclick="exportOralDistributionExcel()" class="btn btn-success">
+    <i class="fas fa-file-excel"></i> Exporter la Répartition (Excel)
+</button>
+            
+            <!-- NOUVEAU : Champ de recherche avec loupe -->
+            <div style="flex: 1; display: flex; justify-content: flex-end;">
+                <div style="position: relative; width: 300px;">
+                    <span style="position: absolute; left: 10px; top: 8px; font-size: 1.1rem;">🔍</span>
+                    <input type="text" id="search-oral-distrib" 
+                           placeholder="Rechercher un élève..." 
+                           onkeyup="findStudentInOralDistrib(this.value)"
+                           style="width: 100%; padding: 8px 8px 8px 35px; border: 1px solid #ccc; border-radius: 20px;">
+                </div>
+            </div>
+        </div>
+
+        <!-- NOUVEAU : Zone d'affichage du résultat (masquée par défaut) -->
+        <div id="oral-search-result" style="display: none; margin-bottom: 15px; padding: 15px; background: #e8f4fd; border: 1px solid #3498db; border-radius: 8px; color: #2c3e50; font-size: 0.95rem;">
+        </div>
+
+        <!-- Conteneur Drag & Drop des Jurys -->
+        <div id="oral-visual-distrib" class="dd-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 15px;">
+            <p style="color:#7f8c8d; text-align:center; width:100%; padding:20px;">Aucune répartition pour le moment. Lancez l'assistant.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Modale de l'Assistant de Répartition (À placer à la fin du body avec les autres modales) -->
+<div id="modal-oral-wizard" class="modal-overlay" style="display:none; z-index:9999;" aria-modal="true" role="dialog" aria-labelledby="oralWizTitle">
+    <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header" id="oralWizTitle" style="background:#2c3e50; color:white; padding:15px; border-radius:5px 5px 0 0;">
+            🚀 Paramétrage de la Répartition de l'Oral
+        </div>
+        
+        <div style="padding: 20px; max-height: 70vh; overflow-y: auto;">
+            <!-- Temps de passage -->
+            <fieldset style="margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 8px;">
+                <legend style="font-weight:bold; color:#2980b9; padding:0 5px;">⏱️ Gestion du Temps</legend>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                    <div>
+                        <label for="oral-dur-indiv" style="font-size:0.9rem;">Durée Individuel (min)</label>
+                        <input type="number" id="oral-dur-indiv" value="15" min="5" class="form-control">
+                    </div>
+                    <div>
+                        <label for="oral-dur-group" style="font-size:0.9rem;">Durée Groupe (min)</label>
+                        <input type="number" id="oral-dur-group" value="25" min="10" class="form-control">
+                    </div>
+                    <div style="grid-column: span 2;">
+                        <label for="oral-dur-harm" style="font-size:0.9rem;">Harmonisation / Délibération post-passage (min)</label>
+                        <input type="number" id="oral-dur-harm" value="5" min="0" class="form-control">
+                    </div>
+                </div>
+            </fieldset>
+
+            <!-- Stratégie de placement -->
+            <fieldset style="margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 8px;">
+                <legend style="font-weight:bold; color:#27ae60; padding:0 5px;">🧩 Stratégie de Placement</legend>
+                
+                <label style="font-weight:bold; font-size:0.9rem; display:block; margin-bottom:5px;">Placement des groupes :</label>
+                <select id="oral-strat-group" class="form-control" style="margin-bottom: 15px;">
+                    <option value="start">En début d'épreuve</option>
+					<option value="mixed">Mélangés avec les individuels</option>
+                    <option value="end">En fin d'épreuve</option>
+
+                </select>
+
+                <label style="font-weight:bold; font-size:0.9rem; display:block; margin-bottom:5px;">Thématiques par Jury :</label>
+                <select id="oral-strat-theme" class="form-control">
+                    <option value="homogenous">Une thématique par jury (Spécialisation)</option>
+                    <option value="heterogenous">Variété de thématiques par jury (Mixité)</option>
+                </select>
+            </fieldset>
+        </div>
+
+        <div class="modal-actions" style="padding: 15px; background:#f8f9fa; border-top:1px solid #eee; display:flex; justify-content:flex-end; gap:10px;">
+            <button class="btn btn-secondary" onclick="document.getElementById('modal-oral-wizard').style.display='none'">Annuler</button>
+            <button class="btn btn-success" onclick="runOralAlgorithm()">Générer la répartition ⚡</button>
+        </div>
+    </div>
+</div>
+
+<div id="sec-oral-grille" class="section">
+    <div class="card">
+        <div class="card-header-flex">
+            <h3>📋 Grille d'évaluation</h3>
+            <button class="btn btn-dark" style="font-weight: bold;" onclick="exportGrillePDF()">🖨️ Exporter au format PDF</button>
+        </div>
+        <p style="color:#7f8c8d; margin-bottom:20px;">
+            Définissez les critères de votre grille. Le total doit impérativement correspondre aux exigences du BO : 8 points pour la prestation, 12 points pour le contenu.
+        </p>
+
+        <!-- BLOC 1 : PRESTATION ORALE -->
+        <fieldset style="border: 2px solid #3498db; border-radius: 8px; padding: 20px; margin-bottom: 25px; background: #fdfdfd;">
+            <legend style="background: #3498db; color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold;">
+                🗣️ Prestation Orale (Sur 8 points)
+            </legend>
+            
+            <!-- Jauge de contrôle (Accessibilité RGAA : aria-live pour annoncer les changements) -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; padding:10px; background:#ebf5fb; border-radius:6px;">
+                <span style="font-weight:bold; color:#2c3e50;">Total alloué :</span>
+                <span id="total-prestation" aria-live="polite" style="font-size:1.2rem; font-weight:bold; padding:4px 10px; border-radius:4px;">0 / 8 pts</span>
+            </div>
+
+            <div id="container-criteres-prestation" style="display:flex; flex-direction:column; gap:15px;"></div>
+            
+            <button class="btn btn-sm" style="margin-top:15px; background:#e8f6f3; color:#27ae60; border:1px dashed #27ae60; width:100%; font-weight:bold;" onclick="addOralCriterion('prestation')">
+                ➕ Ajouter un critère à la prestation
+            </button>
+        </fieldset>
+
+        <!-- BLOC 2 : CONTENU -->
+        <fieldset style="border: 2px solid #9b59b6; border-radius: 8px; padding: 20px; margin-bottom: 25px; background: #fdfdfd;">
+            <legend style="background: #9b59b6; color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold;">
+                📚 Connaissances sur le sujet ou la problématique (Sur 12 points)
+            </legend>
+            
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; padding:10px; background:#f4ecf7; border-radius:6px;">
+                <span style="font-weight:bold; color:#2c3e50;">Total alloué :</span>
+                <span id="total-contenu" aria-live="polite" style="font-size:1.2rem; font-weight:bold; padding:4px 10px; border-radius:4px;">0 / 12 pts</span>
+            </div>
+
+            <div id="container-criteres-contenu" style="display:flex; flex-direction:column; gap:15px;"></div>
+            
+            <button class="btn btn-sm" style="margin-top:15px; background:#f4ecf7; color:#8e44ad; border:1px dashed #8e44ad; width:100%; font-weight:bold;" onclick="addOralCriterion('contenu')">
+                ➕ Ajouter un critère au contenu
+            </button>
+        </fieldset>
+
+        <!-- BLOC 3 : BONUS LANGUE -->
+        <fieldset style="border: 2px solid #f39c12; border-radius: 8px; padding: 20px; background: #fdfdfd;">
+            <legend style="background: #f39c12; color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold;">
+                🌍 Bonus Langue Étrangère
+            </legend>
+            
+            <div style="display:flex; align-items:center; gap:15px; margin-bottom:15px;">
+                <label style="font-weight:bold; cursor:pointer; display:flex; align-items:center; gap:8px;">
+                    <input type="checkbox" id="bonus-enabled" onchange="toggleBonusLangue(this.checked)" style="transform:scale(1.2);">
+                    Activer le bonus d'évaluation en langue vivante
+                </label>
+            </div>
+
+            <div id="container-bonus-config" style="display:none; padding:15px; background:#fef9e7; border-radius:6px; border:1px solid #f8c471;">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+                    <div>
+                        <label style="display:block; font-size:0.9rem; font-weight:bold;">Points maximum attribuables</label>
+                        <input type="number" id="bonus-max-pts" value="2" min="1" max="10" class="form-control" style="width:100px;" onchange="updateBonusConfig()">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.9rem; font-weight:bold;">Nombre de niveaux de maitrise</label>
+                        <select id="bonus-nb-niveaux" class="form-control" style="width:150px;" onchange="updateBonusConfig()">
+                            <option value="2">2 niveaux</option>
+                            <option value="3" selected>3 niveaux</option>
+                            <option value="4">4 niveaux</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="bonus-niveaux-inputs" style="display:flex; gap:10px; margin-top:15px;">
+                    <!-- Généré dynamiquement -->
+                </div>
+            </div>
+        </fieldset>
+    </div>
+</div>
+
+<div id="sec-oral-secretariat" class="section">
+    <div class="card">
+<div class="card-header-flex">
+            <h3>🗂️ Secrétariat de l'Épreuve Orale</h3>
+            <span id="badge-session-secretariat" class="badge" style="background:var(--primary);">Session ...</span>
+        </div>
+        <p style="color:#7f8c8d; margin-bottom:25px;">Générez ici l'ensemble des documents logistiques et officiels pour le jour de l'épreuve.</p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+        
+<!-- BLOC 1 : CONVOCATIONS -->
+            <div style="border: 1px solid #ddd; border-radius: 10px; padding: 20px; background: #fff;">
+                <h4 style="margin-top:0; color:var(--secondary); border-bottom:2px solid #3498db; padding-bottom:5px;">📢 Génération des documents officiels pour l'épreuve orale</h4>
+                <div style="display:flex; flex-direction:column; gap:10px; margin-top:15px;">
+                    <button class="btn btn-dark" style="text-align:left;" onclick="openOralConvocModal()">📄 Convocations Élèves</button>
+                    <button class="btn btn-dark" style="text-align:left;" onclick="exportOralPochettesEleves()">📁 Pochettes Convocations (Classes)</button>
+					<button class="btn btn-dark" style="text-align:left;" onclick="openOralProfConvocModal()">📄 Convocations Professeurs</button>
+<button class="btn btn-dark" style="text-align:left;" onclick="document.getElementById('modal-oral-subjects-option').style.display='flex'">📁 Liste des Parcours par Jury</button>
+                </div>
+            </div>
+			 
+            <!-- BLOC 2 : AFFICHAGES -->
+            <div style="border: 1px solid #ddd; border-radius: 10px; padding: 20px; background: #fff;">
+                <h4 style="margin-top:0; color:var(--secondary); border-bottom:2px solid #3498db; padding-bottom:5px;">📢 Listes d'Affichage</h4>
+                <div style="display:flex; flex-direction:column; gap:10px; margin-top:15px;">
+                    <button class="btn btn-dark" style="text-align:left;" onclick="exportOralDisplayByRoom()">🏫 Listes par Salle (Portes)</button>
+                    <button class="btn btn-dark" style="text-align:left;" onclick="exportOralDisplayGlobal()">🌍 Liste Chronologique Globale (Vie Sco)</button>
+                </div>
+            </div>
+
+<!-- BLOC 3 : ÉMARGEMENT & NOTES -->
+            <div style="border: 1px solid #ddd; border-radius: 10px; padding: 20px; background: #fff;">
+                <h4 style="margin-top:0; color:var(--success); border-bottom:2px solid #27ae60; padding-bottom:5px;">✍️ Documents du jury</h4>
+                <div style="display:flex; flex-direction:column; gap:10px; margin-top:15px;">
+                    <button class="btn btn-dark" style="text-align:left;" onclick="openOralSignModal()" aria-label="Générer les feuilles d'émargement par jury">📝 Feuilles d'émargement par Jury</button>
+                    <button class="btn btn-dark" style="text-align:left;" onclick="exportOralNotationSheets()" aria-label="Générer les bordereaux de notation">📊 Bordereaux de Notation</button>
+                    <!-- Nouveaux boutons d'évaluation -->
+                    <button class="btn btn-dark" style="text-align:left;" onclick="exportGrillePDF()" aria-label="Générer une fiche d'évaluation vierge">📄 Fiche d'évaluation (Vierge)</button>
+                    <button class="btn btn-dark" style="text-align:left;" onclick="exportPrefilledEvalSheets()" aria-label="Générer les fiches d'évaluation publipostées pour tous les candidats">🖨️ Fiches d'évaluation (Publipostées)</button>
+                </div>
+            </div>
+
+            <!-- BLOC 4 : LOGISTIQUE JURY -->
+            <div style="border: 1px solid #ddd; border-radius: 10px; padding: 20px; background: #f8f9fa; grid-column: span 2;">
+                <h4 style="margin-top:0; color:var(--primary); border-bottom:2px solid var(--primary); padding-bottom:5px;">📁 Dossiers de Jury (Format A3)</h4>
+                <p style="font-size:0.85rem; color:#666;">Génère une pochette complète par jury.</p>
+                <div style="display:flex; gap:10px; margin-top:15px;">
+                    <button class="btn btn-primary" style="flex:1; font-weight:bold; padding:15px;" onclick="exportOralJuryPochettes()">🖨️ Imprimer les Pochettes de Jury (A3)</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div id="sec-oral-import" class="section">
+    <div class="card" style="height: calc(100vh - 160px); padding: 0; overflow: hidden; display: flex; flex-direction: column;">
+        <div class="card-header-flex" style="padding: 15px 25px; border-bottom: 1px solid #eee;">
+            <h3>📥 Saisie des Notes par Jury</h3>
+            <span class="badge" style="background: var(--secondary);">Mode Saisie Rapide</span>
+        </div>
+        
+        <div style="display: flex; flex: 1; overflow: hidden;">
+            <!-- Colonne Gauche : Liste des Jurys -->
+            <div id="oral-notes-jurys-list" style="width: 280px; border-right: 1px solid #ddd; background: #f8f9fa; overflow-y: auto; padding: 10px;">
+                <!-- Peuplé par JS -->
+            </div>
+
+            <!-- Colonne Droite : Formulaire de saisie -->
+            <div id="oral-notes-entry-area" style="flex: 1; overflow-y: auto; padding: 25px; position: relative;">
+                <div id="oral-notes-placeholder" style="text-align: center; margin-top: 100px; color: #999;">
+                    <div style="font-size: 3rem; margin-bottom: 15px;">⬅️</div>
+                    <p>Sélectionnez un jury dans la liste de gauche pour commencer la saisie.</p>
+                </div>
+                <div id="oral-notes-table-container" style="display: none;">
+                    <h4 id="current-jury-title" style="margin-top: 0; color: var(--primary);"></h4>
+                    <table id="tableOralNotes">
+                        <thead>
+                            <tr>
+                                <th style="width: 80px;">Heure</th>
+                                <th>Candidat(s)</th>
+                                <th style="width: 120px; text-align: center;">Note / 20</th>
+                            </tr>
+                        </thead>
+                        <tbody id="oral-notes-tbody">
+                            <!-- Peuplé par JS -->
+                        </tbody>
+                    </table>
+                    <div style="margin-top: 25px; padding-top: 20px; border-top: 2px solid #eee; text-align: right;">
+                        <button id="btnSaveOralNotes" class="btn btn-success" style="padding: 12px 25px; font-weight: bold;"></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="sec-oral-resultats" class="section">
+    <div class="card" style="height: calc(100vh - 160px); display: flex; flex-direction: column;">
+        <div class="card-header-flex" style="padding: 15px 25px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 20px;">
+            <h3 style="margin: 0;">🏆 Résultats de l'Épreuve Orale</h3>
+            
+            <div style="display: flex; gap: 10px;">
+                <button onclick="exportOralResultsPDF()" class="btn btn-dark" aria-label="Exporter les résultats en PDF">
+                    📄 Export PDF
+                </button>
+                <button onclick="exportOralResultsExcel()" class="btn btn-dark" aria-label="Exporter les résultats en Excel">
+                    📊 Export Excel
+                </button>
+            </div>
+
+            <div style="flex: 1; display: flex; justify-content: flex-end;">
+                <div style="position: relative; width: 300px;">
+                    <span style="position: absolute; left: 10px; top: 10px;">🔍</span>
+                    <input type="text" id="search-oral-results" 
+                           placeholder="Rechercher un élève ou une classe..." 
+                           oninput="renderOralResultsTable()"
+                           style="width: 100%; padding: 8px 8px 8px 35px; border: 1px solid #ccc; border-radius: 20px;">
+                </div>
+            </div>
+        </div>
+
+        <div style="flex: 1; overflow-y: auto; padding: 20px;">
+            <table id="tableOralResults" class="table-hover">
+                <thead style="position: sticky; top: 0; background: #fff; z-index: 10;">
+                    <tr>
+                        <th style="width: 250px;">Nom Prénom</th>
+                        <th style="width: 100px;">Classe</th>
+                        <th style="width: 200px;">Parcours</th>
+                        <th style="width: 100px; text-align: center;">Jury</th>
+                        <th style="width: 150px; text-align: center;">Note / 20</th>
+                    </tr>
+                </thead>
+                <tbody id="oral-results-tbody">
+                    <!-- Généré par JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+<!-- SOUS-MENU : HARMONISATION -->
+<div id="sec-oral-harmonisation" class="section">
+    <div class="card" style="height: calc(100vh - 160px); display: flex; flex-direction: column; background: #f4f6f8; border: none; box-shadow: none;">
+        
+        <!-- En-tête avec titre et bouton d'export -->
+        <div class="card-header-flex" style="padding: 15px 25px; background: #fff; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h3 style="margin: 0; color: var(--primary);">⚖️ Tableau de bord d'Harmonisation</h3>
+                <span style="font-size: 0.9rem; color: #7f8c8d;">Analyse comparative des jurys</span>
+            </div>
+            
+            <!-- Bouton d'exportation RGAA compliant -->
+            <button onclick="exportOralHarmonisationPDF()" class="btn btn-dark" aria-label="Exporter le rapport d'harmonisation au format PDF" style="font-weight: bold; cursor: pointer;">
+                📄 Exporter le Rapport
+            </button>
+        </div>
+
+        <div style="flex: 1; overflow-y: auto; padding: 5px 10px;">
+            <!-- Bannière de référence (Cohorte) -->
+            <div id="harmonisation-cohort-banner" style="margin-bottom: 15px;"></div>
+            
+            <!-- Grille des jurys (CSS Grid optimisée pour la macro-vision) -->
+            <div id="harmonisation-cards-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px;">
+                <!-- Rempli dynamiquement par JavaScript (renderOralHarmonisation) -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="sec-oral-dataviz" class="section">
+    <div class="card" style="height: calc(100vh - 160px); display: flex; flex-direction: column; background: #f4f6f8; border: none; box-shadow: none;">
+        
+<div class="card-header-flex" style="padding: 15px 25px; background: #fff; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+    <div>
+        <h3 style="margin: 0; color: var(--primary);">📈 Tableau de bord des Performances</h3>
+        <span style="font-size: 0.9rem; color: #7f8c8d;">Analyse pédagogique et démographique de l'épreuve</span>
+    </div>
+    
+    <!-- Bouton d'exportation RGAA compliant -->
+    <button onclick="exportOralDataVizPDF()" class="btn btn-dark" aria-label="Exporter les statistiques de performances au format PDF" style="font-weight: bold; cursor: pointer;">
+        📄 Exporter les Statistiques
+    </button>
+</div>
+
+        <div style="flex: 1; overflow-y: auto; padding: 5px 10px;">
+            <!-- Bandeau KPI Cohorte -->
+            <div id="dataviz-kpi-banner" style="display: flex; gap: 20px; margin-bottom: 25px;">
+                <!-- Rempli par JavaScript -->
+            </div>
+
+            <!-- Grille d'analyse (2 colonnes sur grand écran) -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 25px;">
+                
+                <!-- Carte Démographie & Classes -->
+                <article style="background: #fff; padding: 25px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+                    <h4 style="margin-top: 0; color: var(--secondary); border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; margin-bottom: 20px;">👥 Analyse par Profil et par Classe</h4>
+                    <div id="dataviz-demo-charts"></div>
+                </article>
+
+                <!-- Carte Parcours -->
+                <article style="background: #fff; padding: 25px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+                    <h4 style="margin-top: 0; color: var(--secondary); border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; margin-bottom: 20px;">🎯 Analyse par Parcours & EPI</h4>
+                    <div id="dataviz-parcours-charts"></div>
+                </article>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
             <div id="res-simul" class="section">
                 <div class="card">
                     <div class="card-header-flex">
@@ -2107,6 +2802,7 @@ En cas de retard ou de problème, signalez-vous immédiatement à la vie scolair
     <script src="js/ui_extra.js"></script>
     <script src="js/labels_engine.js"></script>
     <script src="js/v12_features.js"></script>
+    <script src="js/oral_dnb.js"></script>
 </body>
 
 </html>

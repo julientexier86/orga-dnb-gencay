@@ -19,6 +19,7 @@ function nav(id, btn) {
         else if (id.startsWith('res-')) pid = "btnRes";
         else if (id.startsWith('convoc-')) pid = "btnConvoc";
         else if (id.startsWith('planning-')) pid = "btnPlanning";
+        else if (id.startsWith('sec-oral-')) pid = "btnOralDNB";
 
         if (pid) {
             const parent = document.getElementById(pid);
@@ -45,6 +46,18 @@ function nav(id, btn) {
         if(typeof renderJuriesList === 'function') renderJuriesList();
         if(typeof renderStagePlanning === 'function') renderStagePlanning();
     }
+
+    // --- MODULE ORAL DNB V2.7 (DB.oralConfig) ---
+    if (id === 'sec-oral-config') if(typeof refreshOralConfigUI === 'function') refreshOralConfigUI();
+    if (id === 'sec-oral-jurys') if(typeof renderOralTeachersTable === 'function') renderOralTeachersTable();
+    if (id === 'sec-oral-eleves') if(typeof renderOralStudentsTable === 'function') renderOralStudentsTable();
+    if (id === 'sec-oral-repart') if(typeof renderOralVisualDistribution === 'function') renderOralVisualDistribution();
+    if (id === 'sec-oral-grille') if(typeof renderOralGrilleConfig === 'function') renderOralGrilleConfig();
+    if (id === 'sec-oral-import') if(typeof initOralNotesMenu === 'function') initOralNotesMenu();
+    if (id === 'sec-oral-resultats') if(typeof renderOralResultsTable === 'function') renderOralResultsTable();
+    if (id === 'sec-oral-harmonisation') if(typeof renderOralHarmonisation === 'function') renderOralHarmonisation();
+    if (id === 'sec-oral-dataviz') if(typeof renderOralDataViz === 'function') renderOralDataViz();
+    // ---------------------------------------------
 }
 
 function navStage(subId, btn) {

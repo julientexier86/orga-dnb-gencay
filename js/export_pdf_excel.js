@@ -1105,6 +1105,13 @@ function loadGlobalData() {
             document.getElementById('chkPC').checked = DB.config.scienceSubjects.includes('PC');
             document.getElementById('chkTech').checked = DB.config.scienceSubjects.includes('TECH');
 
+            // RESTAURATION MODULE ORAL V2.7 (DB.oralConfig)
+            if (typeof setupOralDatabase === 'function') setupOralDatabase();
+            if (typeof refreshOralConfigUI === 'function') refreshOralConfigUI();
+            if (typeof renderOralTeachersTable === 'function') renderOralTeachersTable();
+            if (typeof renderOralStudentsTable === 'function') renderOralStudentsTable();
+            // --------------------------------------------------
+
             showToast("Données chargées et sécurisées !", 'success');
         } catch (err) {
             console.error(err);
