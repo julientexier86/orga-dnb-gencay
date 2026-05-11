@@ -954,6 +954,7 @@ function importTeachersToOral(mode) {
             if (!exists) {
                 window.oralConfig.teachers.push({
                     id: profDb.id,
+                    civ: profDb.civ || "M.",
                     nom: profDb.nom || "",
                     prenom: profDb.prenom || "",
                     matiere: profDb.matieres || profDb.matiere || "N/C", // Harmonisé
@@ -1200,6 +1201,7 @@ function addManualTeacher(e) {
     // On l'ajoute à la configuration de l'oral
     window.oralConfig.teachers.push({
         id: newId,
+        civ: "M.",
         nom: nom,
         prenom: prenom,
         matiere: matiere || "Externe", // Harmonisé en 'matiere' (sans s) pour correspondre au render
@@ -5615,7 +5617,7 @@ function exportOralSimpleConvocs(params) {
         Y += 10;
 
         // --- DESTINATAIRE ---
-        const civDest = (t.civ || "").trim();
+        const civDest      = (t.civ || "M.").trim();
         const nomAffiche   = (t.nom || "").toUpperCase();
         const prenomAffiche = (t.prenom || "").trim();
         const nomComplet = isGeneric
