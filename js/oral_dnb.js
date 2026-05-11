@@ -5680,3 +5680,108 @@ function exportOralSimpleConvocs(params) {
         showToast("⚠️ Aucun enseignant configuré : lettre générique générée.", "warning");
     }
 }
+
+// ============================================================
+// LISTE D'ÉMARGEMENT — RETRAIT DES CONVOCATIONS
+// ============================================================
+
+window.exportOralConvocSignSheet = function() {
+    if (!window.jspdf) return alert("Librairie jsPDF manquante.");
+    const { jsPDF } = window.jspdf;
+
+    // --- Destinataires ---
+    let teachers = (DB.oralConfig && DB.oralConfig.teachers) || [];
+    let recipients = teachers.filter(t => (t.jury && t.jury !== "") || t.isReserve);
+
+    if (recipients.length === 0) {
+        return alert("Aucun enseignant avec un jury assigné. Veuillez d'abord configurer les jurys dans l'onglet Jurys.");
+    }
+
+    // Tri alphabétique NOM
+    recipients = [...recipients].sort((a, b) => (a.nom || "").localeCompare(b.nom || ""));
+
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const schoolName  = DB.config.schoolName || "Établissement";
+    const sessionYear = DB.config.year || new Date().getFullYear();
+    const rawDate     = DB.oralConfig?.general?.date || "";
+    const oralDate    = formatDateFR(rawDate);
+
+    // --- EN-TÊTE ---
+    let Y = 15;
+    if (DB.config.logo) {
+        try {
+            const props = doc.getImageProperties(DB.config.logo);
+            const ratio = Math.min(20 / props.width, 16 / props.height);
+            doc.addImage(DB.config.logo, 'PNG', 14, Y, props.width * ratio, props.height * ratio);
+        } catch(e) {}
+    }
+
+    doc.setFont("helvetica", "bold").setFontSize(12).setTextColor(44, 62, 80);
+    doc.text(schoolName, 105, Y + 4, { align: 'center' });
+    doc.setFont("helvetica", "normal").setFontSize(9).setTextColor(80, 80, 80);
+    doc.text(`DNB — Session ${sessionYear}${oralDate ? " | Épreuve orale du " + oralDate : ""}`, 105, Y + 10, { align: 'center' });
+
+    Y += 20;
+    doc.setDrawColor(44, 62, 80).setLineWidth(0.6);
+    doc.line(14, Y, 196, Y);
+    Y += 8;
+
+    // --- TITRE ---
+    doc.setFont("helvetica", "bold").setFontSize(14).setTextColor(44, 62, 80);
+    doc.text("LISTE D'ÉMARGEMENT — RETRAIT DES CONVOCATIONS", 105, Y, { align: 'center' });
+    Y += 6;
+    doc.setFont("helvetica", "italic").setFontSize(9).setTextColor(100);
+    doc.text("Chaque enseignant émarge à la réception de sa convocation.", 105, Y, { align: 'center' });
+    Y += 8;
+
+    // --- TABLEAU ---
+    const tableBody = recipients.map((t, i) => {
+        const civ    = t.civ || "M.";
+        const nom    = (t.nom || "").toUpperCase();
+        const prenom = (t.prenom || "").trim();
+        const nomComplet = [civ, nom, prenom].filter(Boolean).join(" ");
+        const affectation = t.isReserve ? "Réserve" : (t.jury ? `Jury ${t.jury}` : "-");
+        return [String(i + 1), nomComplet, affectation, ""];   // "" = colonne signature vide
+    });
+
+    doc.autoTable({
+        startY: Y,
+        head: [["N°", "Nom — Prénom", "Affectation", "Signature"]],
+        body: tableBody,
+        theme: 'grid',
+        headStyles: {
+            fillColor: [44, 62, 80],
+            textColor: 255,
+            fontStyle: 'bold',
+            fontSize: 10,
+            halign: 'center'
+        },
+        columnStyles: {
+            0: { cellWidth: 12,  halign: 'center', fontSize: 9 },
+            1: { cellWidth: 80,  fontSize: 10 },
+            2: { cellWidth: 40,  halign: 'center', fontSize: 9 },
+            3: { cellWidth: 54,  halign: 'center' }   // espace pour la signature manuscrite
+        },
+        bodyStyles: { minCellHeight: 12 },
+        alternateRowStyles: { fillColor: [245, 247, 250] },
+        styles: { cellPadding: 4 },
+        didDrawCell: (data) => {
+            // Petite ligne de signature au centre de la colonne Signature
+            if (data.section === 'body' && data.column.index === 3) {
+                const x1 = data.cell.x + 8;
+                const x2 = data.cell.x + data.cell.width - 8;
+                const lineY = data.cell.y + data.cell.height - 4;
+                doc.setDrawColor(180).setLineWidth(0.3);
+                doc.line(x1, lineY, x2, lineY);
+            }
+        }
+    });
+
+    // --- PIED DE PAGE ---
+    const finalY = doc.lastAutoTable.finalY + 12;
+    doc.setFont("helvetica", "italic").setFontSize(8).setTextColor(150);
+    doc.text(`Document généré le ${new Date().toLocaleDateString('fr-FR')} — ${recipients.length} enseignant(s)`, 105, finalY, { align: 'center' });
+
+    const safeName = schoolName.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-zA-Z0-9]/g, '_');
+    doc.save(`Emargement_Retrait_Convocations_${safeName}_${sessionYear}.pdf`);
+};
