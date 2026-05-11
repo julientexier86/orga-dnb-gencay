@@ -2854,7 +2854,9 @@ const renderOralDocLogo = (doc) => {
 let signExportOptions = { withParcours: false, withSujet: false };
 
 window.openOralSignModal = function() {
-    document.getElementById('modal-oral-sign-settings').style.display = 'flex';
+    const modal = document.getElementById('modal-oral-sign-settings');
+    if (!modal) return alert("Erreur : modal introuvable. Veuillez rafraîchir la page (F5).");
+    modal.style.display = 'flex';
     // Reset visuel par défaut
     toggleSignTile('parcours', false);
     toggleSignTile('sujet', false);
@@ -4402,18 +4404,21 @@ function drawOfficialHeader(doc, title, startY = 15) {
  * Ouvre la modale et pré-remplit avec les dernières valeurs sauvegardées
  */
 window.openOralConvocModal = function() {
-    const params = DB.oralConfig.convocParams || { 
-        showArrival: true, 
-        offset: 15, 
-        text: "Le candidat devra se présenter muni d'une pièce d'identité et de la présente convocation. Il est impératif d'arriver au moins 15 minutes avant l'heure de passage indiquée." 
+    if (typeof setupOralDatabase === 'function') setupOralDatabase();
+    const modal = document.getElementById('modal-oral-convoc-settings');
+    if (!modal) return alert("Erreur : modal introuvable. Veuillez rafraîchir la page (F5).");
+
+    const params = (DB.oralConfig && DB.oralConfig.convocParams) || {
+        showArrival: true,
+        offset: 15,
+        text: "Le candidat devra se présenter muni d'une pièce d'identité et de la présente convocation. Il est impératif d'arriver au moins 15 minutes avant l'heure de passage indiquée."
     };
-    
+
     document.getElementById('convoc-check-accueil').checked = params.showArrival;
     document.getElementById('convoc-offset-mins').value = params.offset;
     document.getElementById('convoc-text-instructions').value = params.text;
     document.getElementById('convoc-offset-container').style.display = params.showArrival ? 'block' : 'none';
-    
-    document.getElementById('modal-oral-convoc-settings').style.display = 'flex';
+    modal.style.display = 'flex';
 };
 
 /**
@@ -4701,13 +4706,16 @@ window.exportOralPochettesEleves = function() {
  * Ouvre la modale des profs avec les données sauvegardées
  */
 window.openOralProfConvocModal = function() {
+    if (typeof setupOralDatabase === 'function') setupOralDatabase(); // sécurité init
     const defaultText = "Présence requise 30 minutes avant le début du premier passage.\nRemise obligatoire des livrets d'évaluation au secrétariat avant le départ.";
-    
-    // Récupération des paramètres sauvegardés ou texte par défaut
-    const params = DB.oralConfig.profConvocParams || { text: defaultText };
-    
-    document.getElementById('prof-text-instructions').value = params.text;
-    document.getElementById('modal-oral-prof-settings').style.display = 'flex';
+
+    const params = (DB.oralConfig && DB.oralConfig.profConvocParams) || { text: defaultText };
+
+    const textarea = document.getElementById('prof-text-instructions');
+    const modal    = document.getElementById('modal-oral-prof-settings');
+    if (!textarea || !modal) return alert("Erreur : modal introuvable. Veuillez rafraîchir la page (F5).");
+    textarea.value = params.text;
+    modal.style.display = 'flex';
 };
 
 /**
