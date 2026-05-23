@@ -140,41 +140,26 @@ function checkTeacherCollision(teacherName, dateStr, startStr, endStr, myKey) {
     // Convertir heures en minutes pour comparaison facile
     const startMin = timeToMin(startStr);
     const endMin = timeToMin(endStr);
+    const cleanTeacherName = normalizePlanningTeacherName(teacherName);
 
     // On parcourt TOUT le planning
     for (const [key, assignedTeacher] of Object.entries(DB.planning)) {
-        if (assignedTeacher !== teacherName) continue; // Pas le même prof
+        if (normalizePlanningTeacherName(assignedTeacher) !== cleanTeacherName) continue; // Pas le même prof
         if (key === myKey) continue; // C'est moi-même
 
-        // Décodage de la clé : examIdx_roomName_type_slotIdx_survIdx
-        const parts = key.split('_');
-        if (parts.length < 5) continue; // Ancienne clé ou invalide
-
-        const otherExamIdx = parseInt(parts[0]);
-        const otherRoom = parts[1];
-        const otherType = parts[2];
-        const otherSlotIdx = parseInt(parts[3]);
-
-        const otherExam = DB.exams[otherExamIdx];
+        const duty = getPlanningDuty(key);
+        if (!duty) continue;
 
         // Règle 1 : Même jour ?
-        if (otherExam.date !== dateStr) continue;
+        if (duty.exam.date !== dateStr) continue;
 
         // Règle 2 : Chevauchement horaire ?
-        // On récupère les horaires du créneau "concurrent"
-        let otherSlot = null;
-        if (otherExam.slots && otherExam.slots[otherType]) {
-            otherSlot = otherExam.slots[otherType][otherSlotIdx];
-        }
+        const otherStart = timeToMin(duty.slot.start);
+        const otherEnd = timeToMin(duty.slot.end);
 
-        if (otherSlot) {
-            const otherStart = timeToMin(otherSlot.start);
-            const otherEnd = timeToMin(otherSlot.end);
-
-            // Formule collision : Max(Starts) < Min(Ends)
-            if (Math.max(startMin, otherStart) < Math.min(endMin, otherEnd)) {
-                return otherRoom; // Retourne le nom de la salle où il y a conflit
-            }
+        // Formule collision : Max(Starts) < Min(Ends)
+        if (Math.max(startMin, otherStart) < Math.min(endMin, otherEnd)) {
+            return duty.roomName; // Retourne le nom de la salle où il y a conflit
         }
     }
     return false; // Pas de conflit
@@ -198,60 +183,102 @@ function addMinutesObj(time, mins) {
 
 // --- 5. SURCHARGE : EXPORT CONVOCATIONS PROFS (Mise à jour V4) ---
 
-window.exportConvocationTeachers = function () {
+function getTeacherSurveillanceDuties(teacher) {
+    const fullName = window.getTeacherPlanningName(teacher);
+    const duties = [];
+
+    for (const [key, assignedName] of Object.entries(DB.planning || {})) {
+        if (normalizePlanningTeacherName(assignedName) !== fullName) continue;
+
+        const duty = getPlanningDuty(key);
+        if (!duty) continue;
+
+        duties.push({
+            date: duty.exam.date,
+            start: duty.slot.start,
+            end: duty.slot.end,
+            name: duty.type === 'dict' ? `Dictée - ${duty.exam.name}` : duty.exam.name,
+            room: duty.type === 'dict' ? `${duty.roomName} (renfort)` : duty.roomName,
+            isTT: duty.type === 'tt'
+        });
+    }
+
+    const reserves = ensurePlanningReserve();
+    Object.entries(reserves).forEach(([key, assignedName]) => {
+        if (normalizePlanningTeacherName(assignedName) !== fullName) return;
+
+        const duty = getReserveDuty(key);
+        if (!duty) return;
+
+        duties.push({
+            date: duty.exam.date,
+            start: duty.slot.start,
+            end: duty.slot.end,
+            name: duty.exam.name,
+            room: getReserveDisplayLabel(),
+            isTT: false
+        });
+    });
+
+    return duties.sort((a, b) => {
+        const dateComp = a.date.localeCompare(b.date);
+        if (dateComp !== 0) return dateComp;
+        return a.start.localeCompare(b.start);
+    });
+}
+
+function getTeacherOralDuties(teacher) {
+    if (!DB.stage || !DB.stage.juries || !DB.stage.config) return [];
+
+    return DB.stage.juries
+        .filter(j => j.members && j.members.some(memberId => String(memberId) === String(teacher.id)))
+        .map(jury => {
+            const room = DB.rooms.find(r => String(r.id) === String(jury.room) || r.nom === jury.room);
+            return {
+                date: DB.stage.config.date || '',
+                start: DB.stage.config.start || '',
+                end: DB.stage.config.end || '',
+                room: room ? room.nom : "Salle ?",
+                group: jury.name || "Jury oral"
+            };
+        })
+        .sort((a, b) => (a.date || '').localeCompare(b.date || '') || (a.start || '').localeCompare(b.start || ''));
+}
+
+window.saveTeacherConvocInstructions = function () {
+    const textarea = document.getElementById('txtConvocProfInstructions');
+    if (!textarea) return;
+    if (!DB.config) DB.config = {};
+    DB.config.teacherConvocInstructions = textarea.value;
+    if (typeof autoSave === 'function') autoSave();
+};
+
+function loadTeacherConvocInstructions() {
+    const textarea = document.getElementById('txtConvocProfInstructions');
+    if (!textarea) return;
+    textarea.value = (DB.config && DB.config.teacherConvocInstructions) || '';
+}
+
+window.addEventListener('load', loadTeacherConvocInstructions);
+
+window.exportConvocationTeachers = function (includeOrals = false) {
     DB.config.schoolName = document.getElementById('schoolName').value;
     DB.config.year = document.getElementById('sessionYear').value;
+    const instructionsBox = document.getElementById('txtConvocProfInstructions');
+    if (instructionsBox) DB.config.teacherConvocInstructions = instructionsBox.value;
     if (!DB.config.director) DB.config.director = { civ: "M. le Principal", name: "" };
+    cleanupPlanningAssignments();
 
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('p', 'mm', 'a4');
     let count = 0;
 
     DB.teachers.forEach(teacher => {
-        const fullName = `${teacher.nom} ${teacher.prenom}`;
-        let duties = [];
+        const fullName = window.getTeacherPlanningName(teacher);
+        const duties = getTeacherSurveillanceDuties(teacher);
+        const oralDuties = includeOrals ? getTeacherOralDuties(teacher) : [];
 
-        // Scan du planning (Nouvelle structure par Slot)
-        for (const [key, assignedName] of Object.entries(DB.planning)) {
-            if (assignedName !== fullName) continue;
-
-            const parts = key.split('_');
-            if (parts.length < 5) continue; // Skip vieilles données
-
-            const examIdx = parseInt(parts[0]);
-            const roomName = parts[1];
-            const type = parts[2];
-            const slotIdx = parseInt(parts[3]);
-
-            const exam = DB.exams[examIdx];
-            // Récupération horaire précis du slot
-            let slot = { start: "??", end: "??" };
-            if (exam.slots && exam.slots[type] && exam.slots[type][slotIdx]) {
-                slot = exam.slots[type][slotIdx];
-            } else {
-                // Fallback : Calcul basé sur l'horaire global de l'épreuve
-                const startTime = (type === 'tt') ? (exam.timeTT || exam.time) : exam.time;
-                const duration = (type === 'tt') ? exam.durTT : exam.durStd;
-
-                if (startTime && duration) {
-                    slot = {
-                        start: startTime,
-                        end: addMinutes(startTime, duration)
-                    };
-                }
-            }
-
-            duties.push({
-                date: exam.date,
-                start: slot.start,
-                end: slot.end,
-                name: exam.name,
-                room: roomName,
-                isTT: (type === 'tt')
-            });
-        }
-
-        if (duties.length === 0) return;
+        if (duties.length === 0 && oralDuties.length === 0) return;
 
         if (count > 0) doc.addPage();
         count++;
@@ -259,14 +286,14 @@ window.exportConvocationTeachers = function () {
         // --- MÊME HEADER QUE PRECEDEMMENT ---
         addSmartLogo(doc, 15, 10, 45);
         doc.setFontSize(10); doc.setTextColor(100);
-        doc.text("DNB BLANC", 195, 12, { align: 'right' });
+        doc.text("DNB", 195, 12, { align: 'right' });
         doc.text(`Session ${DB.config.year}`, 195, 17, { align: 'right' });
 
         doc.setFontSize(14); doc.setTextColor(44, 62, 80); doc.setFont("helvetica", "bold");
         doc.text(DB.config.schoolName || "Collège", 105, 18, { align: 'center' });
 
         doc.setFontSize(18); doc.setTextColor(0);
-        doc.text("CONVOCATION SURVEILLANCE", 105, 40, { align: 'center' });
+        doc.text(includeOrals ? "CONVOCATION PROFESSEUR" : "CONVOCATION SURVEILLANCE", 105, 40, { align: 'center' });
 
         // Info Prof
         doc.setFillColor(248, 249, 250); doc.setDrawColor(44, 62, 80);
@@ -275,74 +302,81 @@ window.exportConvocationTeachers = function () {
         doc.text(`${teacher.civ || ""} ${fullName}`, 20, 62);
 
         doc.setFontSize(11); doc.setFont("helvetica", "normal");
-        doc.text("Planning de vos créneaux de surveillance :", 15, 85);
+        let currentY = 85;
 
-        // Tri chronologique : Date puis Heure Début
-        duties.sort((a, b) => {
-            const dateComp = a.date.localeCompare(b.date);
-            if (dateComp !== 0) return dateComp;
-            return a.start.localeCompare(b.start);
-        });
+        if (duties.length > 0) {
+            doc.text("Planning de vos créneaux de surveillance :", 15, currentY);
 
-        let body = duties.map(d => {
-            const dateObj = new Date(d.date);
-            const dateStr = dateObj.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
-            return [
-                dateStr,
-                `${d.start} - ${d.end}`,
-                d.name + (d.isTT ? " (TT)" : ""),
-                d.room
-            ];
-        });
+            const body = duties.map(d => {
+                const dateObj = new Date(d.date);
+                const dateStr = dateObj.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
+                return [
+                    dateStr,
+                    `${d.start} - ${d.end}`,
+                    d.name + (d.isTT ? " (TT)" : ""),
+                    d.room
+                ];
+            });
 
-        doc.autoTable({
-            head: [['Date', 'Créneau', 'Épreuve', 'Salle']],
-            body: body,
-            startY: 90,
-            theme: 'grid',
-            headStyles: { fillColor: [44, 62, 80] },
-            styles: { cellPadding: 3, valign: 'middle', fontSize: 10 },
-            columnStyles: {
-                0: { cellWidth: 35 },
-                1: { cellWidth: 35, fontStyle: 'bold' },
-                3: { cellWidth: 25, halign: 'center' }
-            }
-        });
+            doc.autoTable({
+                head: [['Date', 'Créneau', 'Épreuve', 'Salle / mission']],
+                body: body,
+                startY: currentY + 5,
+                theme: 'grid',
+                headStyles: { fillColor: [44, 62, 80] },
+                styles: { cellPadding: 3, valign: 'middle', fontSize: 10 },
+                columnStyles: {
+                    0: { cellWidth: 35 },
+                    1: { cellWidth: 35, fontStyle: 'bold' },
+                    3: { cellWidth: 35, halign: 'center' }
+                }
+            });
+            currentY = doc.lastAutoTable.finalY + 10;
+        }
 
-        // --- SECTION ORAUX ---
-        let currentY = doc.lastAutoTable.finalY + 10;
+        if (includeOrals && oralDuties.length > 0) {
+            oralDuties.forEach(oral => {
+                if (currentY + 30 > 270) { doc.addPage(); currentY = 20; }
 
-        if (DB.stage && DB.stage.juries) {
-            // Filter juries where teacher is participating
-            let myJuries = DB.stage.juries.filter(j => j.members && j.members.includes(teacher.id));
+                doc.setFillColor(142, 68, 173);
+                doc.rect(15, currentY, 180, 24, 'F');
 
-            if (myJuries.length > 0) {
-                myJuries.forEach(jury => {
-                    // Page Break Check
-                    if (currentY + 30 > 270) { doc.addPage(); currentY = 20; }
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(11);
+                doc.setFont("helvetica", "bold");
+                doc.text("JURY ORAL", 20, currentY + 7);
 
-                    // Violet Box
-                    doc.setFillColor(142, 68, 173); // Wisteria Violet
-                    doc.rect(15, currentY, 180, 22, 'F');
+                doc.setFontSize(10);
+                doc.setFont("helvetica", "normal");
+                doc.text(`Date : ${oral.date}`, 20, currentY + 15);
+                doc.text(`Heure : ${oral.start} - ${oral.end}`, 80, currentY + 15);
+                doc.text(`Salle : ${oral.room}`, 140, currentY + 15);
+                doc.text(`Groupe : ${oral.group}`, 20, currentY + 21);
 
-                    doc.setTextColor(255, 255, 255); // White
-                    doc.setFontSize(11);
-                    doc.setFont("helvetica", "bold");
-                    doc.text(`🎯 JURY ORAL`, 20, currentY + 7);
+                currentY += 30;
+            });
+        }
 
-                    doc.setFontSize(10);
-                    doc.setFont("helvetica", "normal");
-                    doc.text(`Date : ${DB.stage.config.date}`, 20, currentY + 15);
-                    doc.text(`Heure : ${DB.stage.config.start} - ${DB.stage.config.end}`, 80, currentY + 15);
+        const instructions = (DB.config.teacherConvocInstructions || '').trim();
+        if (instructions) {
+            if (currentY + 35 > 270) { doc.addPage(); currentY = 20; }
+            doc.setFillColor(248, 249, 250);
+            doc.setDrawColor(180, 180, 180);
+            doc.rect(15, currentY, 180, 12, 'FD');
+            doc.setTextColor(44, 62, 80);
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "bold");
+            doc.text("Consignes", 20, currentY + 8);
+            currentY += 17;
 
-                    let rObj = DB.rooms.find(r => r.id === jury.room);
-                    let rName = rObj ? rObj.nom : "Salle ?";
-                    doc.text(`Salle : ${rName}`, 140, currentY + 15);
-                    doc.text(`Groupe : ${jury.name}`, 20, currentY + 20);
-
-                    currentY += 28; // Space for next element
-                });
-            }
+            doc.setTextColor(0);
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            const lines = doc.splitTextToSize(instructions, 175);
+            const textHeight = lines.length * 5;
+            if (currentY + textHeight > 270) { doc.addPage(); currentY = 20; }
+            doc.text(lines, 15, currentY);
+            currentY += textHeight + 8;
         }
 
         // Signature
@@ -364,7 +398,20 @@ window.exportConvocationTeachers = function () {
         }
     });
 
-    doc.save("Convocations_Profs_Details.pdf");
+    if (count === 0) {
+        showToast("Aucune convocation professeur à générer.", 'warning');
+        return;
+    }
+
+    doc.save(includeOrals ? "Convocations_Profs_Oral_Et_Surveillances.pdf" : "Convocations_Profs_Surveillances.pdf");
+};
+
+window.exportConvocationTeachersSurveillanceOnly = function () {
+    exportConvocationTeachers(false);
+};
+
+window.exportConvocationTeachersWithOrals = function () {
+    exportConvocationTeachers(true);
 };
 
 
@@ -610,11 +657,185 @@ window.getComputedSlots = function (exam, type) {
     return [{ start: startTime, end: endTime, originalIdx: 0 }];
 };
 
+function isFrenchGrammarExam(exam) {
+    const name = (exam && exam.name ? exam.name : '').toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    return name.includes('FRANCAIS') && name.includes('GRAMMAIRE');
+}
+
+function getDictationSlot(exam, roomOrType) {
+    if (!isFrenchGrammarExam(exam)) return null;
+    let type = null;
+    if (typeof roomOrType === 'string') type = roomOrType;
+    else if (roomOrType) type = (roomOrType.isTT === true || roomOrType.isTT === 'true') ? 'tt' : 'std';
+
+    const allSlots = type
+        ? window.getComputedSlots(exam, type).filter(s => s && s.start && s.end)
+        : [...window.getComputedSlots(exam, 'std'), ...window.getComputedSlots(exam, 'tt')].filter(s => s && s.start && s.end);
+    if (allSlots.length === 0) return null;
+    const latestEnd = allSlots.reduce((max, slot) => Math.max(max, window.toMin(slot.end)), 0);
+    if (!latestEnd) return null;
+    const startMin = Math.max(0, latestEnd - 20);
+    const toTime = (minutes) => {
+        const h = Math.floor(minutes / 60) % 24;
+        const m = minutes % 60;
+        return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+    };
+    return { start: toTime(startMin), end: toTime(latestEnd), originalIdx: 0, isDictation: true };
+}
+
+function isFrenchTeacher(teacher) {
+    const subject = `${teacher && teacher.matiere ? teacher.matiere : ''} ${teacher && teacher.nom ? teacher.nom : ''}`.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    return subject.includes('FRANCAIS') || subject.includes('LETTRES');
+}
+
+function getDictationKey(examIdx, roomName) {
+    return `${examIdx}_${roomName}_dict_0_0`;
+}
+
 window.getFullDate = function (dateStr, timeStr) {
     const [y, m, d] = dateStr.split('-');
     const [hh, mm] = timeStr.split(':');
     return new Date(y, m - 1, d, hh, mm);
 };
+
+window.getTeacherPlanningName = function (teacher) {
+    if (!teacher) return "";
+    return normalizePlanningTeacherName(`${teacher.nom || ""} ${teacher.prenom || ""}`);
+};
+
+function normalizePlanningTeacherName(name) {
+    return (name || "").replace(/\s+/g, " ").trim();
+}
+
+function getTeacherNameSet() {
+    return new Set((DB.teachers || []).map(t => window.getTeacherPlanningName(t)).filter(Boolean));
+}
+
+function ensurePlanningReserve() {
+    if (!DB.planningReserve) DB.planningReserve = {};
+    return DB.planningReserve;
+}
+
+function getExamReserveSlot(exam) {
+    const slotsStd = window.getComputedSlots(exam, 'std');
+    const slotsTT = window.getComputedSlots(exam, 'tt');
+    const allSlots = [...slotsStd, ...slotsTT].filter(s => s && s.start && s.end);
+    allSlots.sort((a, b) => window.toMin(a.start) - window.toMin(b.start));
+    return allSlots[0] || { start: exam.time || '08:00', end: exam.time || '08:00', originalIdx: 0 };
+}
+
+function getReserveKey(examIdx, reserveIdx) {
+    return `${examIdx}_reserve_${reserveIdx}`;
+}
+
+function getReserveDisplayLabel() {
+    return "Secrétariat d'examen / réserve";
+}
+
+function getReserveShortLabel() {
+    return "Secrétariat / réserve";
+}
+
+function getPlanningSlotForKey(parts) {
+    const examIdx = parseInt(parts[0], 10);
+    const type = parts[2];
+    const slotIdx = parseInt(parts[3], 10);
+    const exam = DB.exams && DB.exams[examIdx];
+    if (!exam || !type || Number.isNaN(slotIdx)) return null;
+
+    if (type === 'dict') {
+        const room = DB.rooms && DB.rooms.find(r => r.nom === parts[1]);
+        return getDictationSlot(exam, room || 'std');
+    }
+
+    const slots = window.getComputedSlots(exam, type);
+    return slots.find(s => (s.originalIdx !== undefined ? s.originalIdx : 0) === slotIdx) || slots[slotIdx] || null;
+}
+
+function parsePlanningKey(key) {
+    const parts = String(key || "").split('_');
+    if (parts.length < 5) return null;
+
+    const examIdx = parseInt(parts[0], 10);
+    const survIdx = parseInt(parts[parts.length - 1], 10);
+    const slotIdx = parseInt(parts[parts.length - 2], 10);
+    const type = parts[parts.length - 3];
+    const roomName = parts.slice(1, -3).join('_');
+
+    if (Number.isNaN(examIdx) || Number.isNaN(slotIdx) || Number.isNaN(survIdx) || !roomName || !type) return null;
+    return { examIdx, roomName, type, slotIdx, survIdx };
+}
+
+function getPlanningDuty(key) {
+    const parsed = parsePlanningKey(key);
+    if (!parsed) return null;
+
+    const exam = DB.exams && DB.exams[parsed.examIdx];
+    const room = DB.rooms && DB.rooms.find(r => r.nom === parsed.roomName);
+    if (!exam || !room) return null;
+
+    const activeRoom = ((DB.distribution && DB.distribution[room.nom]) || []).length > 0;
+    if (!activeRoom) return null;
+
+    const expectedType = (room.isTT === true || room.isTT === 'true') ? 'tt' : 'std';
+    if (parsed.type !== expectedType && parsed.type !== 'dict') return null;
+
+    const limit = parsed.type === 'dict' ? 1 : (room.nbSurv || DB.config.nbSurv || 1);
+    if (parsed.survIdx < 0 || parsed.survIdx >= limit) return null;
+
+    const slot = parsed.type === 'dict'
+        ? getDictationSlot(exam, room)
+        : getPlanningSlotForKey([parsed.examIdx, parsed.roomName, parsed.type, parsed.slotIdx]);
+    if (!slot || !slot.start || !slot.end) return null;
+
+    return { ...parsed, exam, room, slot, minutes: window.toMin(slot.end) - window.toMin(slot.start) };
+}
+
+function getReserveDuty(key) {
+    const parts = String(key || "").split('_');
+    if (parts.length !== 3 || parts[1] !== 'reserve') return null;
+    const examIdx = parseInt(parts[0], 10);
+    const reserveIdx = parseInt(parts[2], 10);
+    const exam = DB.exams && DB.exams[examIdx];
+    if (!exam || Number.isNaN(reserveIdx) || reserveIdx < 0 || reserveIdx > 1) return null;
+    const slot = getExamReserveSlot(exam);
+    return { examIdx, reserveIdx, exam, slot, minutes: window.toMin(slot.end) - window.toMin(slot.start) };
+}
+
+function cleanupPlanningAssignments() {
+    if (!DB.planning) DB.planning = {};
+    const knownTeachers = getTeacherNameSet();
+    let changed = false;
+
+    Object.keys(DB.planning).forEach(key => {
+        const cleanName = normalizePlanningTeacherName(DB.planning[key]);
+        if (!cleanName || !knownTeachers.has(cleanName) || !getPlanningDuty(key)) {
+            delete DB.planning[key];
+            changed = true;
+            return;
+        }
+        if (DB.planning[key] !== cleanName) {
+            DB.planning[key] = cleanName;
+            changed = true;
+        }
+    });
+
+    const reserves = ensurePlanningReserve();
+    Object.keys(reserves).forEach(key => {
+        const cleanName = normalizePlanningTeacherName(reserves[key]);
+        if (!cleanName || !knownTeachers.has(cleanName) || !getReserveDuty(key)) {
+            delete reserves[key];
+            changed = true;
+            return;
+        }
+        if (reserves[key] !== cleanName) {
+            reserves[key] = cleanName;
+            changed = true;
+        }
+    });
+
+    return changed;
+}
 
 // --- NOUVELLE FONCTION : Gestion flexible du nombre de surveillants ---
 window.changeRoomSurvCount = function (roomName, delta) {
@@ -673,6 +894,8 @@ window.renderPlanning = function () {
         return;
     }
 
+    if (cleanupPlanningAssignments() && typeof autoSave === 'function') autoSave();
+
     DB.exams.forEach((exam, examIdx) => {
         const wrapper = document.createElement('div');
         wrapper.style.marginBottom = "30px";
@@ -687,6 +910,14 @@ window.renderPlanning = function () {
         const gridCols = [];
         for (let i = 0; i < sortedPoints.length - 1; i++) {
             gridCols.push({ start: sortedPoints[i], end: sortedPoints[i + 1] });
+        }
+
+        const dictationSlot = getDictationSlot(exam);
+        if (dictationSlot) {
+            const note = document.createElement('div');
+            note.style.cssText = 'margin:0 0 10px 0; padding:8px 12px; border-left:5px solid #8e44ad; background:#f5eef8; color:#4a235a; border-radius:4px; font-weight:bold;';
+            note.innerHTML = `<i class="fas fa-pen-nib"></i> Dictée : les 20 dernières minutes de cette épreuve nécessitent un renfort par salle, avec priorité aux enseignants de français.`;
+            wrapper.appendChild(note);
         }
 
         const table = document.createElement('table');
@@ -772,7 +1003,8 @@ window.renderPlanning = function () {
 
                     for (let i = 0; i < limit; i++) {
                         const planKey = `${examIdx}_${room.nom}_${roomType}_${slotIdx}_${i}`;
-                        const currentVal = DB.planning[planKey] || "";
+                        const currentVal = (DB.planning[planKey] || "").replace(/\s+/g, " ").trim();
+                        if (DB.planning[planKey] && DB.planning[planKey] !== currentVal) DB.planning[planKey] = currentVal;
 
                         const select = document.createElement('select');
                         select.className = 'surv-select';
@@ -789,7 +1021,7 @@ window.renderPlanning = function () {
                         const slotEndObj = window.getFullDate(exam.date, activeSlot.end);
 
                         DB.teachers.forEach(t => {
-                            const fullName = `${t.nom} ${t.prenom}`;
+                            const fullName = window.getTeacherPlanningName(t);
                             // Vérification collision
                             let conflictRoom = (typeof checkTeacherCollision === 'function') ? checkTeacherCollision(fullName, exam.date, activeSlot.start, activeSlot.end, planKey) : false;
                             // Vérification EDT
@@ -828,17 +1060,127 @@ window.renderPlanning = function () {
             });
             tbody.appendChild(tr);
         });
+        const reserveBox = renderReserveSelectorsForExam(exam, examIdx);
         table.appendChild(tbody);
         wrapper.appendChild(table);
+        if (dictationSlot) wrapper.appendChild(renderDictationSelectorsForExam(exam, examIdx, activeRooms));
+        if (reserveBox) wrapper.appendChild(reserveBox);
         container.appendChild(wrapper);
     });
 };
+
+function renderDictationSelectorsForExam(exam, examIdx, activeRooms) {
+    const box = document.createElement('div');
+    box.style.cssText = 'margin:8px 0 0 0; padding:10px 12px; background:#fbf7ff; border:1px solid #d7bde2; border-left:5px solid #8e44ad; border-radius:6px;';
+    box.innerHTML = `<div style="font-weight:bold; color:#4a235a; margin-bottom:8px;"><i class="fas fa-pen-nib"></i> Renfort Dictée - priorité Français</div>`;
+
+    const grid = document.createElement('div');
+    grid.style.cssText = 'display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:8px;';
+
+    activeRooms.forEach(room => {
+        const slot = getDictationSlot(exam, room);
+        if (!slot) return;
+        const key = getDictationKey(examIdx, room.nom);
+        const currentVal = (DB.planning[key] || "").replace(/\s+/g, " ").trim();
+        if (DB.planning[key] && DB.planning[key] !== currentVal) DB.planning[key] = currentVal;
+
+        const item = document.createElement('label');
+        item.style.cssText = 'display:grid; grid-template-columns:90px 1fr; align-items:center; gap:8px; font-weight:bold; color:#2c3e50;';
+        item.appendChild(document.createTextNode(`${room.nom} (${slot.start}-${slot.end})`));
+
+        const select = document.createElement('select');
+        select.className = 'surv-select';
+        select.appendChild(new Option('-- Dictée --', ''));
+
+        const addOptions = (teachers, label) => {
+            if (teachers.length === 0) return;
+            const sep = new Option(label, '');
+            sep.disabled = true;
+            select.appendChild(sep);
+            teachers.forEach(t => {
+                const fullName = window.getTeacherPlanningName(t);
+                const opt = new Option(fullName, fullName);
+                const conflict = checkTeacherCollision(fullName, exam.date, slot.start, slot.end, key);
+                const busy = isTeacherBusyInMaintainedEdt(t, exam, slot);
+                if ((conflict || busy) && fullName !== currentVal) {
+                    opt.disabled = true;
+                    opt.text = conflict ? `${fullName} (occupé)` : `${fullName} (indisponible)`;
+                }
+                if (fullName === currentVal) opt.selected = true;
+                select.appendChild(opt);
+            });
+        };
+
+        const teachers = [...DB.teachers].sort((a, b) => window.getTeacherPlanningName(a).localeCompare(window.getTeacherPlanningName(b)));
+        addOptions(teachers.filter(isFrenchTeacher), '--- Français ---');
+        addOptions(teachers.filter(t => !isFrenchTeacher(t)), '--- Autres ---');
+
+        select.onchange = (e) => {
+            if (e.target.value) DB.planning[key] = e.target.value;
+            else delete DB.planning[key];
+            renderPlanning();
+            if (typeof autoSave === 'function') autoSave();
+        };
+
+        item.appendChild(select);
+        grid.appendChild(item);
+    });
+
+    box.appendChild(grid);
+    return box;
+}
+
+function renderReserveSelectorsForExam(exam, examIdx) {
+    const reserves = ensurePlanningReserve();
+    const slot = getExamReserveSlot(exam);
+    const box = document.createElement('div');
+    box.style.cssText = 'margin:8px 0 0 0; padding:10px 12px; background:#f4f6f7; border:1px solid #dfe6e9; border-left:5px solid #8e44ad; border-radius:6px; display:grid; grid-template-columns:180px 1fr 1fr; gap:10px; align-items:center;';
+    box.innerHTML = `<div style="font-weight:bold; color:#2c3e50;"><i class="fas fa-user-shield"></i> ${getReserveDisplayLabel()}<br><small style="font-weight:normal; color:#7f8c8d;">${slot.start} - ${slot.end}</small></div>`;
+
+    for (let i = 0; i < 2; i++) {
+        const key = getReserveKey(examIdx, i);
+        const currentVal = (reserves[key] || "").replace(/\s+/g, " ").trim();
+        if (reserves[key] && reserves[key] !== currentVal) reserves[key] = currentVal;
+
+        const select = document.createElement('select');
+        select.className = 'surv-select';
+        select.style.width = '100%';
+        select.appendChild(new Option(`-- ${getReserveShortLabel()} ${i + 1} --`, ""));
+
+        DB.teachers.forEach(t => {
+            const fullName = window.getTeacherPlanningName(t);
+            const opt = new Option(fullName, fullName);
+            const conflict = checkTeacherCollision(fullName, exam.date, slot.start, slot.end, key);
+            const busy = isTeacherBusyInMaintainedEdt(t, exam, slot);
+            const usedOtherReserve = Object.entries(reserves).some(([reserveKey, name]) => reserveKey !== key && reserveKey.startsWith(`${examIdx}_reserve_`) && name === fullName);
+
+            if ((conflict || busy || usedOtherReserve) && fullName !== currentVal) {
+                opt.disabled = true;
+                opt.text = conflict ? `${fullName} (déjà en salle)` : `${fullName} (indisponible)`;
+            }
+            if (fullName === currentVal) opt.selected = true;
+            select.appendChild(opt);
+        });
+
+        select.onchange = (e) => {
+            const value = e.target.value;
+            if (value) reserves[key] = value;
+            else delete reserves[key];
+            renderPlanning();
+            if (typeof autoSave === 'function') autoSave();
+        };
+        box.appendChild(select);
+    }
+
+    return box;
+}
 
 // =========================================================
 // --- VUE GLOBALE PROFESSEURS ---
 function renderPlanningProfs() {
     const container = document.getElementById('profViewContainer');
     if (!container) return;
+    if (cleanupPlanningAssignments() && typeof autoSave === 'function') autoSave();
 
     // 1. Récupérer l'état du Switch
     const isVisualMode = document.getElementById('toggleProfView').checked;
@@ -902,51 +1244,33 @@ function getTeacherHoursData(cleanFn) {
 
         // Calcul Heures Faites (Source : Planning actuel)
         let minutesDone = 0;
-        const fullName = `${t.nom} ${t.prenom}`;
+        const fullName = window.getTeacherPlanningName(t);
+        const dutyDetails = [];
 
         Object.keys(DB.planning).forEach(key => {
-            if (DB.planning[key] === fullName) {
-                const parts = key.split('_');
-                const examIdx = parseInt(parts[0]);
-                const type = parts[2];
-                const slotIdx = parseInt(parts[3]);
-
-                const exam = DB.exams[examIdx];
-                let slotDur = 0;
-
-                if (exam.slots && exam.slots[type] && exam.slots[type][slotIdx]) {
-                    const s = exam.slots[type][slotIdx];
-                    slotDur = window.toMin(s.end) - window.toMin(s.start);
-                } else {
-                    slotDur = type === 'tt' ? exam.durTT : exam.durStd;
-                }
-                minutesDone += slotDur;
-            }
+            if (normalizePlanningTeacherName(DB.planning[key]) !== fullName) return;
+            const duty = getPlanningDuty(key);
+            if (!duty) return;
+            minutesDone += duty.minutes;
+            dutyDetails.push(`${duty.exam.date} ${duty.exam.name} - ${duty.roomName} (${duty.slot.start}-${duty.slot.end})`);
         });
 
-        // --- AJOUT : Heures des Oraux ---
-        if (DB.stage && DB.stage.juries && DB.stage.config && DB.stage.config.start && DB.stage.config.end) {
-            let myJuries = DB.stage.juries.filter(j => j.members && j.members.includes(t.id));
-            if (myJuries.length > 0) {
-                let oralDur = window.toMin(DB.stage.config.end) - window.toMin(DB.stage.config.start);
-                // Soustraire la pause repas si configurée et valide
-                if (DB.stage.config.lunchStart && DB.stage.config.lunchEnd) {
-                    let lunchDur = window.toMin(DB.stage.config.lunchEnd) - window.toMin(DB.stage.config.lunchStart);
-                    if (lunchDur > 0) oralDur -= lunchDur;
-                }
-                if (oralDur > 0) {
-                    // Si le prof est dans plusieurs jurys (anormal mais possible), on boucle
-                    minutesDone += (oralDur * myJuries.length);
-                }
-            }
-        }
+        const reserves = ensurePlanningReserve();
+        Object.entries(reserves).forEach(([key, name]) => {
+            if (normalizePlanningTeacherName(name) !== fullName) return;
+            const duty = getReserveDuty(key);
+            if (!duty) return;
+            minutesDone += duty.minutes;
+            dutyDetails.push(`${duty.exam.date} ${duty.exam.name} - ${getReserveDisplayLabel()} (${duty.slot.start}-${duty.slot.end})`);
+        });
 
         const balance = minutesDone - minutesDue;
         rawData.push({
             name: fullName,
             minutesDue,
             minutesDone,
-            balance
+            balance,
+            dutyDetails
         });
     });
 
@@ -969,11 +1293,11 @@ window.exportTeacherHoursPDF = function () {
         let balStr = "Eq";
         if (r.balance > 0) balStr = `+${formatTime(r.balance)}`;
         else if (r.balance < 0) balStr = formatTime(Math.abs(r.balance));
-        return [r.name, formatTime(r.minutesDue), formatTime(r.minutesDone), balStr];
+        return [r.name, formatTime(r.minutesDue), formatTime(r.minutesDone), balStr, (r.dutyDetails || []).join('\n')];
     });
 
     doc.autoTable({
-        head: [['Professeur', 'Heures Libérées', 'Heures Surv.', 'Balance']],
+        head: [['Professeur', 'Heures Libérées', 'Heures Surv.', 'Balance', 'Détail']],
         body: body,
         startY: 25,
         theme: 'grid',
@@ -997,12 +1321,12 @@ window.exportTeacherHoursXLSX = function () {
 
     const formatTime = (m) => m <= 0 ? "-" : `${Math.floor(m / 60)}h${Math.round(m % 60).toString().padStart(2, '0')}`;
 
-    let data = [["Professeur", "Heures Libérées", "Heures Surv.", "Balance"]];
+    let data = [["Professeur", "Heures Libérées", "Heures Surv.", "Balance", "Détail"]];
     rawData.forEach(r => {
         let balStr = "Eq";
         if (r.balance > 0) balStr = `+${formatTime(r.balance)}`;
         else if (r.balance < 0) balStr = formatTime(Math.abs(r.balance));
-        data.push([r.name, formatTime(r.minutesDue), formatTime(r.minutesDone), balStr]);
+        data.push([r.name, formatTime(r.minutesDue), formatTime(r.minutesDone), balStr, (r.dutyDetails || []).join('\n')]);
     });
 
     const ws = XLSX.utils.aoa_to_sheet(data);
@@ -1021,14 +1345,15 @@ function renderProfSynthesis(container, cleanFn) {
     <div style="overflow-x:auto;">
         <table class="table table-bordered table-striped table-hover text-center align-middle" 
                style="width: auto !important; table-layout: auto !important; min-width: 600px;">
-            <thead class="table-dark sticky-top">
-                <tr>
-                    <th style="text-align:left; width: 350px;">Professeur</th>
-                    <th style="width:150px;">Heures Libérées<br><small>(Cours annulés)</small></th>
-                    <th style="width:150px;">Heures Surv.<br><small>(Affectées)</small></th>
-                    <th style="width:150px;">Balance</th>
-                </tr>
-            </thead>
+	            <thead class="table-dark sticky-top">
+	                <tr>
+	                    <th style="text-align:left; width: 350px;">Professeur</th>
+	                    <th style="width:150px;">Heures Libérées<br><small>(Cours annulés)</small></th>
+	                    <th style="width:150px;">Heures Surv.<br><small>(Affectées)</small></th>
+	                    <th style="width:150px;">Balance</th>
+	                    <th style="min-width:260px;">Détail compté</th>
+	                </tr>
+	            </thead>
             <tbody>`;
 
     let rows = [];
@@ -1042,12 +1367,15 @@ function renderProfSynthesis(container, cleanFn) {
         if (r.balance > 0) { balanceColor = "text-danger fw-bold"; balanceText = `+${formatTime(r.balance)}`; }
         else if (r.balance < 0) { balanceColor = "text-success fw-bold"; balanceText = formatTime(Math.abs(r.balance)); }
 
-        rows.push({
-            name: r.name,
-            dueStr: formatTime(r.minutesDue),
-            doneStr: formatTime(r.minutesDone),
-            balHtml: `<span class="${balanceColor}">${balanceText}</span>`
-        });
+	        rows.push({
+	            name: r.name,
+	            dueStr: formatTime(r.minutesDue),
+	            doneStr: formatTime(r.minutesDone),
+	            balHtml: `<span class="${balanceColor}">${balanceText}</span>`,
+	            detailHtml: (r.dutyDetails && r.dutyDetails.length > 0)
+	                ? r.dutyDetails.map(d => `<div>${escapeHTML(d)}</div>`).join('')
+	                : '<span class="text-muted">-</span>'
+	        });
     });
 
     rows.forEach(r => {
@@ -1055,7 +1383,8 @@ function renderProfSynthesis(container, cleanFn) {
             <td style="text-align:left; font-weight:bold;">${r.name}</td>
             <td style="background:#ebf5fb;">${r.dueStr}</td>
             <td style="background:#eafaf1;">${r.doneStr}</td>
-            <td>${r.balHtml}</td>
+	            <td>${r.balHtml}</td>
+	            <td style="text-align:left; font-size:0.8rem;">${r.detailHtml}</td>
         </tr>`;
     });
 
@@ -1090,10 +1419,9 @@ function renderProfPlanningMatrix(container) {
     DB.exams.forEach((ex, exIdx) => {
         // Parsing de la date (Format YYYY-MM-DD)
         const parts = ex.date.split('-');
-        // IMPORTANT : On garde les entiers tels quels pour matcher l'import (Ex: Mars = 3)
         const d = parseInt(parts[2]);
         const m = parseInt(parts[1]);
-        const dayKey = `${d}-${m}`; // Ex: "16-3"
+        const dayKey = `${d}/${m - 1}`;
 
         // Récupération des slots STD et TT
         const sStd = (ex.slots && ex.slots.std.length > 0) ? ex.slots.std : [{ start: ex.time, end: addMinutesObj(ex.time, ex.durStd) }];
@@ -1115,9 +1443,12 @@ function renderProfPlanningMatrix(container) {
                 columns.push({
                     label: `${ex.name}<br><small>${s.start}-${s.end}</small>`,
                     examIdx: exIdx,
-                    dayKey: dayKey,    // "16-3"
-                    minStart: minStart,// ex: 510
-                    minEnd: minEnd     // ex: 600
+                    date: ex.date,
+                    start: s.start,
+                    end: s.end,
+                    dayKey: dayKey,
+                    minStart: minStart,
+                    minEnd: minEnd
                 });
             }
         });
@@ -1127,8 +1458,9 @@ function renderProfPlanningMatrix(container) {
     columns.sort((a, b) => {
         // Astuce : On trie grossièrement sur la chaîne jour (approximatif mais suffisant pour une session)
         // ou mieux : on suppose que les exams sont déjà dans l'ordre dans DB.exams
-        if (a.examIdx !== b.examIdx) return a.examIdx - b.examIdx;
-        return a.minStart - b.minStart;
+        const dateCmp = (a.date || '').localeCompare(b.date || '');
+        if (dateCmp !== 0) return dateCmp;
+        return a.minStart - b.minStart || a.examIdx - b.examIdx;
     });
 
     // 3. Construction HTML
@@ -1146,32 +1478,38 @@ function renderProfPlanningMatrix(container) {
 
     // Boucle sur les Profs
     DB.teachers.sort((a, b) => a.nom.localeCompare(b.nom)).forEach(t => {
-        const tName = `${t.nom} ${t.prenom}`;
+        const tName = window.getTeacherPlanningName(t);
 
         html += `<tr><td style="text-align:left; font-weight:bold; position:sticky; left:0; background:white; z-index:5; border-right:2px solid #ddd;">${tName}</td>`;
 
         columns.forEach(col => {
             // A. SURVEILLANCE (Priorité 1 : Bleu)
-            let isSurv = false;
-            // On cherche dans le planning
+            let surveillanceLabel = "";
             for (const key in DB.planning) {
-                if (DB.planning[key] === tName) {
-                    // key format: examIdx_Room_Type_SlotIdx_SurvIdx
-                    const parts = key.split('_');
-                    if (parseInt(parts[0]) === col.examIdx) {
-                        // C'est le bon examen, est-ce le bon créneau horaire ?
-                        // Simplification : Si le prof surveille cet exam, on colore la case
-                        // (Pour être au pixel près, il faudrait parser les slots du planning, mais c'est souvent suffisant)
-                        isSurv = true;
-                        break;
-                    }
-                }
+                if (normalizePlanningTeacherName(DB.planning[key]) !== tName) continue;
+                const duty = getPlanningDuty(key);
+                if (!duty || duty.examIdx !== col.examIdx) continue;
+                const overlaps = window.toMin(duty.slot.start) < col.minEnd && window.toMin(duty.slot.end) > col.minStart;
+                if (!overlaps) continue;
+                surveillanceLabel = `${duty.roomName}<br><small>${duty.slot.start}-${duty.slot.end}</small>`;
+                break;
             }
 
-            if (isSurv) {
-                html += `<td style="background-color:#3498db; color:white; border:1px solid white;">Surv.</td>`;
-            }
-            else {
+            const reserves = ensurePlanningReserve();
+            let reserveLabel = "";
+            Object.entries(reserves).forEach(([reserveKey, name]) => {
+                if (reserveLabel || normalizePlanningTeacherName(name) !== tName) return;
+                const duty = getReserveDuty(reserveKey);
+                if (!duty || duty.examIdx !== col.examIdx) return;
+                const overlaps = window.toMin(duty.slot.start) < col.minEnd && window.toMin(duty.slot.end) > col.minStart;
+                if (overlaps) reserveLabel = `${getReserveShortLabel()}<br><small>${duty.slot.start}-${duty.slot.end}</small>`;
+            });
+
+            if (surveillanceLabel) {
+                html += `<td style="background-color:#3498db; color:white; border:1px solid white;">${surveillanceLabel}</td>`;
+            } else if (reserveLabel) {
+                html += `<td style="background-color:#8e44ad; color:white; border:1px solid white;">${reserveLabel}</td>`;
+            } else {
                 // B. COURS MAINTENU (Priorité 2 : Gris Foncé)
                 // On vérifie dans la liste ROUGE importée
                 let isBusy = false;
@@ -1180,7 +1518,7 @@ function renderProfPlanningMatrix(container) {
                 isBusy = listMaintained.some(c => {
                     // 1. Vérif Nom
                     if (!namesMatch(c.profName, t.nom)) return false;
-                    // 2. Vérif Jour (16-3 === 16-3 ?)
+                    // 2. Vérif Jour
                     if (c.dayKey !== col.dayKey) return false;
                     // 3. Vérif Chevauchement (Minutes)
                     // (StartA < EndB) ET (EndA > StartB)
@@ -1257,6 +1595,20 @@ window.exportPlanningXLSX = function () {
                     survs.join(', ')
                 ]);
             });
+
+            const dictSlot = getDictationSlot(exam, room);
+            if (dictSlot) {
+                const dictTeacher = DB.planning[getDictationKey(examIdx, room.nom)] || '';
+                data.push([
+                    exam.date,
+                    `${exam.name} - Dictée`,
+                    room.nom,
+                    "Renfort Dictée",
+                    dictSlot.start,
+                    dictSlot.end,
+                    dictTeacher
+                ]);
+            }
         });
     });
 
@@ -1264,6 +1616,193 @@ window.exportPlanningXLSX = function () {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Vues_Surveillances");
     XLSX.writeFile(wb, "Planning_Surveillances.xlsx");
+};
+
+function formatDateLongFR(dateStr) {
+    const date = new Date(dateStr + 'T12:00:00');
+    return date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function getExamMainSlot(exam, room) {
+    const isRTt = room && (room.isTT === true || room.isTT === 'true');
+    const slots = window.getComputedSlots(exam, isRTt ? 'tt' : 'std');
+    return slots[0] || getExamReserveSlot(exam);
+}
+
+function getPlanningSummaryColumns() {
+    return (DB.exams || []).map((exam, examIdx) => ({
+        exam,
+        examIdx,
+        sortKey: `${exam.date || '9999-12-31'}_${exam.time || '99:99'}_${examIdx.toString().padStart(3, '0')}`,
+        dateLabel: formatDateLongFR(exam.date || ''),
+        subjectLabel: exam.name || 'Épreuve',
+        stdSlot: window.getComputedSlots(exam, 'std')[0] || getExamReserveSlot(exam),
+        ttSlot: window.getComputedSlots(exam, 'tt')[0] || getExamReserveSlot(exam)
+    })).sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+}
+
+function getSummaryTimeLabel(column) {
+    const stdLabel = `${column.stdSlot.start}-${column.stdSlot.end}`;
+    const ttLabel = `${column.ttSlot.start}-${column.ttSlot.end}`;
+    const baseLabel = stdLabel === ttLabel ? stdLabel : `${stdLabel}\n* TT : ${ttLabel}`;
+    const dictStd = getDictationSlot(column.exam, 'std');
+    if (!dictStd) return baseLabel;
+    const dictTt = getDictationSlot(column.exam, 'tt');
+    const dictStdLabel = `${dictStd.start}-${dictStd.end}`;
+    const dictTtLabel = dictTt ? `${dictTt.start}-${dictTt.end}` : dictStdLabel;
+    const dictLabel = dictStdLabel === dictTtLabel ? `Dictée : ${dictStdLabel}` : `Dictée : ${dictStdLabel}\n* TT dictée : ${dictTtLabel}`;
+    return `${baseLabel}\n${dictLabel}`;
+}
+
+function getPlanningSummaryRows() {
+    const rows = [];
+    const reserves = ensurePlanningReserve();
+    const activeRooms = DB.rooms
+        .filter(room => (DB.distribution[room.nom] || []).length > 0)
+        .sort((a, b) => {
+            const specialA = !!(a.isTT || a.isAmen);
+            const specialB = !!(b.isTT || b.isAmen);
+            if (specialA !== specialB) return specialA ? 1 : -1;
+            return a.nom.localeCompare(b.nom);
+        });
+
+    activeRooms.forEach(room => {
+        const limit = room.nbSurv || DB.config.nbSurv || 1;
+        for (let i = 0; i < limit; i++) {
+            rows.push({
+                type: 'room',
+                label: `${room.nom}${room.isTT ? ' *' : ''}`,
+                capacity: (DB.distribution[room.nom] || []).length || room.capacite || '',
+                room,
+                survIdx: i
+            });
+        }
+    });
+
+    for (let i = 0; i < 2; i++) {
+        rows.push({
+            type: 'reserve',
+            label: i === 0 ? getReserveDisplayLabel() : '',
+            capacity: '',
+            reserveIdx: i,
+            reserves
+        });
+    }
+
+    return rows;
+}
+
+function getSummaryCell(row, column) {
+    if (row.type === 'reserve') {
+        return row.reserves[getReserveKey(column.examIdx, row.reserveIdx)] || '';
+    }
+
+    const room = row.room;
+    const isRTt = room.isTT === true || room.isTT === 'true';
+    const slotType = isRTt ? 'tt' : 'std';
+    const slot = getExamMainSlot(column.exam, room);
+    const slotIdx = slot.originalIdx !== undefined ? slot.originalIdx : 0;
+    const mainTeacher = DB.planning[`${column.examIdx}_${room.nom}_${slotType}_${slotIdx}_${row.survIdx}`] || '';
+    const dictSlot = getDictationSlot(column.exam, room);
+    if (!dictSlot || row.survIdx !== 0) return mainTeacher;
+
+    const dictTeacher = DB.planning[getDictationKey(column.examIdx, room.nom)];
+    if (!dictTeacher) return mainTeacher;
+    return mainTeacher ? `${mainTeacher}\nDictée : ${dictTeacher}` : `Dictée : ${dictTeacher}`;
+}
+
+function buildPlanningSummaryAOA() {
+    const columns = getPlanningSummaryColumns();
+    const rows = getPlanningSummaryRows();
+    const title = `Tableau des surveillances du DNB - Session ${DB.config.year || ''}`;
+    const header1 = ['', '', ...columns.map(c => c.dateLabel)];
+    const header2 = ['', '', ...columns.map(c => c.subjectLabel)];
+    const header3 = ['', '', ...columns.map(c => getSummaryTimeLabel(c))];
+    const body = rows.map(row => [
+        row.label,
+        row.capacity,
+        ...columns.map(column => getSummaryCell(row, column))
+    ]);
+    return [[title], [], header1, header2, header3, ...body, [], ['* Salle tiers-temps : horaires indiqués en ligne "TT" dans l’en-tête.']];
+}
+
+window.exportPlanningSummaryXLSX = function () {
+    if (typeof XLSX === 'undefined') return showToast("Librairie Excel non chargée.", 'error');
+    const aoa = buildPlanningSummaryAOA();
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    const columns = getPlanningSummaryColumns();
+    const rows = getPlanningSummaryRows();
+
+    ws['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: columns.length + 1 } }
+    ];
+    ws['!cols'] = [
+        { wch: 22 },
+        { wch: 8 },
+        ...columns.map(() => ({ wch: 24 }))
+    ];
+
+    rows.forEach((row, idx) => {
+        if (idx > 0 && row.type === 'room' && rows[idx - 1].label === row.label) {
+            const excelRow = idx + 6;
+            const prevExcelRow = excelRow - 1;
+            ws['!merges'].push({ s: { r: prevExcelRow - 1, c: 0 }, e: { r: excelRow - 1, c: 0 } });
+            ws['!merges'].push({ s: { r: prevExcelRow - 1, c: 1 }, e: { r: excelRow - 1, c: 1 } });
+        }
+    });
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Synthese");
+    XLSX.writeFile(wb, "Tableau_Surveillances_DNB.xlsx");
+};
+
+window.exportPlanningSummaryPDF = function () {
+    if (!window.jspdf) return showToast("Librairie PDF non chargée.", 'error');
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('l', 'mm', 'a4');
+    const columns = getPlanningSummaryColumns();
+    const rows = getPlanningSummaryRows();
+    const head = [
+        [
+            { content: 'Salle', styles: { halign: 'center', fillColor: [190, 190, 190] } },
+            ...columns.map(c => ({ content: c.dateLabel, styles: { halign: 'center', fillColor: [190, 190, 190] } }))
+        ],
+        [
+            { content: '', styles: { fillColor: [205, 205, 205] } },
+            ...columns.map(c => ({ content: c.subjectLabel, styles: { halign: 'center', fillColor: [205, 205, 205] } }))
+        ],
+        [
+            { content: '', styles: { fillColor: [205, 205, 205] } },
+            ...columns.map(c => ({ content: getSummaryTimeLabel(c), styles: { halign: 'center', fillColor: [205, 205, 205] } }))
+        ]
+    ];
+    const body = rows.map(row => {
+        const fill = row.type === 'reserve' ? [230, 238, 252] : [255, 255, 255];
+        return [
+            { content: row.label, styles: { fontStyle: row.label ? 'bold' : 'normal', fillColor: row.type === 'reserve' ? [180, 203, 238] : fill } },
+            ...columns.map(column => ({ content: getSummaryCell(row, column), styles: { halign: 'center', fillColor: fill } }))
+        ];
+    });
+
+    addSmartLogo(doc, 2, 2, 24);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Tableau des surveillances du DNB - Session ${DB.config.year || ''}`, 148, 14, { align: 'center' });
+    doc.autoTable({
+        head,
+        body,
+        startY: 25,
+        theme: 'grid',
+        styles: { fontSize: 7.5, cellPadding: 2, lineWidth: 0.1, lineColor: [0, 0, 0], valign: 'middle' },
+        headStyles: { textColor: [0, 0, 0], fontStyle: 'bold', lineColor: [0, 0, 0], lineWidth: 0.1 },
+        columnStyles: {
+            0: { cellWidth: 32 }
+        }
+    });
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.text('* Salle tiers-temps : horaires indiqués en ligne "TT" dans l’en-tête.', 10, 205);
+    doc.save("Tableau_Surveillances_DNB.pdf");
 };
 
 // --- 3bis. EXPORT PDF PLANNING (Noms l'un sous l'autre) ---
@@ -1368,6 +1907,11 @@ window.exportPlanning = function () {
                     }
                     // --- MODIFICATION ICI : SAUT DE LIGNE POUR PDF ---
                     cellContent += survs.length > 0 ? survs.join('\n') : "(Vide)";
+                    const dictSlot = getDictationSlot(exam, room);
+                    const dictTeacher = dictSlot ? DB.planning[getDictationKey(examIdx, room.nom)] : '';
+                    if (dictTeacher && window.toMin(activeSlot.start) <= window.toMin(dictSlot.start) && window.toMin(activeSlot.end) >= window.toMin(dictSlot.end)) {
+                        cellContent += `\nDictée ${dictSlot.start}-${dictSlot.end}\n${dictTeacher}`;
+                    }
                     // -------------------------------------------------
 
                     row[key] = {
@@ -1555,15 +2099,35 @@ window.exportPochettesPDF = function () {
 
 // --- 1. GÉNÉRATION AUTOMATIQUE (Auto-Fill) ---
 window.autoFillPlanning = function () {
-    // Sécurités
-    if (!DB.edt.cancelled || DB.edt.cancelled.length === 0) {
-        showToast("⚠️ Aucun cours annulé n'a été chargé ! Importez le fichier dans la zone verte.", 'warning');
+    if (!DB.edt) DB.edt = { cancelled: [], maintained: [] };
+
+    const hasCancelledEdt = DB.edt.cancelled && DB.edt.cancelled.length > 0;
+    const hasMaintainedEdt = DB.edt.maintained && DB.edt.maintained.length > 0;
+    const hasAnyEdt = hasCancelledEdt || hasMaintainedEdt;
+    const activeRooms = DB.rooms.filter(r => (DB.distribution[r.nom] || []).length > 0);
+
+    if (!DB.teachers || DB.teachers.length === 0) {
+        showToast("⚠️ Aucun professeur n'est configuré.", 'warning');
+        return;
+    }
+    if (activeRooms.length === 0) {
+        showToast("⚠️ Aucune salle active. Faites d'abord la répartition des élèves.", 'warning');
         return;
     }
 
-    showConfirm("🚀 LANCER L'AFFECTATION ?\nPriorité aux profs du fichier Vert (Dû).", () => {
-    const nbSurv = DB.config.nbSurv || 1;
-    let countDue = 0, countHSE = 0;
+    if (!hasCancelledEdt) {
+        const msg = hasAnyEdt
+            ? "🚀 LANCER L'AFFECTATION HSE ?\nAucun cours annulé n'est chargé. Les cours maintenus seront évités, puis les autres surveillances seront réparties automatiquement par demi-journée."
+            : "🚀 LANCER L'AFFECTATION HSE ?\nAucun import EDT n'est chargé. Les professeurs seront affectés automatiquement au-delà de leurs disponibilités ordinaires, avec une seule salle par demi-journée.";
+        showConfirm(msg, () => autoFillPlanningWithoutEdt(activeRooms));
+        return;
+    }
+
+	    showConfirm("🚀 LANCER L'AFFECTATION ?\nPriorité aux profs du fichier Vert (Dû).", () => {
+	        clearActivePlanningSlots(activeRooms);
+	        cleanupPlanningAssignments();
+	        const nbSurv = DB.config.nbSurv || 1;
+    let countDue = 0, countHSE = 0, countDict = 0;
 
     // --- COMPARATEUR DE NOMS (Mots clés) ---
     // Gère "CONAN-JANIN" vs "CONAN"
@@ -1622,7 +2186,7 @@ window.autoFillPlanning = function () {
                                 const dbProf = DB.teachers.find(t => namesMatch(t.nom, c.profName));
                                 if (!dbProf) continue; // Prof excel non trouvé en base
 
-                                const fullName = `${dbProf.nom} ${dbProf.prenom}`;
+                                const fullName = window.getTeacherPlanningName(dbProf);
                                 // 3. Est-il déjà occupé ailleurs ?
                                 if (window.checkTeacherCollision(fullName, exam.date, slot.start, slot.end, planKey)) continue;
 
@@ -1653,7 +2217,7 @@ window.autoFillPlanning = function () {
                                 if (t.noHSE === true) return false;
 
                                 // 2. Vérifications Classiques
-                                const name = `${t.nom} ${t.prenom}`;
+                                const name = window.getTeacherPlanningName(t);
 
                                 // Collision Planning ?
                                 if (window.checkTeacherCollision(name, exam.date, slot.start, slot.end, planKey)) return false;
@@ -1670,7 +2234,7 @@ window.autoFillPlanning = function () {
                             });
 
                             if (winner) {
-                                bestCandidate = `${winner.nom} ${winner.prenom}`;
+                                bestCandidate = window.getTeacherPlanningName(winner);
                                 countHSE++;
                             }
                         }
@@ -1682,10 +2246,337 @@ window.autoFillPlanning = function () {
         });
     });
 
+    const dictStats = fillDictationTeachers(activeRooms);
+    countDict = dictStats.filled;
+    fillReserveTeachersForExistingPlanning(activeRooms);
     renderPlanning();
-    showAlertModal('Terminé !\nVERT (Dû) : ' + countDue + '\nBLANC (HSE) : ' + countHSE, 'success');
+    showAlertModal('Terminé !\nVERT (Dû) : ' + countDue + '\nBLANC (HSE) : ' + countHSE + '\nDICTÉE : ' + countDict, 'success');
     });
 };
+
+function getPlanningHalfDayKey(exam, slot) {
+    const startMin = window.toMin(slot.start);
+    const half = startMin < 12 * 60 ? 'AM' : 'PM';
+    return `${exam.date}_${half}`;
+}
+
+function isTeacherBusyInMaintainedEdt(teacher, exam, slot) {
+    if (!DB.edt || !DB.edt.maintained || DB.edt.maintained.length === 0) return false;
+    const startObj = window.getFullDate(exam.date, slot.start);
+    const endObj = window.getFullDate(exam.date, slot.end);
+    const status = getProfStatusForSlot(teacher, startObj, endObj);
+    return status.code === 'BUSY_CLASS';
+}
+
+function getTeacherLoad(planning) {
+    const loads = {};
+    Object.entries(planning || {}).forEach(([key, name]) => {
+        if (!name) return;
+        if (!getPlanningDuty(key)) return;
+        const cleanName = name.replace(/\s+/g, " ").trim();
+        loads[cleanName] = (loads[cleanName] || 0) + 1;
+    });
+    return loads;
+}
+
+function getTeacherDayMap(planning) {
+    const days = {};
+    Object.entries(planning || {}).forEach(([key, name]) => {
+        if (!name) return;
+        const duty = getPlanningDuty(key);
+        if (!duty) return;
+        const cleanName = name.replace(/\s+/g, " ").trim();
+        const exam = duty.exam;
+        if (!exam.date) return;
+        if (!days[cleanName]) days[cleanName] = new Set();
+        days[cleanName].add(exam.date);
+    });
+    return days;
+}
+
+function fillDictationTeachers(activeRooms, loads = getTeacherLoad(DB.planning), teacherDays = getTeacherDayMap(DB.planning)) {
+    let filled = 0;
+    let missing = 0;
+    const eligibleTeachers = DB.teachers.filter(t => t.noHSE !== true);
+    const teacherPool = eligibleTeachers.length > 0 ? eligibleTeachers : DB.teachers;
+
+    DB.exams.forEach((exam, examIdx) => {
+        activeRooms.forEach(room => {
+            const slot = getDictationSlot(exam, room);
+            if (!slot) return;
+            const key = getDictationKey(examIdx, room.nom);
+            const reserves = ensurePlanningReserve();
+            const reservedThisExam = new Set([reserves[getReserveKey(examIdx, 0)], reserves[getReserveKey(examIdx, 1)]].filter(Boolean));
+            delete DB.planning[key];
+
+            const candidates = teacherPool
+                .map(teacher => ({ teacher, name: window.getTeacherPlanningName(teacher) }))
+                .filter(({ teacher, name }) => {
+                    if (!name) return false;
+                    if (reservedThisExam.has(name)) return false;
+                    if (window.checkTeacherCollision(name, exam.date, slot.start, slot.end, key)) return false;
+                    if (isTeacherBusyInMaintainedEdt(teacher, exam, slot)) return false;
+                    return true;
+                });
+
+            if (candidates.length === 0) {
+                missing++;
+                return;
+            }
+
+            const winner = candidates.map(({ teacher, name }) => {
+                const days = teacherDays[name] || new Set();
+                return {
+                    name,
+                    score:
+                        (isFrenchTeacher(teacher) ? 0 : 1000) +
+                        ((loads[name] || 0) * 50) +
+                        (days.has(exam.date) ? 0 : 80) +
+                        (days.size * 8)
+                };
+            }).sort((a, b) => a.score - b.score || a.name.localeCompare(b.name))[0];
+
+            DB.planning[key] = winner.name;
+            loads[winner.name] = (loads[winner.name] || 0) + 1;
+            if (!teacherDays[winner.name]) teacherDays[winner.name] = new Set();
+            teacherDays[winner.name].add(exam.date);
+            filled++;
+        });
+    });
+
+    return { filled, missing };
+}
+
+function clearActivePlanningSlots(activeRooms) {
+    const reserves = ensurePlanningReserve();
+    DB.exams.forEach((exam, examIdx) => {
+        activeRooms.forEach(room => {
+            const isRTt = (room.isTT === true || room.isTT === 'true');
+            const slotType = isRTt ? 'tt' : 'std';
+            const slots = window.getComputedSlots(exam, slotType);
+            const limit = room.nbSurv || DB.config.nbSurv || 1;
+
+            slots.forEach(slot => {
+                const slotIdx = slot.originalIdx !== undefined ? slot.originalIdx : 0;
+                for (let i = 0; i < limit; i++) {
+                    delete DB.planning[`${examIdx}_${room.nom}_${slotType}_${slotIdx}_${i}`];
+                }
+            });
+            delete DB.planning[getDictationKey(examIdx, room.nom)];
+        });
+        delete reserves[getReserveKey(examIdx, 0)];
+        delete reserves[getReserveKey(examIdx, 1)];
+    });
+}
+
+function fillReserveTeachersForExistingPlanning(activeRooms) {
+    const reserves = ensurePlanningReserve();
+    const loads = getTeacherLoad(DB.planning);
+    const teacherDays = getTeacherDayMap(DB.planning);
+    const eligibleTeachers = DB.teachers.filter(t => t.noHSE !== true);
+    const teacherPool = eligibleTeachers.length > 0 ? eligibleTeachers : DB.teachers;
+
+    DB.exams.forEach((exam, examIdx) => {
+        const slot = getExamReserveSlot(exam);
+        const reservedForExam = new Set();
+        delete reserves[getReserveKey(examIdx, 0)];
+        delete reserves[getReserveKey(examIdx, 1)];
+
+        for (let reserveIdx = 0; reserveIdx < 2; reserveIdx++) {
+            const candidates = teacherPool
+                .map(teacher => ({ teacher, name: window.getTeacherPlanningName(teacher) }))
+                .filter(({ teacher, name }) => {
+                    if (!name || reservedForExam.has(name)) return false;
+                    if (window.checkTeacherCollision(name, exam.date, slot.start, slot.end, getReserveKey(examIdx, reserveIdx))) return false;
+                    if (isTeacherBusyInMaintainedEdt(teacher, exam, slot)) return false;
+                    return true;
+                });
+
+            if (candidates.length === 0) continue;
+
+            const minLoad = Math.min(...candidates.map(({ name }) => loads[name] || 0));
+            const winner = candidates.map(({ name }) => {
+                const days = teacherDays[name] || new Set();
+                return {
+                    name,
+                    score: ((loads[name] || 0) - minLoad) * 60 + (days.has(exam.date) ? 0 : 80) + days.size * 8
+                };
+            }).sort((a, b) => a.score - b.score || a.name.localeCompare(b.name))[0];
+
+            reserves[getReserveKey(examIdx, reserveIdx)] = winner.name;
+            reservedForExam.add(winner.name);
+            loads[winner.name] = (loads[winner.name] || 0) + 1;
+            if (!teacherDays[winner.name]) teacherDays[winner.name] = new Set();
+            teacherDays[winner.name].add(exam.date);
+        }
+    });
+}
+
+function autoFillPlanningWithoutEdt(activeRooms) {
+    const roomKeeper = {};
+    const teacherHalfDayRoom = {};
+    const reserves = ensurePlanningReserve();
+
+    clearActivePlanningSlots(activeRooms);
+    cleanupPlanningAssignments();
+
+    const loads = getTeacherLoad(DB.planning);
+    const teacherDays = getTeacherDayMap(DB.planning);
+    let countHSE = 0;
+    let countDict = 0;
+    let missing = 0;
+
+    const getTeacherName = (teacher) => window.getTeacherPlanningName(teacher);
+    const eligibleTeachers = DB.teachers.filter(t => t.noHSE !== true);
+    const fallbackTeachers = eligibleTeachers.length > 0 ? eligibleTeachers : DB.teachers;
+
+    const pickTeacher = (exam, examIdx, slot, room, slotType, slotIdx, survIdx, planKey) => {
+        const halfDayKey = getPlanningHalfDayKey(exam, slot);
+        const keeperKey = `${halfDayKey}_${room.nom}_${survIdx}`;
+        const keptName = roomKeeper[keeperKey];
+
+        const candidates = fallbackTeachers
+            .map(teacher => ({ teacher, name: getTeacherName(teacher) }))
+            .filter(({ teacher, name }) => {
+                if (!name) return false;
+                if (window.checkTeacherCollision(name, exam.date, slot.start, slot.end, planKey)) return false;
+                if (isTeacherBusyInMaintainedEdt(teacher, exam, slot)) return false;
+
+                const occupiedRoom = teacherHalfDayRoom[`${halfDayKey}_${name}`];
+                return !occupiedRoom || occupiedRoom === room.nom;
+            });
+
+        if (candidates.length === 0) return null;
+
+        const minLoad = Math.min(...candidates.map(({ name }) => loads[name] || 0));
+
+        const keptTeacher = keptName ? DB.teachers.find(t => getTeacherName(t) === keptName) : null;
+        const keptIsValid = keptName && candidates.some(({ name }) => name === keptName);
+        if (keptIsValid && (!keptTeacher || !isTeacherBusyInMaintainedEdt(keptTeacher, exam, slot)) && (loads[keptName] || 0) <= minLoad + 1) {
+            return keptName;
+        }
+
+        const scored = candidates.map(({ teacher, name }) => {
+            const load = loads[name] || 0;
+            const days = teacherDays[name] || new Set();
+            const alreadyThisDay = days.has(exam.date);
+            const occupiedRoom = teacherHalfDayRoom[`${halfDayKey}_${name}`];
+            const sameRoomHalfDay = occupiedRoom === room.nom;
+
+            return {
+                teacher,
+                name,
+                score:
+                    ((load - minLoad) * 60) +
+                    (alreadyThisDay ? 0 : 80) +
+                    (days.size * 8) +
+                    (sameRoomHalfDay ? -40 : 0)
+            };
+        }).sort((a, b) => a.score - b.score || a.name.localeCompare(b.name));
+
+        const winner = scored[0];
+
+        if (!winner) return null;
+
+        const name = winner.name;
+        roomKeeper[keeperKey] = name;
+        teacherHalfDayRoom[`${halfDayKey}_${name}`] = room.nom;
+        return name;
+    };
+
+    const pickReserveTeacher = (exam, examIdx, slot, reserveIdx) => {
+        const halfDayKey = getPlanningHalfDayKey(exam, slot);
+        const key = getReserveKey(examIdx, reserveIdx);
+        const alreadyReserved = new Set([reserves[getReserveKey(examIdx, 0)], reserves[getReserveKey(examIdx, 1)]].filter(Boolean));
+
+        const candidates = fallbackTeachers
+            .map(teacher => ({ teacher, name: getTeacherName(teacher) }))
+            .filter(({ teacher, name }) => {
+                if (!name) return false;
+                if (alreadyReserved.has(name)) return false;
+                if (window.checkTeacherCollision(name, exam.date, slot.start, slot.end, key)) return false;
+                if (isTeacherBusyInMaintainedEdt(teacher, exam, slot)) return false;
+                return !teacherHalfDayRoom[`${halfDayKey}_${name}`];
+            });
+
+        if (candidates.length === 0) return null;
+
+        const minLoad = Math.min(...candidates.map(({ name }) => loads[name] || 0));
+        const scored = candidates.map(({ name }) => {
+            const load = loads[name] || 0;
+            const days = teacherDays[name] || new Set();
+            const alreadyThisDay = days.has(exam.date);
+
+            return {
+                name,
+                score:
+                    ((load - minLoad) * 60) +
+                    (alreadyThisDay ? 0 : 80) +
+                    (days.size * 8)
+            };
+        }).sort((a, b) => a.score - b.score || a.name.localeCompare(b.name));
+
+        const winnerName = scored[0].name;
+        reserves[key] = winnerName;
+        teacherHalfDayRoom[`${halfDayKey}_${winnerName}`] = 'RESERVE';
+        loads[winnerName] = (loads[winnerName] || 0) + 1;
+        if (!teacherDays[winnerName]) teacherDays[winnerName] = new Set();
+        teacherDays[winnerName].add(exam.date);
+        return winnerName;
+    };
+
+    DB.exams.forEach((exam, examIdx) => {
+        activeRooms.forEach(room => {
+            if (!room.nbSurv) room.nbSurv = DB.config.nbSurv || 1;
+            const isRTt = (room.isTT === true || room.isTT === 'true');
+            const slotType = isRTt ? 'tt' : 'std';
+            const slots = window.getComputedSlots(exam, slotType);
+
+            slots.forEach((slot) => {
+                const slotIdx = slot.originalIdx !== undefined ? slot.originalIdx : 0;
+                const limit = room.nbSurv || DB.config.nbSurv || 1;
+
+                for (let i = 0; i < limit; i++) {
+                    const planKey = `${examIdx}_${room.nom}_${slotType}_${slotIdx}_${i}`;
+                    const teacherName = pickTeacher(exam, examIdx, slot, room, slotType, slotIdx, i, planKey);
+                    if (teacherName) {
+                        DB.planning[planKey] = teacherName;
+                        loads[teacherName] = (loads[teacherName] || 0) + 1;
+                        if (!teacherDays[teacherName]) teacherDays[teacherName] = new Set();
+                        teacherDays[teacherName].add(exam.date);
+                        countHSE++;
+                    } else {
+                        delete DB.planning[planKey];
+                        missing++;
+                    }
+                }
+            });
+        });
+
+        const reserveSlot = getExamReserveSlot(exam);
+        for (let i = 0; i < 2; i++) {
+            const reserveName = pickReserveTeacher(exam, examIdx, reserveSlot, i);
+            if (reserveName) countHSE++;
+            else missing++;
+        }
+    });
+
+    const dictStats = fillDictationTeachers(activeRooms, loads, teacherDays);
+    countDict = dictStats.filled;
+    missing += dictStats.missing;
+
+    renderPlanning();
+    if (typeof renderDashboard === 'function') renderDashboard();
+    if (typeof autoSave === 'function') autoSave();
+
+    const mobilizedTeachers = Object.keys(teacherDays).filter(name => (loads[name] || 0) > 0).length;
+    const teacherDayCount = Object.values(teacherDays).reduce((sum, days) => sum + days.size, 0);
+    let msg = `Affectation HSE terminée.\n${countHSE} surveillance(s) positionnée(s) automatiquement.\n${countDict} renfort(s) Dictée positionné(s).\n${mobilizedTeachers} enseignant(s) mobilisé(s), ${teacherDayCount} venue(s) enseignant/jour.`;
+    if (missing > 0) {
+        msg += `\n\n⚠️ ${missing} emplacement(s) restent sans surveillant : pas assez de professeurs disponibles avec la règle "une salle par demi-journée".`;
+    }
+    showAlertModal(msg, missing > 0 ? 'warning' : 'success');
+}
 
 // --- FONCTION D'OPTIMISATION (Avec Popup & Règle Multi-Profs) ---
 // --- FONCTION D'OPTIMISATION AVANCÉE (Bouche-trous + Échanges) ---
@@ -1705,16 +2596,16 @@ window.optimizePlanningMoves = function (silentMode = false) {
 
     // Helper: Vérifier si un prof est déjà occupé AILLEURS sur ce créneau (Anti-Ubiquité)
     const isProfBusyInSlot = (profName, examIdx, slotType, slotIdx) => {
-        // On parcourt toutes les salles pour ce créneau
-        for (let r of DB.rooms) {
-            const limit = room.nbSurv || 1; // <--- MODIFICATION ICI
+        const exam = DB.exams[examIdx];
+        if (!exam) return false;
 
-            // On remplit les N places de CETTE salle
-            for (let i = 0; i < limit; i++) {
-                const planKey = `${examIdx}_${room.nom}_${slotType}_${sIdx}_${i}`;
-            }
-        }
-        return false;
+        const slots = slotType === 'tt'
+            ? window.getComputedSlots(exam, 'tt')
+            : window.getComputedSlots(exam, 'std');
+        const slot = slots.find(s => (s.originalIdx !== undefined ? s.originalIdx : 0) === slotIdx) || slots[slotIdx];
+        if (!slot) return false;
+
+        return !!window.checkTeacherCollision(profName, exam.date, slot.start, slot.end, '');
     };
 
     // ==============================================================================
@@ -1740,7 +2631,7 @@ window.optimizePlanningMoves = function (silentMode = false) {
                         let bestCandidate = null;
                         DB.teachers.forEach(t => {
                             if (t.noHSE) return; // Respect du refus HSE
-                            const fullName = `${t.nom} ${t.prenom}`;
+	                            const fullName = window.getTeacherPlanningName(t);
                             if (isProfBusyInSlot(fullName, examIdx, slotType, slotIdx)) return;
 
                             // Vérif EDT (Dû)
@@ -1861,7 +2752,10 @@ window.optimizePlanningMoves = function (silentMode = false) {
 };
 window.resetPlanning = function () {
     showConfirm("🗑️ Attention : Vous allez effacer TOUT le planning.\nContinuer ?", () => {
-        DB.planning = {}; renderPlanning(); autoSave();
+        DB.planning = {};
+        DB.planningReserve = {};
+        renderPlanning();
+        autoSave();
         showToast("✅ Planning réinitialisé.", 'success');
     });
 }
@@ -1874,20 +2768,29 @@ function addSmartLogo(doc, x, y, size) {
         const props = doc.getImageProperties(DB.config.logo);
         const ratio = props.width / props.height;
 
-        let w = size;
-        let h = size;
+        // On limite volontairement la zone d'en-tête : un logo trop grand mord sur les titres.
+        const maxSize = Math.min(size || 28, 28);
+        let w = maxSize;
+        let h = maxSize;
 
-        // 2. Calculer les nouvelles dimensions pour tenir dans le carré "size x size"
+        // 2. Calculer les nouvelles dimensions pour tenir dans le carré réservé.
         if (ratio > 1) {
             // Image rectangulaire (Paysage) -> On fixe la largeur, on réduit la hauteur
-            h = size / ratio;
+            h = maxSize / ratio;
         } else {
             // Image haute (Portrait) -> On fixe la hauteur, on réduit la largeur
-            w = size * ratio;
+            w = maxSize * ratio;
         }
 
-        // 3. Afficher l'image sans déformation
-        doc.addImage(DB.config.logo, 'JPEG', x, y, w, h);
+        // 3. Centrer le logo dans sa zone et préserver un fond blanc lisible.
+        const boxW = maxSize;
+        const boxH = maxSize;
+        const drawX = x + (boxW - w) / 2;
+        const drawY = y + (boxH - h) / 2;
+        doc.setFillColor(255, 255, 255);
+        doc.rect(x - 1, y - 1, boxW + 2, boxH + 2, 'F');
+        const format = props.fileType || 'PNG';
+        doc.addImage(DB.config.logo, format, drawX, drawY, w, h, undefined, 'FAST');
     } catch (e) {
         // Sécurité si l'image est corrompue
         console.error("Erreur logo", e);
@@ -2254,4 +3157,3 @@ window.addEventListener('beforeunload', function (e) {
 // ============================================================
 // === MODULE ORAUX (RE-IMPLEMENTATION) ===
 // ============================================================
-

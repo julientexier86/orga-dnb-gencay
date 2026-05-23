@@ -36,24 +36,24 @@ window.renderStudents = function () {
     let tbodyHtml = '<tbody>';
 
     DB.students.forEach((s, i) => {
-        const codeDisplay = s.anonymat ? `<span style="font-family:courier; font-weight:bold; color:#d35400">${s.anonymat}</span>` : '<span style="color:#ccc; font-size:0.8rem">--</span>';
+        const codeDisplay = s.anonymat ? `<span style="font-family:courier; font-weight:bold; color:#d35400">${escapeHTML(s.anonymat)}</span>` : '<span style="color:#ccc; font-size:0.8rem">--</span>';
 
         let labelsHtml = "";
         if (s.labels && s.labels.length > 0) {
             s.labels.forEach(labCode => {
                 const def = DB.config.labels.find(d => d.code === labCode);
                 const col = def ? def.color : '#999';
-                labelsHtml += `<span class="badge" style="background-color:${col}; margin-right:3px;">${labCode}</span>`;
+                labelsHtml += `<span class="badge" style="background-color:${escapeHTML(col)}; margin-right:3px;">${escapeHTML(labCode)}</span>`;
             });
         }
 
         tbodyHtml += `
         <tr>
-            <td style="font-weight:bold;">${s.nom}</td>
-            <td>${s.prenom}</td>
-            <td>${s.sexe}</td>
-            <td><span class="badge bg-secondary" style="background:#6c757d; color:white;">${s.classe}</span></td>
-            <td style="color:#2980b9; font-size:0.9rem;">${s.mef || "-"}</td> <td>${codeDisplay}</td>
+            <td style="font-weight:bold;">${escapeHTML(s.nom)}</td>
+            <td>${escapeHTML(s.prenom)}</td>
+            <td>${escapeHTML(s.sexe)}</td>
+            <td><span class="badge bg-secondary" style="background:#6c757d; color:white;">${escapeHTML(s.classe)}</span></td>
+            <td style="color:#2980b9; font-size:0.9rem;">${escapeHTML(s.mef || "-")}</td> <td>${codeDisplay}</td>
             <td>${labelsHtml}</td> 
             <td style="text-align:center">
                 <input type="checkbox" ${s.tt ? 'checked' : ''} ${l ? 'disabled' : ''} onchange="toggleStudentTT(${i}, this.checked)">
@@ -120,7 +120,7 @@ function toggleStudentTT(idx, val) {
 function renderRooms() {
     const l = DB.uiState.locked.rooms;
     document.querySelector('#tableRooms tbody').innerHTML = DB.rooms.map((r, i) => `<tr>
-        <td>${r.nom}</td>
+        <td>${escapeHTML(r.nom)}</td>
         <td><input type="number" value="${r.capacite}" style="width:60px" ${l ? 'disabled' : ''} onchange="DB.rooms[${i}].capacite=parseInt(this.value)"></td>
         <td style="text-align:center"><input type="checkbox" ${r.isTT ? 'checked' : ''} ${l ? 'disabled' : ''} onchange="DB.rooms[${i}].isTT=this.checked; renderRooms()"></td>
         <td style="text-align:center"><input type="checkbox" ${r.isAmen ? 'checked' : ''} ${l ? 'disabled' : ''} onchange="DB.rooms[${i}].isAmen=this.checked; renderRooms()"></td>
@@ -162,17 +162,17 @@ window.renderTeachers = function () {
 
         html += `
         <tr style="${rowStyle}">
-            <td>${t.civ || ""}</td>
+            <td>${escapeHTML(t.civ || "")}</td>
             
-            <td style="font-weight:bold;">${t.nom}</td>
-            <td>${t.prenom}</td>
+            <td style="font-weight:bold;">${escapeHTML(t.nom)}</td>
+            <td>${escapeHTML(t.prenom)}</td>
             
             <td style="text-align:center;">
                 <input type="checkbox" ${noHSE} onchange="toggleNoHSE(${i})" 
                        style="transform: scale(1.3); cursor:pointer;" title="Cochez pour interdire les HSE">
             </td>
             
-            <td><span style="${matStyle}">${t.matiere}</span></td>
+            <td><span style="${matStyle}">${escapeHTML(t.matiere)}</span></td>
             
             <td style="text-align:center;">
                 <button class="btn btn-sm btn-warning" onclick="editTeacher(${i})" title="Modifier" style="padding:2px 6px;">✏️</button>
@@ -261,19 +261,39 @@ function closeTeacherModal() { document.getElementById('teacherModal').style.dis
 function saveNewTeacher() { const n = document.getElementById('modTeaNom').value; if (n) { DB.teachers.push({ civ: document.getElementById('modTeaCiv').value, nom: n, prenom: document.getElementById('modTeaPrenom').value, matiere: document.getElementById('modTeaMatiere').value }); renderTeachers(); closeTeacherModal(); } }
 function toggleDistribLock() { if (!DB.uiState.locked.distrib) DB.uiState.locked.distrib = false; DB.uiState.locked.distrib = !DB.uiState.locked.distrib; updateDistribLock(); }
 function updateDistribLock() { const locked = DB.uiState.locked.distrib; const btn = document.getElementById('lock-distrib'), cont = document.getElementById('visualDistrib'), btnWiz = document.getElementById('btnLaunchDistrib'), btnReset = document.getElementById('btnResetDistrib'); if (locked) { btn.innerHTML = "🔒 Déverrouiller"; btn.classList.add('locked'); cont.classList.add('is-locked-disabled'); btnWiz.disabled = true; btnReset.disabled = true; } else { btn.innerHTML = "🔓 Verrouiller"; btn.classList.remove('locked'); cont.classList.remove('is-locked-disabled'); btnWiz.disabled = false; btnReset.disabled = false; } }
+function syncDistributionBuffer() {
+    if (!DB.distribution) DB.distribution = {};
+
+    const studentById = new Map((DB.students || []).map(student => [normalizeStudentId(student.id), student]));
+    const assignedIds = new Set();
+
+    DB.rooms.forEach(room => {
+        const seenInRoom = new Set();
+        const currentList = Array.isArray(DB.distribution[room.nom]) ? DB.distribution[room.nom] : [];
+        DB.distribution[room.nom] = currentList.filter(student => {
+            const id = normalizeStudentId(student && student.id);
+            if (!id || !studentById.has(id) || seenInRoom.has(id) || assignedIds.has(id)) return false;
+            seenInRoom.add(id);
+            assignedIds.add(id);
+            return true;
+        }).map(student => studentById.get(normalizeStudentId(student.id)));
+    });
+
+    DB.distribution["Zone Tampon"] = (DB.students || []).filter(student => !assignedIds.has(normalizeStudentId(student.id)));
+}
+
 function renderVisualDistribution() {
     const container = document.getElementById('visualDistrib');
     container.innerHTML = '';
+    syncDistributionBuffer();
 
     // Zone Tampon
-    if (!DB.distribution["Zone Tampon"]) DB.distribution["Zone Tampon"] = [];
     const bufferList = DB.distribution["Zone Tampon"];
     let bufferCard = createRoomCard("Zone Tampon", bufferList, { nom: "Zone Tampon", capacite: 9999 }, true);
     container.appendChild(bufferCard);
 
     // Salles
     DB.rooms.forEach(room => {
-        if (!DB.distribution[room.nom]) DB.distribution[room.nom] = [];
         const list = DB.distribution[room.nom];
         let card = createRoomCard(room.nom, list, room, false);
         container.appendChild(card);
@@ -390,12 +410,20 @@ function handleDrop(e, targetRoomName) {
         autoSave();
     }
 }
-function resetDistribution() { showConfirm("Tout effacer ?", () => { DB.distribution = {}; DB.rooms.forEach(r => DB.distribution[r.nom] = []); renderVisualDistribution(); }); }
-function openDistribWizard() { document.getElementById('distribModal').style.display = 'flex'; wizGoToStep(1); const list = document.getElementById('wizTTListContainer'); list.innerHTML = ''; DB.students.filter(s => s.tt).forEach(s => { list.innerHTML += `<label class="check-item"><input type="checkbox" value="${s.id}" checked> &nbsp; ${s.nom} ${s.prenom} (${s.classe})</label>`; }); }
+function resetDistribution() {
+    showConfirm("Tout effacer ?", () => {
+        DB.distribution = {};
+        DB.rooms.forEach(r => DB.distribution[r.nom] = []);
+        DB.distribution["Zone Tampon"] = [...DB.students];
+        renderVisualDistribution();
+        if (typeof autoSave === 'function') autoSave();
+    });
+}
+function openDistribWizard() { document.getElementById('distribModal').style.display = 'flex'; wizGoToStep(1); const list = document.getElementById('wizTTListContainer'); list.innerHTML = ''; DB.students.filter(s => s.tt).forEach(s => { list.innerHTML += `<label class="check-item"><input type="checkbox" value="${escapeHTML(normalizeStudentId(s.id))}" checked> &nbsp; ${escapeHTML(s.nom)} ${escapeHTML(s.prenom)} (${escapeHTML(s.classe)})</label>`; }); }
 function closeDistribWizard() { document.getElementById('distribModal').style.display = 'none'; }
 function toggleWizTTList(show) { document.getElementById('wizTTListContainer').style.display = show ? 'block' : 'none'; }
 function wizGoToStep(n) { document.querySelectorAll('.wizard-step').forEach(s => s.classList.remove('active')); document.getElementById('wiz-step-' + n).classList.add('active'); }
-function wizGoToStep2() { const mode = document.querySelector('input[name="wizTTMode"]:checked').value; wizData.selectedTTIds = []; if (mode === 'auto') wizData.selectedTTIds = DB.students.filter(s => s.tt).map(s => s.id); else document.querySelectorAll('#wizTTListContainer input:checked').forEach(cb => wizData.selectedTTIds.push(parseFloat(cb.value))); const ttCount = wizData.selectedTTIds.length; const ttRooms = DB.rooms.filter(r => r.isTT); const ttCap = ttRooms.reduce((acc, r) => acc + (parseInt(r.capacite) || 0), 0); const totalStudents = DB.students.length; const stdCount = totalStudents - ttCount; const stdRooms = DB.rooms.filter(r => !r.isTT); const stdCap = stdRooms.reduce((acc, r) => acc + (parseInt(r.capacite) || 0), 0); const msgDiv = document.getElementById('wizCapCheckMsg'); const btnNext = document.getElementById('btnWizStep2Next'); let html = ""; let error = false; if (ttCount > ttCap) { html += `<div style="color:#c0392b;margin-bottom:10px;"><strong>⛔ TT Insuffisant !</strong> Besoin:${ttCount} / Dispo:${ttCap}</div>`; error = true; } else html += `<div style="color:#27ae60;margin-bottom:10px;"><strong>✅ TT OK</strong> (${ttCount}/${ttCap})</div>`; if (stdCount > stdCap) { html += `<div style="color:#c0392b;"><strong>⛔ Standard Insuffisant !</strong> Besoin:${stdCount} / Dispo:${stdCap}</div>`; error = true; } else html += `<div style="color:#27ae60;"><strong>✅ Standard OK</strong> (${stdCount}/${stdCap})</div>`; msgDiv.innerHTML = html; if (error) { msgDiv.style.background = "#fdedec"; btnNext.style.display = 'none'; } else { msgDiv.style.background = "#e8f6f3"; btnNext.style.display = 'inline-block'; } wizGoToStep(2); }
+function wizGoToStep2() { const mode = document.querySelector('input[name="wizTTMode"]:checked').value; wizData.selectedTTIds = []; if (mode === 'auto') wizData.selectedTTIds = DB.students.filter(s => s.tt).map(s => normalizeStudentId(s.id)); else document.querySelectorAll('#wizTTListContainer input:checked').forEach(cb => wizData.selectedTTIds.push(normalizeStudentId(cb.value))); const ttCount = wizData.selectedTTIds.length; const ttRooms = DB.rooms.filter(r => r.isTT); const ttCap = ttRooms.reduce((acc, r) => acc + (parseInt(r.capacite) || 0), 0); const totalStudents = DB.students.length; const stdCount = totalStudents - ttCount; const stdRooms = DB.rooms.filter(r => !r.isTT); const stdCap = stdRooms.reduce((acc, r) => acc + (parseInt(r.capacite) || 0), 0); const msgDiv = document.getElementById('wizCapCheckMsg'); const btnNext = document.getElementById('btnWizStep2Next'); let html = ""; let error = false; if (ttCount > ttCap) { html += `<div style="color:#c0392b;margin-bottom:10px;"><strong>⛔ TT Insuffisant !</strong> Besoin:${ttCount} / Dispo:${ttCap}</div>`; error = true; } else html += `<div style="color:#27ae60;margin-bottom:10px;"><strong>✅ TT OK</strong> (${ttCount}/${ttCap})</div>`; if (stdCount > stdCap) { html += `<div style="color:#c0392b;"><strong>⛔ Standard Insuffisant !</strong> Besoin:${stdCount} / Dispo:${stdCap}</div>`; error = true; } else html += `<div style="color:#27ae60;"><strong>✅ Standard OK</strong> (${stdCount}/${stdCap})</div>`; msgDiv.innerHTML = html; if (error) { msgDiv.style.background = "#fdedec"; btnNext.style.display = 'none'; } else { msgDiv.style.background = "#e8f6f3"; btnNext.style.display = 'inline-block'; } wizGoToStep(2); }
 function wizGoToStep3() { wizGoToStep(3); }
 function executeDistribution() {
     // 1. Récupération des options de l'assistant
@@ -444,7 +472,7 @@ function executeDistribution() {
     };
 
     // 3. Définition des Groupes (Pools)
-    const isTT = (s) => wizData.selectedTTIds.includes(s.id);
+    const isTT = (s) => wizData.selectedTTIds.includes(normalizeStudentId(s.id));
     const hasAmen = (s) => s.labels && s.labels.some(l => l !== 'TTEMPS');
 
     // On prépare les 4 listes d'élèves

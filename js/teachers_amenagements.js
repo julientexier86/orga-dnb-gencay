@@ -9,13 +9,15 @@ function generateUniqueId() {
 }
 
 function saveDB() {
-    // Cette ligne sauvegarde vos données dans la mémoire du navigateur.
-    // IMPORTANT : Vérifiez que 'OrgaDNB_V5_Data' correspond bien à ce qui est dans votre fonction loadDB() plus bas/haut.
-    // Si vos données ne reviennent pas après rechargement, remplacez 'OrgaDNB_V5_Data' par le nom trouvé dans loadDB.
-    localStorage.setItem('OrgaDNB_V5_Data', JSON.stringify(DB));
+    if (typeof autoSave === 'function') {
+        autoSave();
+    } else {
+        localStorage.setItem('DNB_Manager_Current', JSON.stringify(DB));
+    }
+}
 
-    // Si vous avez un système de notification toast, on peut l'afficher (optionnel)
-    // console.log("Sauvegarde effectuée");
+function jsArg(value) {
+    return escapeHTML(JSON.stringify(String(value ?? "")));
 }
 
 // ----------------------------------------
@@ -117,14 +119,14 @@ function renderLabels() {
     let html = '';
     DB.config.labels.forEach(l => {
         html += `
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; background:#f8f9fa; padding:5px; border-radius:4px; border-left: 5px solid ${l.color}">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; background:#f8f9fa; padding:5px; border-radius:4px; border-left: 5px solid ${escapeHTML(l.color)}">
             <div style="flex:1">
-                <strong>${l.code}</strong> 
-                <span style="font-size:0.8em; color:#666; margin-left:10px;">${l.name || ''}</span>
+                <strong>${escapeHTML(l.code)}</strong>
+                <span style="font-size:0.8em; color:#666; margin-left:10px;">${escapeHTML(l.name || '')}</span>
             </div>
             <div>
-                <button class="btn btn-sm btn-warning" onclick="editLabel('${l.code}')" style="font-size:0.7rem; padding:2px 6px;">✏️</button>
-                <button class="btn btn-sm btn-danger" onclick="deleteLabel('${l.code}')" style="font-size:0.7rem; padding:2px 6px;">🗑️</button>
+                <button class="btn btn-sm btn-warning" onclick="editLabel(${jsArg(l.code)})" style="font-size:0.7rem; padding:2px 6px;">✏️</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteLabel(${jsArg(l.code)})" style="font-size:0.7rem; padding:2px 6px;">🗑️</button>
             </div>
         </div>`;
     });
@@ -247,19 +249,19 @@ window.renderAmenagements = function () {
         (DB.config.labels || []).forEach(l => {
             const isActive = (s.labels || []).includes(l.code);
             const style = isActive
-                ? `background:${l.color}; color:white; border:1px solid ${l.color};`
+                ? `background:${escapeHTML(l.color)}; color:white; border:1px solid ${escapeHTML(l.color)};`
                 : `background:white; color:#ccc; border:1px solid #ddd;`;
 
-            badges += `<span onclick="toggleStudentLabel(${s.id}, '${l.code}')" 
-                       style="cursor:pointer; padding:2px 6px; border-radius:10px; font-size:0.7rem; margin-right:4px; user-select:none; ${style}">
-                       ${l.code}</span>`;
+            badges += `<span onclick="toggleStudentLabel(${jsArg(normalizeStudentId(s.id))}, ${jsArg(l.code)}, this)"
+	                       style="cursor:pointer; padding:2px 6px; border-radius:10px; font-size:0.7rem; margin-right:4px; user-select:none; ${style}">
+	                       ${escapeHTML(l.code)}</span>`;
         });
 
         tbody.innerHTML += `
         <tr>
-            <td style="font-weight:600;">${s.nom} <span style="font-weight:normal; font-size:0.9em">${s.prenom}</span></td>
-            <td style="text-align:center; font-size:0.85rem;">${s.classe}</td>
-            <td style="text-align:center; font-size:0.8rem; color:#2980b9;">${s.mef || '-'}</td>
+            <td style="font-weight:600;">${escapeHTML(s.nom)} <span style="font-weight:normal; font-size:0.9em">${escapeHTML(s.prenom)}</span></td>
+            <td style="text-align:center; font-size:0.85rem;">${escapeHTML(s.classe)}</td>
+            <td style="text-align:center; font-size:0.8rem; color:#2980b9;">${escapeHTML(s.mef || '-')}</td>
             <td>${badges}</td>
         </tr>`;
     });
@@ -416,4 +418,3 @@ window.exportAmenagPDF = function (sortMode) {
 // =========================================================================
 // === EXTENSION V4 : GESTION DES CRÉNEAUX HORAIRES & PLANNING TEMPOREL ===
 // =========================================================================
-

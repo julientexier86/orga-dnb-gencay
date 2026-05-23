@@ -1,4 +1,8 @@
 {
+  "scripts": {
+    "check": "for f in js/*.js; do node --check \"$f\" || exit 1; done",
+    "test": "npm run check && node test_smoke.js"
+  },
   "dependencies": {
     "jsdom": "^28.1.0"
   }

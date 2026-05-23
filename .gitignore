@@ -17,6 +17,9 @@ Desktop.ini
 *.tmp
 *.log
 
+# Anciens fichiers monolithiques conservés hors application
+legacy/
+
 # Éditeurs
 .vscode/
 .idea/

@@ -67,7 +67,6 @@ Application **Vanilla JS** modulaire, sans framework ni bundler — fonctionne e
 orga-dnb-gencay/
 ├── index.html              # Interface principale (~1700 lignes)
 ├── style.css               # Styles (~1500 lignes, variables CSS)
-├── script.js               # Noyau principal
 └── js/                     # Modules
     ├── globals.js           # Variables globales, toasts, backups
     ├── ui.js                # Navigation, onglets, menus

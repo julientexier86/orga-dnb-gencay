@@ -28,6 +28,7 @@ function nav(id, btn) {
     }
 
     // 5. Déclencheurs spécifiques (Rafraichissement des données)
+    if (id === 'dashboard') if(typeof renderDashboard === 'function') renderDashboard();
     if (id === 'data-eleves') if(typeof renderStudents === 'function') renderStudents();
     if (id === 'organization') if(typeof renderVisualDistribution === 'function') renderVisualDistribution();
 
