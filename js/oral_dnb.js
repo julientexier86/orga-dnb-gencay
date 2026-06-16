@@ -7,7 +7,7 @@
 function setupOralDatabase() {
     // 1. Assurer l'existence de l'objet global DB
     if (typeof DB === 'undefined') window.DB = {};
-    
+
     // 2. Création de la structure si elle n'existe pas du tout
     if (!DB.oralConfig) {
         DB.oralConfig = {
@@ -18,7 +18,7 @@ function setupOralDatabase() {
             students: [],
             teachers: [],
             distribution: {}, // Le tiroir pour stocker les jurys et créneaux
-            
+
             // --- Création initiale de la grille d'évaluation ---
             grille: {
                 prestation: { maxPoints: 8, criteres: [] },
@@ -28,7 +28,7 @@ function setupOralDatabase() {
             // -----------------------------------------------------------
         };
     }
-    
+
     // 3. --- SÉCURITÉ POUR LES ANCIENNES SAUVEGARDES (Migration) ---
     // Si on charge un ancien fichier qui n'avait pas encore ces tiroirs, on les crée.
     if (!DB.oralConfig.teachers) DB.oralConfig.teachers = [];
@@ -37,8 +37,8 @@ function setupOralDatabase() {
     if (!DB.oralConfig.languages) DB.oralConfig.languages = [];
     if (!DB.oralConfig.general) DB.oralConfig.general = {};
     if (!DB.oralConfig.themes) DB.oralConfig.themes = { "Parcours Avenir": [], "Parcours Citoyen": [], "Parcours PEAC": [], "Parcours Santé": [], "Histoire des Arts": [], "EPI": [] };
-    if (!DB.oralConfig.distribution) DB.oralConfig.distribution = {}; 
-    
+    if (!DB.oralConfig.distribution) DB.oralConfig.distribution = {};
+
     // --- Sécurisation du tiroir de la grille pour les anciens fichiers ---
     if (!DB.oralConfig.grille) {
         DB.oralConfig.grille = {
@@ -58,7 +58,7 @@ function setupOralDatabase() {
  */
 function launchApp() {
     setupOralDatabase();
-    
+
     if (typeof initOralConfiguration === 'function') {
         initOralConfiguration();
     }
@@ -75,7 +75,7 @@ if (document.readyState === 'loading') {
 }
 
 function initOralConfiguration() {
-    
+
     // --- 1. GESTION DES CHAMPS GÉNÉRAUX (NOM, DATE, HORAIRES) ---
     const generalFields = {
         'oral-name': 'name',
@@ -99,7 +99,7 @@ Object.entries(generalFields).forEach(([id, key]) => {
         el.addEventListener('input', () => {
             window.oralConfig.general[key] = el.value;
             // ON AJOUTE CECI : déclenche l'autosave globale si elle existe
-            if(typeof autoSave === 'function') autoSave(); 
+            if(typeof autoSave === 'function') autoSave();
         });
         el.classList.add('has-listener');
     }
@@ -116,7 +116,7 @@ Object.entries(generalFields).forEach(([id, key]) => {
         pauseList.innerHTML = '';
         if (!window.oralConfig.pauses) window.oralConfig.pauses = [];
         window.oralConfig.pauses.sort((a, b) => a.start.localeCompare(b.start));
-        
+
         window.oralConfig.pauses.forEach((pause, index) => {
             const text = `☕ ${pause.start} - ${pause.end} : ${pause.label || 'Pause'}`;
             const item = createBadge(text, () => {
@@ -132,7 +132,7 @@ Object.entries(generalFields).forEach(([id, key]) => {
             const start = pauseStart.value;
             const end = pauseEnd.value;
             const label = pauseLabel.value.trim();
-            
+
             if (start && end && start < end) {
                 window.oralConfig.pauses.push({ start, end, label });
                 pauseStart.value = ''; pauseEnd.value = ''; pauseLabel.value = '';
@@ -183,9 +183,9 @@ Object.entries(generalFields).forEach(([id, key]) => {
         btnAddMainTheme.addEventListener('click', () => {
             const name = newMainThemeInput.value.trim();
             if (name && !window.oralConfig.themes[name]) {
-                window.oralConfig.themes[name] = []; 
+                window.oralConfig.themes[name] = [];
                 newMainThemeInput.value = '';
-                renderThemesGrid(); 
+                renderThemesGrid();
             }
         });
         btnAddMainTheme.classList.add('has-listener');
@@ -193,8 +193,8 @@ Object.entries(generalFields).forEach(([id, key]) => {
 
     function renderThemesGrid() {
         if (!gridContainer) return;
-        gridContainer.innerHTML = ''; 
-        
+        gridContainer.innerHTML = '';
+
         Object.keys(window.oralConfig.themes).forEach(themeName => {
             const row = document.createElement('div');
             row.style.cssText = 'display: grid; grid-template-columns: 250px 1fr; gap: 20px; padding: 15px 10px; border-bottom: 1px solid #eee; align-items: start; transition: background 0.2s;';
@@ -204,18 +204,18 @@ Object.entries(generalFields).forEach(([id, key]) => {
             const colLeft = document.createElement('div');
             colLeft.style.cssText = 'font-weight: 600; color: #2c3e50; font-size: 0.95em; display: flex; justify-content: space-between; align-items: center;';
             colLeft.innerHTML = `<span>${themeName}</span>`;
-            
+
             const officialThemes = ["Parcours Avenir", "Parcours Citoyen", "Parcours PEAC", "Parcours Santé", "Histoire des Arts", "EPI"];
             if (!officialThemes.includes(themeName)) {
                 const delThemeBtn = document.createElement('button');
                 delThemeBtn.innerHTML = '🗑️';
                 delThemeBtn.setAttribute('aria-label', `Supprimer le parcours ${themeName}`);
                 delThemeBtn.style.cssText = 'background:none; border:none; cursor:pointer; font-size: 1em; opacity: 0.6;';
-                delThemeBtn.onclick = () => { 
-                    if(confirm(`Êtes-vous sûr de vouloir supprimer l'intitulé "${themeName}" et tous ses sujets ?`)) { 
-                        delete window.oralConfig.themes[themeName]; 
-                        renderThemesGrid(); 
-                    } 
+                delThemeBtn.onclick = () => {
+                    if(confirm(`Êtes-vous sûr de vouloir supprimer l'intitulé "${themeName}" et tous ses sujets ?`)) {
+                        delete window.oralConfig.themes[themeName];
+                        renderThemesGrid();
+                    }
                 };
                 colLeft.appendChild(delThemeBtn);
             }
@@ -263,20 +263,20 @@ Object.entries(generalFields).forEach(([id, key]) => {
     // --- 5. FACTORY : CRÉATION DES BADGES VISUELS ---
     function createBadge(text, onDelete, isList = false) {
         const el = document.createElement('div');
-        el.style.cssText = isList 
+        el.style.cssText = isList
             ? 'display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;'
             : 'display: inline-flex; align-items: center; background: #e0eaf1; color: #2c3e50; padding: 6px 12px; border-radius: 15px; font-size: 0.85em; font-weight: 500;';
-        
+
         const textSpan = document.createElement('span');
         textSpan.textContent = text;
-        
+
         const delBtn = document.createElement('button');
         delBtn.innerHTML = '×';
         delBtn.setAttribute('aria-label', `Supprimer`);
         delBtn.style.cssText = isList
             ? 'background: none; border: none; color: #e74c3c; cursor: pointer; font-weight: bold; font-size: 1.5em; padding: 0 5px; line-height: 1;'
             : 'background: none; border: none; margin-left: 8px; cursor: pointer; font-weight: bold; color: #7f8c8d; font-size: 1.2em; padding: 0; line-height: 1;';
-        
+
         delBtn.addEventListener('click', onDelete);
         el.appendChild(textSpan); el.appendChild(delBtn);
         return el;
@@ -297,7 +297,7 @@ function openIntegrationModal() {
         return alert("Aucun élève trouvé dans la base principale (Menu Données).");
     }
     const choice = confirm("Voulez-vous intégrer les élèves de la base ?\n\nOK : Compléter la liste actuelle\nANNULER : Écraser la liste actuelle et repartir à zéro");
-    if (choice === null) return; 
+    if (choice === null) return;
 
     integrateStudents(confirm("Cliquez sur OK pour COMPLÉTER ou ANNULER pour TOUT ÉCRASER") ? "append" : "overwrite");
 }
@@ -305,18 +305,49 @@ function openIntegrationModal() {
 function integrateStudents(mode) {
     if (mode === "overwrite") window.oralConfig.students = [];
 
+    // --- PATCH DE RÉTROCOMPATIBILITÉ (Doublons d'ID Élèves) ---
+    // Les anciennes versions de l'import généraient le même ID (Date.now())
+    // pour tous les élèves importés simultanément.
+    const seenIds = new Set();
+    let hasDuplicateIds = false;
+
+    DB.students.forEach(s => {
+        if (seenIds.has(s.id)) hasDuplicateIds = true;
+        seenIds.add(s.id);
+    });
+
+    if (hasDuplicateIds) {
+        console.log("🛠️ Réparation des IDs élèves (Rétrocompatibilité)...");
+        DB.students.forEach((s, index) => {
+            const oldId = s.id;
+            const newId = "STU-" + Date.now() + "-" + index + "-" + Math.random().toString(36).substr(2, 5);
+
+            // Si l'élève était déjà dans l'oral, on synchronise son nouvel ID
+            if (window.oralConfig && window.oralConfig.students) {
+                const oralMatch = window.oralConfig.students.find(os => os.id === oldId && os.nom === s.nom && os.prenom === s.prenom);
+                if (oralMatch) {
+                    oralMatch.id = newId;
+                }
+            }
+
+            s.id = newId;
+        });
+        if (typeof autoSave === 'function') autoSave();
+    }
+    // --- FIN DU PATCH ---
+
     DB.students.forEach(s => {
         const exists = window.oralConfig.students.find(os => os.id === s.id);
         if (!exists) {
             window.oralConfig.students.push({
-                id: s.id, 
-                nom: s.nom, 
-                prenom: s.prenom, 
+                id: s.id,
+                nom: s.nom,
+                prenom: s.prenom,
                 classe: s.classe,
                 sexe: s.sexe || "?", // 👈 NOUVEAUTÉ : On récupère le sexe de la base de données
-                langue: "", 
-                parcours: "", 
-                sujet: "", 
+                langue: "",
+                parcours: "",
+                sujet: "",
                 groupId: null
             });
         }
@@ -326,13 +357,13 @@ function integrateStudents(mode) {
 
 /**
  * @why Génère une matrice Excel de saisie robuste et interopérable (Excel/LibreOffice).
- * Utilise un système de double onglet (Saisie + Référentiel) pour pallier l'absence de 
- * listes déroulantes natives dans la version gratuite de SheetJS, tout en garantissant 
+ * Utilise un système de double onglet (Saisie + Référentiel) pour pallier l'absence de
+ * listes déroulantes natives dans la version gratuite de SheetJS, tout en garantissant
  * l'intégrité des données saisies par les enseignants.
  */
 window.exportOralDataEntryTemplate = function() {
     if (typeof XLSX === 'undefined') return alert("⚠️ La librairie XLSX n'est pas chargée.");
-    
+
     // On s'assure qu'il y a des élèves dans la base générale du collège
     if (!DB.students || DB.students.length === 0) {
         return alert("⚠️ Aucun élève dans la base générale. Importez d'abord vos élèves dans le menu principal.");
@@ -348,27 +379,27 @@ window.exportOralDataEntryTemplate = function() {
     ];
 
     // Tri par classe puis par ordre alphabétique pour faciliter la lecture par les PP
-    const sortedStudents = [...DB.students].sort((a,b) => 
-        (a.classe || "").localeCompare(b.classe || "") || 
+    const sortedStudents = [...DB.students].sort((a,b) =>
+        (a.classe || "").localeCompare(b.classe || "") ||
         (a.nom || "").localeCompare(b.nom || "")
     );
 
     sortedStudents.forEach(s => {
         // Si l'élève a déjà des données orales, on les pré-remplit, sinon on met le tiret par défaut
         wsData.push([
-            s.nom, 
-            s.prenom, 
-            s.classe || "N/C", 
-            s.sexe || "M", 
-            s.langue || "-", 
-            s.groupId ? "En groupe" : "Individuel", 
-            s.parcours || "-", 
+            s.nom,
+            s.prenom,
+            s.classe || "N/C",
+            s.sexe || "M",
+            s.langue || "-",
+            s.groupId ? "En groupe" : "Individuel",
+            s.parcours || "-",
             s.sujet || "-"
         ]);
     });
 
     const ws1 = XLSX.utils.aoa_to_sheet(wsData);
-    
+
     // Ergonomie : Élargissement des colonnes pour la lisibilité
     ws1['!cols'] = [
         {wch: 25}, // Nom
@@ -440,27 +471,27 @@ window.exportOralDataEntryTemplate = function() {
  * @why Ingère la matrice Excel et met à jour les données des candidats à l'oral en mémoire.
  * Version expurgée de l'auto-sauvegarde pour laisser le contrôle du fichier à l'utilisateur.
  * Cible le sous-objet DB.oralConfig.students et gère l'auto-intégration.
- * 
+ *
  * @param {Event} event - L'événement onchange de l'input type="file"
  */
 window.processOralExcelImport = function(event) {
     if (typeof XLSX === 'undefined') return alert("⚠️ La librairie XLSX n'est pas chargée.");
-    
+
     const file = event.target.files[0];
     if (!file) return;
 
     const reader = new FileReader();
-    
+
     reader.onload = function(e) {
         try {
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, { type: 'array' });
 
             // 1. Ciblage de l'onglet (résilient si renommé par erreur)
-            const sheetName = workbook.SheetNames.includes("1_Saisie_Candidats") 
-                ? "1_Saisie_Candidats" 
+            const sheetName = workbook.SheetNames.includes("1_Saisie_Candidats")
+                ? "1_Saisie_Candidats"
                 : workbook.SheetNames[0];
-            
+
             const worksheet = workbook.Sheets[sheetName];
             const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
 
@@ -488,18 +519,18 @@ window.processOralExcelImport = function(event) {
                 if (!nom) return; // Ignore les lignes vides
 
                 // 3. Recherche dans le vivier de l'oral (Tolérance majuscules/minuscules)
-                let studentOral = DB.oralConfig.students.find(s => 
-                    s.nom === nom.toUpperCase() && 
+                let studentOral = DB.oralConfig.students.find(s =>
+                    s.nom === nom.toUpperCase() &&
                     (s.prenom || "").toLowerCase() === prenom.toLowerCase()
                 );
 
                 // 4. AUTO-INTÉGRATION : S'il n'y est pas, on le récupère du collège global
                 if (!studentOral) {
-                    const studentGlobal = DB.students.find(s => 
-                        s.nom === nom.toUpperCase() && 
+                    const studentGlobal = DB.students.find(s =>
+                        s.nom === nom.toUpperCase() &&
                         (s.prenom || "").toLowerCase() === prenom.toLowerCase()
                     );
-                    
+
                     if (studentGlobal) {
                         studentOral = JSON.parse(JSON.stringify(studentGlobal)); // Clone propre
                         DB.oralConfig.students.push(studentOral);
@@ -537,16 +568,16 @@ window.processOralExcelImport = function(event) {
             });
 
             // 6. Nettoyage et rafraîchissement DOM
-            event.target.value = ""; 
-            
+            event.target.value = "";
+
             // Rafraîchissement du tableau visuel
             if (typeof renderOralStudentsTable === 'function') renderOralStudentsTable();
-            
+
             // Affichage du bilan
             let msg = `✅ Importation réussie ! ${successCount} dossiers ont été mis à jour en mémoire.`;
             if (errorCount > 0) msg += `\n⚠️ ${errorCount} lignes ignorées (Élèves introuvables).`;
             msg += `\n\nN'oubliez pas de sauvegarder votre projet manuellement.`;
-            
+
             alert(msg);
 
         } catch (err) {
@@ -554,19 +585,19 @@ window.processOralExcelImport = function(event) {
             alert("❌ Erreur de lecture. Le fichier est peut-être corrompu ou ouvert dans Excel.");
         }
     };
-    
+
     reader.onerror = () => alert("❌ Échec de la lecture du fichier par le navigateur.");
     reader.readAsArrayBuffer(file);
 };
 
 /**
  * @why Exporte l'intégralité des données des candidats à l'oral vers un fichier Excel.
- * Permet au secrétariat ou à la direction d'avoir une vue d'ensemble, d'archiver les choix, 
+ * Permet au secrétariat ou à la direction d'avoir une vue d'ensemble, d'archiver les choix,
  * et de vérifier la composition exacte des groupes avant de lancer la répartition algorithmique.
  */
 window.exportOralStudentsData = function() {
     if (typeof XLSX === 'undefined') return alert("⚠️ La librairie XLSX n'est pas chargée.");
-    
+
     // Sécurité : Vérification de l'existence des données de l'oral
     if (!DB.oralConfig || !DB.oralConfig.students || DB.oralConfig.students.length === 0) {
         return alert("⚠️ Aucun élève n'est actuellement inscrit dans le vivier de l'épreuve orale.");
@@ -580,8 +611,8 @@ window.exportOralStudentsData = function() {
     ];
 
     // 2. Tri pour une lecture plus aisée (par classe puis par ordre alphabétique)
-    const sortedStudents = [...DB.oralConfig.students].sort((a,b) => 
-        (a.classe || "").localeCompare(b.classe || "") || 
+    const sortedStudents = [...DB.oralConfig.students].sort((a,b) =>
+        (a.classe || "").localeCompare(b.classe || "") ||
         (a.nom || "").localeCompare(b.nom || "")
     );
 
@@ -611,7 +642,7 @@ window.exportOralStudentsData = function() {
 
     // 4. Création de la feuille et ajustement ergonomique des colonnes
     const ws = XLSX.utils.aoa_to_sheet(wsData);
-    
+
     ws['!cols'] = [
         {wch: 25}, // Nom
         {wch: 20}, // Prénom
@@ -638,20 +669,20 @@ function renderOralStudentsTable() {
     if (!body) return;
 
     body.innerHTML = '';
-    
+
     window.oralConfig.students.forEach(s => {
         if (s.nom.toLowerCase().includes(search) || s.classe.toLowerCase().includes(search)) {
             const tr = document.createElement('tr');
             tr.style.borderBottom = "1px solid #eee";
             tr.style.cursor = "pointer";
-            
+
             tr.onmouseenter = () => tr.style.backgroundColor = "#f8f9fa";
             tr.onmouseleave = () => tr.style.backgroundColor = "transparent";
-            
-            tr.onclick = (e) => { 
-                if(e.target.tagName !== 'BUTTON') openEditModal(s.id); 
+
+            tr.onclick = (e) => {
+                if(e.target.tagName !== 'BUTTON') openEditModal(s.id);
             };
-            
+
             // J'ai ajouté la ligne <td> pour le sexe juste après la classe
             tr.innerHTML = `
                 <td style="padding: 12px;"><b>${s.nom.toUpperCase()}</b> ${s.prenom}</td>
@@ -681,7 +712,7 @@ window.togglePriority = function(id) {
 };
 
 /**
- * @why Ouvre la modal de modification d'un élève et pré-remplit les champs, 
+ * @why Ouvre la modal de modification d'un élève et pré-remplit les champs,
  * y compris la nouvelle option de priorité ⭐.
  */
 function openEditModal(studentId) {
@@ -701,15 +732,15 @@ function openEditModal(studentId) {
 
     // 4. Remplissage dynamique des menus déroulants (Langues)
     const langSelect = document.getElementById('edit-oral-lang');
-    langSelect.innerHTML = '<option value="">Aucune</option>' + 
-        window.oralConfig.languages.map(l => 
+    langSelect.innerHTML = '<option value="">Aucune</option>' +
+        window.oralConfig.languages.map(l =>
             `<option value="${l}" ${student.langue === l ? 'selected' : ''}>${l}</option>`
         ).join('');
 
     // 5. Remplissage dynamique des parcours
     const parcoursSelect = document.getElementById('edit-oral-parcours');
-    parcoursSelect.innerHTML = '<option value="">Choisir un parcours...</option>' + 
-        Object.keys(window.oralConfig.themes).map(t => 
+    parcoursSelect.innerHTML = '<option value="">Choisir un parcours...</option>' +
+        Object.keys(window.oralConfig.themes).map(t =>
             `<option value="${t}" ${student.parcours === t ? 'selected' : ''}>${t}</option>`
         ).join('');
 
@@ -734,19 +765,19 @@ function updateSubThemeDropdown(selectedSujet = "") {
 function refreshGroupDisplay(student) {
     const list = document.getElementById('group-members-list');
     list.innerHTML = '';
-    
+
     if (student.groupId) {
         const members = window.oralConfig.students.filter(s => s.groupId === student.groupId);
         members.forEach(m => {
             const span = document.createElement('span');
             span.style.cssText = "background: #3498db; color: white; padding: 5px 12px; border-radius: 20px; font-size: 0.85em; display: flex; align-items: center; gap: 8px;";
             span.innerHTML = `<span>${m.nom} ${m.prenom} (${m.classe})</span>`;
-            
+
             const delBtn = document.createElement('b');
             delBtn.innerHTML = '×';
             delBtn.style.cursor = 'pointer';
             delBtn.onclick = () => { m.groupId = null; refreshGroupDisplay(student); };
-            
+
             span.appendChild(delBtn);
             list.appendChild(span);
         });
@@ -759,7 +790,7 @@ function refreshGroupDisplay(student) {
         .filter(s => s.id !== student.id && (!student.groupId || s.groupId !== student.groupId))
         .sort((a, b) => a.nom.localeCompare(b.nom));
 
-    addSelect.innerHTML = '<option value="">Sélectionner un élève...</option>' + 
+    addSelect.innerHTML = '<option value="">Sélectionner un élève...</option>' +
         available.map(s => `<option value="${s.id}">${s.nom} ${s.prenom} [${s.classe}]</option>`).join('');
 }
 
@@ -783,7 +814,7 @@ function closeEditModal() {
 // L'UNIQUE gestionnaire d'enregistrement mis à jour
 document.getElementById('form-edit-student').addEventListener('submit', function(e) {
     e.preventDefault();
-    
+
     const id = document.getElementById('edit-student-id').value;
     const student = window.oralConfig.students.find(s => s.id == id);
     if (!student) return;
@@ -821,7 +852,7 @@ document.getElementById('form-edit-student').addEventListener('submit', function
     if (typeof syncOralDistributionData === 'function') {
         syncOralDistributionData();
     }
-    
+
     if (typeof autoSave === 'function') {
         autoSave();
     }
@@ -844,7 +875,7 @@ function openTeacherImportModal() {
     // 1. On vérifie s'il y a des doublons d'ID dans la base générale
     const seenIds = new Set();
     let hasDuplicateIds = false;
-    
+
     DB.teachers.forEach(t => {
         if (seenIds.has(t.id)) {
             hasDuplicateIds = true;
@@ -859,9 +890,9 @@ function openTeacherImportModal() {
             // On recrée un ID unique pour chacun
             t.id = "FIX-" + Date.now() + "-" + index;
         });
-        
+
         // On déclenche une sauvegarde automatique pour acter la réparation
-        if (typeof autoSave === 'function') autoSave(); 
+        if (typeof autoSave === 'function') autoSave();
     }
     // --- FIN DU PATCH ---
 
@@ -873,23 +904,23 @@ function openTeacherImportModal() {
 
     sortedProfs.forEach(p => {
         const isAlreadyIn = window.oralConfig.teachers.some(ot => ot.id === p.id);
-        
+
         // Création de la ligne en mode Grille pour un alignement parfait
         const row = document.createElement('div');
         row.style.cssText = `
-            display: grid; 
-            grid-template-columns: 50px 250px 1fr; 
-            align-items: center; 
-            padding: 12px 15px; 
-            border-bottom: 1px solid #f1f1f1; 
+            display: grid;
+            grid-template-columns: 50px 250px 1fr;
+            align-items: center;
+            padding: 12px 15px;
+            border-bottom: 1px solid #f1f1f1;
             cursor: pointer;
             transition: background 0.1s;
         `;
-        
+
         // Effet de survol
         row.onmouseenter = () => row.style.background = "#f8fbff";
         row.onmouseleave = () => row.style.background = "transparent";
-        
+
         // Cliquer sur la ligne coche la case
         row.onclick = (e) => {
             if(e.target.type !== 'checkbox') {
@@ -923,10 +954,10 @@ function toggleAllTeachers(isChecked) {
  */
 function importTeachersToOral(mode) {
     const checkboxes = document.querySelectorAll('.chk-import-prof');
-    
+
     // On liste les IDs de tous les profs cochés
     const selectedIds = Array.from(checkboxes).filter(chk => chk.checked).map(chk => chk.value);
-    
+
     if (selectedIds.length === 0 && mode === 'append') {
         alert("Veuillez sélectionner au moins un professeur pour compléter la liste.");
         return;
@@ -935,9 +966,9 @@ function importTeachersToOral(mode) {
     // Si on choisit "Remplacer", on met une sécurité supplémentaire
     if (mode === 'overwrite') {
         if (!confirm("⚠️ ATTENTION : Vous allez effacer tous les professeurs actuellement dans le tableau des jurys...")) {
-            return; 
+            return;
         }
-        window.oralConfig.teachers = []; 
+        window.oralConfig.teachers = [];
     }
 
     // --- RÉCUPÉRATION DES HORAIRES PAR DÉFAUT ---
@@ -947,10 +978,10 @@ function importTeachersToOral(mode) {
     // On parcourt les IDs sélectionnés pour les ajouter
     selectedIds.forEach(id => {
         const profDb = DB.teachers.find(p => String(p.id) === String(id));
-        
+
         if (profDb) {
             const exists = window.oralConfig.teachers.find(ot => String(ot.id) === String(id));
-            
+
             if (!exists) {
                 window.oralConfig.teachers.push({
                     id: profDb.id,
@@ -977,7 +1008,7 @@ function importTeachersToOral(mode) {
     if (typeof renderOralTeachersTable === 'function') {
         renderOralTeachersTable();
     }
-    
+
     if (typeof autoSave === 'function') {
         autoSave();
     }
@@ -986,7 +1017,7 @@ function importTeachersToOral(mode) {
 }
 
 /**
- * @why Rendu du tableau des professeurs avec alignement parfait, 
+ * @why Rendu du tableau des professeurs avec alignement parfait,
  * menu déroulant pour les langues, champs éditables pour Jury/Salle,
  * et une NOUVELLE colonne pour la gestion des professeurs de réserve.
  */
@@ -1008,7 +1039,7 @@ function renderOralTeachersTable() {
 
     sortedTeachers.forEach(t => {
         if (t.nom.toLowerCase().includes(search) || (t.matiere && t.matiere.toLowerCase().includes(search))) {
-            
+
             const tr = document.createElement('tr');
             tr.style.borderBottom = "1px solid #eee";
             // Ligne légèrement colorée si le prof est de réserve
@@ -1026,24 +1057,24 @@ function renderOralTeachersTable() {
             // Redistribution des largeurs pour atteindre 100% avec la nouvelle colonne
             tr.innerHTML = `
                 <td style="padding: 12px; width: 18%;"><b>${t.nom.toUpperCase()}</b> ${t.prenom || ""}</td>
-                
+
                 <td style="padding: 12px; width: 14%; color: #7f8c8d; font-size: 0.85em;">${t.matiere || t.fonction || '-'}</td>
-                
+
                 <td style="padding: 12px; width: 20%;">
                     <div style="display: flex; align-items: center; gap: 4px; background: #f8f9fa; padding: 4px; border-radius: 4px; border: 1px solid #dee2e6; width: fit-content;">
-                        <input type="time" value="${startTime}" 
+                        <input type="time" value="${startTime}"
                                onchange="updateJuryTime('${t.id}', 'startTime', this.value)"
                                style="border:none; background:transparent; font-size: 0.85em; width:70px;">
                         <span>-</span>
-                        <input type="time" value="${endTime}" 
+                        <input type="time" value="${endTime}"
                                onchange="updateJuryTime('${t.id}', 'endTime', this.value)"
                                style="border:none; background:transparent; font-size: 0.85em; width:70px;">
                     </div>
                 </td>
-                
+
                 <td style="padding: 12px; width: 8%; text-align: center;">
-                    <input type="checkbox" 
-                           ${t.isReserve ? 'checked' : ''} 
+                    <input type="checkbox"
+                           ${t.isReserve ? 'checked' : ''}
                            onchange="updateTeacherReserve('${t.id}', this.checked)"
                            style="width: 18px; height: 18px; cursor: pointer; accent-color: #e67e22;"
                            title="Définir comme professeur de réserve">
@@ -1051,29 +1082,29 @@ function renderOralTeachersTable() {
 
                 <td style="padding: 12px; width: 12%;">
                     <select onchange="updateTeacherField('${t.id}', 'langue', this.value)"
-                            ${t.isReserve ? 'disabled' : ''} 
+                            ${t.isReserve ? 'disabled' : ''}
                             style="width: 100%; padding: 5px; border: 1px solid #eee; border-radius: 4px; font-size: 0.9em; ${t.isReserve ? 'background:#f2f2f2;' : ''}">
                         ${langOptions}
                     </select>
                 </td>
-                
+
                 <td style="padding: 12px; width: 8%;">
-                    <input type="text" value="${t.jury || ''}" 
+                    <input type="text" value="${t.jury || ''}"
                            onchange="updateTeacherField('${t.id}', 'jury', this.value)"
-                           ${t.isReserve ? 'disabled' : ''} 
+                           ${t.isReserve ? 'disabled' : ''}
                            style="width: 50px; padding: 5px; border: 1px solid #3498db; border-radius: 4px; font-weight: bold; text-align: center; color: #2980b9; ${t.isReserve ? 'background:#f2f2f2; border-color:#ccc;' : ''}">
                 </td>
-                
+
                 <td style="padding: 12px; width: 8%;">
-                    <input type="text" value="${t.salle || ''}" 
+                    <input type="text" value="${t.salle || ''}"
                            placeholder="Salle"
                            onchange="updateTeacherField('${t.id}', 'salle', this.value)"
-                           ${t.isReserve ? 'disabled' : ''} 
+                           ${t.isReserve ? 'disabled' : ''}
                            style="width: 70px; padding: 5px; border: 1px solid #eee; border-radius: 4px; ${t.isReserve ? 'background:#f2f2f2;' : ''}">
                 </td>
-                
+
                 <td style="padding: 12px; width: 12%; text-align: center;">
-                    <button onclick="deleteOralTeacher('${t.id}')" 
+                    <button onclick="deleteOralTeacher('${t.id}')"
                             style="background: #fadbd8; color: #e74c3c; border: none; padding: 5px 10px; border-radius: 4px; cursor:pointer; font-size: 0.8em;">
                         Supprimer
                     </button>
@@ -1093,18 +1124,18 @@ window.updateTeacherReserve = function(teacherId, isChecked) {
     const teacher = window.oralConfig.teachers.find(t => t.id == teacherId);
     if (teacher) {
         teacher.isReserve = isChecked;
-        
+
         if (isChecked) {
             // Nettoyage pour éviter les conflits dans le publipostage
             teacher.jury = "";
             teacher.salle = "";
             teacher.langue = "";
         }
-        
+
         if (typeof autoSave === 'function') {
             autoSave();
         }
-        
+
         // On relance le rendu pour griser/verrouiller les champs (Jury/Salle) et colorer la ligne
         renderOralTeachersTable();
     }
@@ -1119,7 +1150,7 @@ window.updateTeacherReserve = function(teacherId, isChecked) {
 window.deleteOralTeacher = function(teacherId) {
     // 1. Récupération du professeur pour personnaliser le message de confirmation
     const teacher = DB.oralConfig.teachers.find(t => String(t.id) === String(teacherId));
-    
+
     if (!teacher) {
         console.error("Professeur introuvable avec l'ID :", teacherId);
         return;
@@ -1183,11 +1214,11 @@ window.removeOralTeacher = function(id) {
  */
 function addManualTeacher(e) {
     e.preventDefault(); // Empêche la page de se recharger
-    
+
     const nom = document.getElementById('manual-teacher-nom').value.trim();
     const prenom = document.getElementById('manual-teacher-prenom').value.trim();
     const matiere = document.getElementById('manual-teacher-matiere').value.trim();
-    
+
     if (!nom) return;
 
     // Création d'un identifiant unique (EXT = Externe)
@@ -1217,7 +1248,7 @@ function addManualTeacher(e) {
     document.getElementById('manual-teacher-nom').value = '';
     document.getElementById('manual-teacher-prenom').value = '';
     document.getElementById('manual-teacher-matiere').value = '';
-    
+
     // On ferme la fenêtre
     document.getElementById('modal-manual-teacher').style.display = 'none';
 
@@ -1251,11 +1282,11 @@ function renderOralConfig() {
     if (typeof renderPauses === 'function') {
         renderPauses();
     }
-    
+
     if (typeof renderLanguages === 'function') {
         renderLanguages();
     }
-    
+
     if (typeof renderThemes === 'function') {
         renderThemes();
     }
@@ -1267,7 +1298,7 @@ function renderOralConfig() {
  */
 window.renderThemes = function() {
     const container = document.getElementById('themes-grid-container');
-    
+
     // Sécurité : on s'assure que le conteneur existe dans le DOM avant d'agir
     if (!container) return;
 
@@ -1286,16 +1317,16 @@ window.renderThemes = function() {
         // Création de la ligne conteneur pour ce parcours
         const row = document.createElement('div');
         row.style.cssText = "display: grid; grid-template-columns: 250px 1fr; gap: 20px; padding: 15px 10px; border-bottom: 1px solid #eee; align-items: start;";
-        
+
         // Colonne 1 : Le nom du parcours
         const colParcours = document.createElement('div');
         colParcours.style.cssText = "font-weight: bold; color: #2c3e50;";
         colParcours.textContent = theme.name || "Parcours sans nom";
-        
+
         // Colonne 2 : La liste des sujets associés
         const colSujets = document.createElement('div');
         colSujets.style.cssText = "display: flex; flex-wrap: wrap; gap: 8px;";
-        
+
         // S'il y a des sujets, on crée des badges (visuellement clairs)
         if (Array.isArray(theme.subjects) && theme.subjects.length > 0) {
             theme.subjects.forEach((subject, subIndex) => {
@@ -1324,7 +1355,7 @@ function openOralDistribWizard() {
     // Vérifier s'il y a des élèves et des jurys créés
     // if (!DB.oralStudents || DB.oralStudents.length === 0) return alert("Aucun élève configuré pour l'oral.");
     // if (!DB.oralJurys || DB.oralJurys.length === 0) return alert("Aucun jury configuré.");
-    
+
     document.getElementById('modal-oral-wizard').style.display = 'flex';
 }
 
@@ -1339,14 +1370,14 @@ function clearOralDistribution() {
 }
 
 /**
- * @why Audit de faisabilité linguistique. Vérifie que les compétences linguistiques 
+ * @why Audit de faisabilité linguistique. Vérifie que les compétences linguistiques
  * requises par les élèves sont bien présentes dans les jurys constitués.
  * @returns {boolean} true si l'audit est OK, false si un blocage est détecté.
  */
 window.auditLanguageCapacity = function() {
     const students = DB.oralConfig.students || [];
     const teachers = DB.oralConfig.teachers || [];
-    
+
     // 1. Recensement des langues demandées par les élèves
     let languesDemandees = new Set();
     students.forEach(s => {
@@ -1388,7 +1419,7 @@ window.auditLanguageCapacity = function() {
 
 /**
  * @why Cœur algorithmique de l'Oral (Version 3.0).
- * Gère : 
+ * Gère :
  * 1. Priorités (⭐) : Placés en début de journée.
  * 2. Disponibilités Jurys : Heure de début et de fin spécifique par jury.
  * 3. Pauses (☕) : Saut automatique des créneaux de repos.
@@ -1566,7 +1597,7 @@ function runOralAlgorithm() {
 
         uniqueJurys.forEach(juryName => {
             const info = jurysInfos[juryName];
-            
+
             // Calcul de l'heure de début possible en tenant compte des pauses
             const potentialStart = getNextValidStartTime(info.currentTime, tempsRequisTotal, breaks);
             const potentialEnd = addMinutesToTime(potentialStart, passage.duration);
@@ -1578,18 +1609,18 @@ function runOralAlgorithm() {
 
             // Filtre et Équilibrage des Langues
             if (passage.langue) {
-                if (!info.languages.has(passage.langue)) return; 
+                if (!info.languages.has(passage.langue)) return;
                 const currentLangCount = info.langCounts[passage.langue] || 0;
-                score -= (currentLangCount * 200); 
+                score -= (currentLangCount * 200);
             }
 
             // Priorité au jury qui est disponible le plus tôt
-            score -= timeToMins(potentialStart); 
+            score -= timeToMins(potentialStart);
 
             // Stratégie thématique (EPI/Parcours)
             const hasTheme = info.themes.has(passage.theme);
-            if (stratTheme === 'homogenous' && hasTheme) score += 50; 
-            else if (stratTheme === 'heterogenous' && !hasTheme) score += 50; 
+            if (stratTheme === 'homogenous' && hasTheme) score += 50;
+            else if (stratTheme === 'heterogenous' && !hasTheme) score += 50;
 
             if (score > bestScore) {
                 bestScore = score;
@@ -1602,7 +1633,7 @@ function runOralAlgorithm() {
             const info = jurysInfos[bestJury];
             const finalStart = getNextValidStartTime(info.currentTime, tempsRequisTotal, breaks);
             const finalEnd = addMinutesToTime(finalStart, passage.duration);
-            
+
             DB.oralConfig.distribution[bestJury].push({
                 type: passage.isGroup ? "group" : "indiv",
                 theme: passage.theme,
@@ -1672,7 +1703,7 @@ function minsToTime(mins) {
 }
 
 /**
- * @why Vérifie si un créneau [début + durée] chevauche une pause. 
+ * @why Vérifie si un créneau [début + durée] chevauche une pause.
  * Si oui, repousse l'heure au premier créneau disponible après la pause.
  * @param {string} startTimeStr - Heure de début prévue (ex: "10:00")
  * @param {number} durationMins - Durée totale (passage + harmonisation éventuellement)
@@ -1682,7 +1713,7 @@ function minsToTime(mins) {
 function getNextValidStartTime(startTimeStr, durationMins, pauses = []) {
     let startMins = timeToMins(startTimeStr);
     let endMins = startMins + durationMins;
-    
+
     // 1. On s'assure que les pauses sont triées chronologiquement
     const sortedPauses = [...pauses].sort((a, b) => timeToMins(a.start) - timeToMins(b.start));
 
@@ -1694,13 +1725,13 @@ function getNextValidStartTime(startTimeStr, durationMins, pauses = []) {
             let pStart = timeToMins(p.start);
             let pEnd = timeToMins(p.end);
 
-            // LOGIQUE DE CONFLIT : 
+            // LOGIQUE DE CONFLIT :
             // Le créneau commence AVANT la fin de la pause ET finit APRÈS le début de la pause
             if (startMins < pEnd && endMins > pStart) {
                 // On repousse le début exactement à la fin de la pause
                 startMins = pEnd;
                 endMins = startMins + durationMins;
-                hasConflict = true; 
+                hasConflict = true;
                 break; // On recommence la vérification avec le nouvel horaire
             }
         }
@@ -1710,7 +1741,7 @@ function getNextValidStartTime(startTimeStr, durationMins, pauses = []) {
 
 /**
  * @why Recalcule les horaires de passage pour un jury spécifique.
- * Utilisé après un Drag & Drop ou une modification manuelle pour 
+ * Utilisé après un Drag & Drop ou une modification manuelle pour
  * s'assurer que les horaires se suivent sans chevaucher les pauses.
  */
 function recalculateJuryTimes(juryName) {
@@ -1723,7 +1754,7 @@ function recalculateJuryTimes(juryName) {
     const durHarm = parseInt(document.getElementById('oral-dur-harm')?.value) || 5;
     const durIndiv = parseInt(document.getElementById('oral-dur-indiv')?.value) || 15;
     const durGroup = parseInt(document.getElementById('oral-dur-group')?.value) || 25;
-    
+
     // 3. RÉCUPÉRATION DES PAUSES (Essentiel pour le calcul)
     const breaks = DB.oralConfig.pauses || [];
 
@@ -1732,7 +1763,7 @@ function recalculateJuryTimes(juryName) {
     slots.forEach(slot => {
         // Détermination de la durée selon le type de passage
         const passageDuration = slot.type === "group" ? durGroup : durIndiv;
-        
+
         // TEMPS REQUIS : On vérifie si l'épreuve + l'harmonisation tiennent
         // cela évite de finir l'élève à 12h00 mais de n'avoir l'harmonisation qu'à 12h05 (pendant la pause)
         const totalBlockMins = passageDuration + durHarm;
@@ -1776,13 +1807,13 @@ function renderOralVisualDistribution() {
     // On trie les jurys par nom pour un affichage ordonné
     Object.keys(dist).sort((a,b) => a.localeCompare(b, undefined, {numeric: true})).forEach(juryName => {
         const slots = dist[juryName];
-        
+
         // --- 1. Récupération des informations du Jury ---
         const juryTeachers = DB.oralConfig.teachers.filter(t => t.jury === juryName);
         // On met les noms en gras et majuscules pour la lisibilité
         const teacherNames = juryTeachers.map(t => t.nom.toUpperCase()).join(' / ');
         const juryLangs = [...new Set(juryTeachers.map(t => t.langue).filter(Boolean))].join(', ');
-        
+
         let card = document.createElement('div');
         card.className = 'dd-room-card';
         card.style.width = "320px"; // Largeur fixe pour éviter les cartes déformées
@@ -1797,7 +1828,7 @@ function renderOralVisualDistribution() {
                         ${slots.length} passages
                     </span>
                 </div>
-                
+
                 <div style="text-align:center;">
                     <div style="font-size:0.85rem; font-weight:500; color:#ecf0f1; line-height:1.2; word-break:break-word;">
                         ${teacherNames || 'Aucun prof assigné'}
@@ -1812,7 +1843,7 @@ function renderOralVisualDistribution() {
                 </div>
             </div>
         `;
-        
+
         let body = document.createElement('div');
         body.className = 'dd-room-body';
         body.style.padding = "10px";
@@ -1825,14 +1856,14 @@ function renderOralVisualDistribution() {
             sep.setAttribute('data-jury', juryName);
             sep.setAttribute('data-insert-index', insertIndex);
             sep.style.cssText = "height: 8px; margin: -4px 0; border-radius: 4px; transition: all 0.2s ease; position: relative; z-index:10;";
-            sep.addEventListener('dragover', (e) => { 
-                e.preventDefault(); 
-                e.currentTarget.style.backgroundColor = "#3498db"; 
-                e.currentTarget.style.height = "25px"; 
+            sep.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.currentTarget.style.backgroundColor = "#3498db";
+                e.currentTarget.style.height = "25px";
             });
-            sep.addEventListener('dragleave', (e) => { 
-                e.currentTarget.style.backgroundColor = "transparent"; 
-                e.currentTarget.style.height = "8px"; 
+            sep.addEventListener('dragleave', (e) => {
+                e.currentTarget.style.backgroundColor = "transparent";
+                e.currentTarget.style.height = "8px";
             });
             sep.addEventListener('drop', handleOralDrop);
             return sep;
@@ -1842,14 +1873,14 @@ function renderOralVisualDistribution() {
         body.appendChild(createSeparator(0));
 
         slots.forEach((slot, index) => {
-            
+
             // --- 3. GESTION VISUELLE DES PAUSES ---
             const pauseHere = pauses.find(p => p.end === slot.startTime);
             if (pauseHere) {
                 let pDiv = document.createElement('div');
                 pDiv.style.cssText = "background:#f1f2f6; border:2px dashed #bdc3c7; border-radius:5px; padding:8px; margin-bottom:8px; display:flex; align-items:center; color:#7f8c8d; font-size:0.85rem;";
                 pDiv.innerHTML = `
-                    <span style="font-size:1.2rem; margin-right:10px;">☕</span> 
+                    <span style="font-size:1.2rem; margin-right:10px;">☕</span>
                     <div style="flex-grow:1;">
                         <strong>${pauseHere.label || 'PAUSE'}</strong><br>
                         <small>${pauseHere.start} - ${pauseHere.end}</small>
@@ -1861,7 +1892,7 @@ function renderOralVisualDistribution() {
             // --- 4. RENDU DU CRÉNEAU ÉLÈVE (SLOT) ---
             let slotDiv = document.createElement('div');
             slotDiv.style.cssText = "border: 1px solid #ccc; border-radius: 5px; margin-bottom: 8px; background: white; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05);";
-            
+
             slotDiv.innerHTML = `
                 <div style="background:#e9ecef; padding:5px; font-size:0.85rem; font-weight:bold; border-bottom:1px solid #ccc; display:flex; justify-content:space-between;">
                     <span>⏱️ ${slot.startTime} - ${slot.endTime}</span>
@@ -1874,7 +1905,7 @@ function renderOralVisualDistribution() {
             dropZone.style.padding = "5px";
             dropZone.setAttribute('data-jury', juryName);
             dropZone.setAttribute('data-slot-index', index);
-            
+
             dropZone.addEventListener('dragover', (e) => { e.preventDefault(); e.currentTarget.style.backgroundColor = "#d4edda"; });
             dropZone.addEventListener('dragleave', (e) => { e.currentTarget.style.backgroundColor = "transparent"; });
             dropZone.addEventListener('drop', handleOralDrop);
@@ -1884,7 +1915,7 @@ function renderOralVisualDistribution() {
                 let stDiv = document.createElement('div');
                 stDiv.className = 'dd-student';
                 stDiv.draggable = true;
-                
+
                 const langueBadge = student.langue ? `<span style="font-size:0.65rem; background:#95a5a6; color:white; padding:1px 4px; border-radius:3px; margin-left:4px;">${student.langue}</span>` : "";
                 const priorityStar = student.isPriority ? `<span style="color: #f1c40f; margin-right: 5px; font-size:1.1rem;" title="Élève Prioritaire">⭐</span>` : "";
 
@@ -1893,31 +1924,31 @@ function renderOralVisualDistribution() {
                         <div style="flex-grow:1; display:flex; align-items:center; font-size:0.9rem; overflow:hidden;">
                             ${priorityStar}
                             <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                                <strong>${student.nom.toUpperCase()}</strong>&nbsp;${student.prenom} 
+                                <strong>${student.nom.toUpperCase()}</strong>&nbsp;${student.prenom}
                             </span>
                             ${langueBadge}
                         </div>
-                        <button style="background:transparent; border:none; cursor:pointer; color:#e74c3c; font-weight:bold; padding:0 5px;" 
+                        <button style="background:transparent; border:none; cursor:pointer; color:#e74c3c; font-weight:bold; padding:0 5px;"
                                 onclick="removeStudentFromSlot('${juryName}', ${index}, ${studentIndex})"
                                 title="Retirer l'élève">❌</button>
                     </div>
                 `;
-                
+
                 stDiv.addEventListener('dragstart', (e) => {
                     if(e.target.tagName === 'BUTTON') return e.preventDefault();
-                    e.dataTransfer.setData('text/plain', JSON.stringify({ 
-                        juryName: juryName, 
-                        slotIndex: index, 
-                        studentId: student.id 
+                    e.dataTransfer.setData('text/plain', JSON.stringify({
+                        juryName: juryName,
+                        slotIndex: index,
+                        studentId: student.id
                     }));
                 });
-                
+
                 dropZone.appendChild(stDiv);
             });
 
             slotDiv.appendChild(dropZone);
             body.appendChild(slotDiv);
-            
+
             // Zone d'insertion après chaque créneau
             body.appendChild(createSeparator(index + 1));
         });
@@ -1934,12 +1965,12 @@ function renderOralVisualDistribution() {
 function handleOralDrop(e) {
     e.preventDefault();
     e.currentTarget.style.backgroundColor = "transparent";
-    
+
     // Reset style pour les séparateurs
     if (e.currentTarget.className === 'inter-slot-separator') {
         e.currentTarget.style.height = "8px";
     }
-    
+
     try {
         const data = JSON.parse(e.dataTransfer.getData('text/plain'));
         const targetJury = e.currentTarget.getAttribute('data-jury');
@@ -1957,7 +1988,7 @@ function handleOralDrop(e) {
         if (!isInsertion) {
             const targetSlotIndex = parseInt(e.currentTarget.getAttribute('data-slot-index'));
             const targetSlot = DB.oralConfig.distribution[targetJury][targetSlotIndex];
-            
+
             // Si le créneau cible est une pause, on annule tout
             if (targetSlot && (targetSlot.isPause || targetSlot.type === 'pause')) {
                 alert("⚠️ Action impossible : Vous ne pouvez pas ajouter un élève sur un créneau de pause.");
@@ -1980,7 +2011,7 @@ function handleOralDrop(e) {
         // 3. Routage de l'action
         if (isInsertion) {
             let insertIndex = parseInt(e.currentTarget.getAttribute('data-insert-index'));
-            
+
             // Ajustement d'index si suppression au-dessus dans le même jury
             if (sourceJury === targetJury && sourceSlotRemoved && sourceSlotIndex < insertIndex) {
                 insertIndex--;
@@ -1991,7 +2022,7 @@ function handleOralDrop(e) {
                 theme: studentToMove.parcours || "Général",
                 langue: studentToMove.langue || null,
                 students: [studentToMove],
-                startTime: "", 
+                startTime: "",
                 endTime: ""
             };
             DB.oralConfig.distribution[targetJury].splice(insertIndex, 0, newSlot);
@@ -2083,15 +2114,15 @@ window.exportOralPlannings = function() {
 
         slots.forEach(slot => {
             const timeStr = `${slot.startTime} - ${slot.endTime}`;
-            
+
             // Formatage des élèves (Retour à la ligne si groupe)
             const studentsStr = slot.students.map(s => `${s.nom.toUpperCase()} ${s.prenom}`).join('\n');
-            
+
             // Dédoublonnage des classes (ex: si 2 élèves de 3A, on affiche juste "3A")
             const classesStr = [...new Set(slot.students.map(s => s.classe))].join(', ');
-            
+
             const typeStr = slot.type === 'group' ? 'Groupe' : 'Indiv.';
-            
+
             // Formatage du thème et de la langue (ex: "EPI \n Anglais")
             let detailsStr = slot.theme;
             if (slot.langue) detailsStr += `\n(Langue: ${slot.langue})`;
@@ -2140,7 +2171,7 @@ window.exportOralPlannings = function() {
         alert("⚠️ Un problème est survenu : les jurys semblent vides.");
         return;
     }
-    
+
     // Nom du fichier nettoyé des espaces
     const fileName = `Planning_Oral_${nomExamen.replace(/\s+/g, '_')}.pdf`;
     doc.save(fileName);
@@ -2160,9 +2191,9 @@ window.clearOralDistribution = function() {
 
     // 2. Fenêtre de confirmation (Sécurité anti-misclick)
     const messageConfirmation = "⚠️ Attention : Voulez-vous vraiment effacer toute la répartition de l'oral ?\n\nTous les créneaux générés seront supprimés. Cette action est irréversible en mémoire.";
-    
+
     if (confirm(messageConfirmation)) {
-        
+
         // 3. Purge des données (On réinitialise le tiroir de l'oral à un objet vide)
         DB.oralConfig.distribution = {};
 
@@ -2170,7 +2201,7 @@ window.clearOralDistribution = function() {
         if (typeof renderOralVisualDistribution === 'function') {
             renderOralVisualDistribution();
         }
-        
+
         // Feedback utilisateur
         console.log("🧹 La répartition de l'oral a été réinitialisée avec succès.");
     }
@@ -2182,13 +2213,13 @@ window.clearOralDistribution = function() {
  */
 function renderOralGrilleConfig() {
     // L'initialisation est garantie par setupOralDatabase(), on peut lire en sécurité
-    const grille = DB.oralConfig.grille; 
+    const grille = DB.oralConfig.grille;
 
     // Fonction Helper pour dessiner les critères d'un bloc
     const renderBloc = (typeId, typeData) => {
         const container = document.getElementById(`container-criteres-${typeId}`);
         if (!container) return; // Sécurité si le DOM n'est pas encore prêt
-        
+
         container.innerHTML = "";
         let currentTotal = 0;
 
@@ -2201,7 +2232,7 @@ function renderOralGrilleConfig() {
                 niveauxHtml += `
                     <div style="display:flex; flex-direction:column; align-items:center; flex:1;">
                         <label style="font-size:0.75rem; color:#7f8c8d;">Niv. ${lvlIndex + 1} (pts)</label>
-                        <input type="number" step="0.5" min="0" value="${pts}" class="form-control" style="width:100%; text-align:center;" 
+                        <input type="number" step="0.5" min="0" value="${pts}" class="form-control" style="width:100%; text-align:center;"
                                onchange="updateOralCriterionLvl('${typeId}', ${index}, ${lvlIndex}, this.value)">
                     </div>
                 `;
@@ -2214,7 +2245,7 @@ function renderOralGrilleConfig() {
                 <div style="display:flex; justify-content:space-between; gap:15px; margin-bottom:10px;">
                     <div style="flex:2;">
                         <label style="font-size:0.85rem; font-weight:bold;">Nom du critère</label>
-                        <input type="text" class="form-control" value="${critere.label}" placeholder="Ex: Clarté de la voix..." 
+                        <input type="text" class="form-control" value="${critere.label}" placeholder="Ex: Clarté de la voix..."
                                onchange="updateOralCriterion('${typeId}', ${index}, 'label', this.value)">
                     </div>
                     <div style="flex:1;">
@@ -2238,7 +2269,7 @@ function renderOralGrilleConfig() {
         const totalSpan = document.getElementById(`total-${typeId}`);
         if (totalSpan) {
             totalSpan.innerText = `${currentTotal} / ${typeData.maxPoints} pts`;
-            
+
             if (currentTotal === typeData.maxPoints) {
                 totalSpan.style.backgroundColor = "#d4edda";
                 totalSpan.style.color = "#155724";
@@ -2259,15 +2290,15 @@ function renderOralGrilleConfig() {
     if (bonusCheckbox) {
         bonusCheckbox.checked = grille.bonus.enabled;
     }
-    
+
     const bonusContainer = document.getElementById("container-bonus-config");
     if (bonusContainer) {
         bonusContainer.style.display = grille.bonus.enabled ? "block" : "none";
-        
+
         if (grille.bonus.enabled) {
             document.getElementById("bonus-max-pts").value = grille.bonus.maxPoints;
             document.getElementById("bonus-nb-niveaux").value = grille.bonus.niveaux.length;
-            
+
             const bonusLvlContainer = document.getElementById("bonus-niveaux-inputs");
             if (bonusLvlContainer) {
                 bonusLvlContainer.innerHTML = grille.bonus.niveaux.map((pts, idx) => `
@@ -2310,13 +2341,13 @@ window.updateOralCriterion = function(typeId, index, field, value) {
 window.changeOralCriterionScale = function(typeId, index, newScale) {
     const nb = parseInt(newScale);
     let niveaux = DB.oralConfig.grille[typeId].criteres[index].niveaux;
-    
+
     if (nb > niveaux.length) {
         while(niveaux.length < nb) niveaux.push(0);
     } else if (nb < niveaux.length) {
         niveaux = niveaux.slice(0, nb);
     }
-    
+
     DB.oralConfig.grille[typeId].criteres[index].niveaux = niveaux;
     // On recalcule le point max basé sur le dernier niveau
     DB.oralConfig.grille[typeId].criteres[index].maxPts = Math.max(...niveaux);
@@ -2330,7 +2361,7 @@ window.updateOralCriterionLvl = function(typeId, critIndex, lvlIndex, value) {
     const valNum = parseFloat(value) || 0;
     const critere = DB.oralConfig.grille[typeId].criteres[critIndex];
     critere.niveaux[lvlIndex] = valNum;
-    
+
     // Le max du critère est la valeur la plus haute de son échelle
     critere.maxPts = Math.max(...critere.niveaux);
     renderOralGrilleConfig();
@@ -2345,9 +2376,9 @@ window.toggleBonusLangue = function(isEnabled) {
 window.updateBonusConfig = function() {
     const maxPts = parseInt(document.getElementById("bonus-max-pts").value) || 2;
     const nbNiv = parseInt(document.getElementById("bonus-nb-niveaux").value) || 3;
-    
+
     DB.oralConfig.grille.bonus.maxPoints = maxPts;
-    
+
     let niveaux = DB.oralConfig.grille.bonus.niveaux;
     if (nbNiv > niveaux.length) {
         while(niveaux.length < nbNiv) niveaux.push(0);
@@ -2380,14 +2411,14 @@ window.exportGrillePDF = function() {
     const grille = DB.oralConfig.grille;
 
     // --- A. EN-TÊTE DU DOCUMENT ET LOGO ---
-    const nomExamen = DB.oralConfig.general?.name || "Epreuve_Orale"; 
+    const nomExamen = DB.oralConfig.general?.name || "Epreuve_Orale";
     const sessionYear = DB.config.year || new Date().getFullYear();
-    
+
     if (DB.config.logo) {
         try {
             const imgProps = doc.getImageProperties(DB.config.logo);
-            const maxW = 30; 
-            const maxH = 25; 
+            const maxW = 30;
+            const maxH = 25;
             const ratio = Math.min(maxW / imgProps.width, maxH / imgProps.height);
             const w = imgProps.width * ratio;
             const h = imgProps.height * ratio;
@@ -2396,38 +2427,38 @@ window.exportGrillePDF = function() {
             console.error("Erreur lors de l'insertion du logo :", e);
         }
     }
-    
+
     doc.setFontSize(18);
-    doc.setTextColor(44, 62, 80); 
+    doc.setTextColor(44, 62, 80);
     doc.setFont("helvetica", "bold");
     doc.text(`Grille d'évaluation - Session ${sessionYear}`, 105, 22, { align: 'center' });
 
     doc.setDrawColor(200);
     doc.setFillColor(248, 249, 250);
-    doc.rect(14, 31, 182, 26, 'FD'); 
+    doc.rect(14, 31, 182, 26, 'FD');
     doc.setFontSize(12);
     doc.setTextColor(0);
-    
+
     doc.text("Candidat(e) : .....................................................................", 18, 38);
     doc.text("Parcours / EPI : ................................................................", 18, 45);
     doc.text("Jury : ..................................................................................", 18, 52);
 
-    let startY = 65; 
+    let startY = 65;
 
     // --- B. FONCTION HELPER POUR GÉNÉRER UN TABLEAU ---
-    const primaryColor = [44, 62, 80]; 
+    const primaryColor = [44, 62, 80];
 
     const drawSectionTable = (title, data, maxTotal) => {
         if (data.criteres.length === 0) return;
 
         let maxLvlCount = 0;
         data.criteres.forEach(c => { if (c.niveaux.length > maxLvlCount) maxLvlCount = c.niveaux.length; });
-        
+
         let headRow = ['Critères d\'évaluation'];
         for (let i = 0; i < maxLvlCount; i++) {
             headRow.push(`Niveau ${i + 1}`);
         }
-        headRow.push('Note'); 
+        headRow.push('Note');
 
         let bodyRows = [];
         data.criteres.forEach(critere => {
@@ -2436,10 +2467,10 @@ window.exportGrillePDF = function() {
                 if (i < critere.niveaux.length) {
                     row.push(`${critere.niveaux[i]} pts`);
                 } else {
-                    row.push("-"); 
+                    row.push("-");
                 }
             }
-            row.push(""); 
+            row.push("");
             bodyRows.push(row);
         });
 
@@ -2456,29 +2487,29 @@ window.exportGrillePDF = function() {
             headStyles: { fillColor: primaryColor, halign: 'center' },
             // MODIFICATION ICI : overflow ajouté
             styles: { fontSize: 10, cellPadding: 3, valign: 'middle', overflow: 'linebreak' },
-            columnStyles: { 
+            columnStyles: {
                 // MODIFICATION ICI : largeur fixe au lieu de 'auto' pour forcer le retour à la ligne
-                0: { cellWidth: 70 }, 
+                0: { cellWidth: 70 },
                 [headRow.length - 1]: { cellWidth: 20, halign: 'center', fillColor: [240, 240, 240] }
             }
         });
 
-        startY = doc.lastAutoTable.finalY + 15; 
+        startY = doc.lastAutoTable.finalY + 15;
     };
 
     // --- C. DESSIN DES SECTIONS ---
     drawSectionTable("Prestation Orale", grille.prestation, 8);
-    
+
     if (startY > 220) { doc.addPage(); startY = 20; }
     drawSectionTable("Contenu de l'exposé", grille.contenu, 12);
 
     if (grille.bonus && grille.bonus.enabled) {
         if (startY > 250) { doc.addPage(); startY = 20; }
-        
+
         doc.setFontSize(11);
-        doc.setTextColor(...primaryColor); 
+        doc.setTextColor(...primaryColor);
         doc.text(`Bonus Évaluation en Langue Vivante (Max : +${grille.bonus.maxPoints} pts)`, 14, startY);
-        
+
         let bonusRow = ['Qualité de l\'expression en langue étrangère'];
         grille.bonus.niveaux.forEach((pts) => {
             bonusRow.push(`${pts} pts`);
@@ -2497,7 +2528,7 @@ window.exportGrillePDF = function() {
             headStyles: { fillColor: primaryColor, halign: 'center' },
             // MODIFICATION ICI
             styles: { fontSize: 10, cellPadding: 3, valign: 'middle', overflow: 'linebreak' },
-            columnStyles: { 
+            columnStyles: {
                 0: { cellWidth: 70 }, // MODIFICATION ICI
                 [headBonus.length - 1]: { cellWidth: 20, halign: 'center', fillColor: [250, 240, 230] }
             }
@@ -2510,12 +2541,12 @@ window.exportGrillePDF = function() {
 
     doc.setDrawColor(0);
     doc.setLineWidth(0.5);
-    doc.rect(14, startY, 182, 40); 
+    doc.rect(14, startY, 182, 40);
 
     doc.setFontSize(11);
     doc.setTextColor(0);
     doc.text("Appréciations générales du jury :", 18, startY + 6);
-    
+
     doc.setDrawColor(200);
     doc.setLineWidth(0.2);
     doc.line(18, startY + 15, 190, startY + 15);
@@ -2526,7 +2557,7 @@ window.exportGrillePDF = function() {
     doc.setLineWidth(0.8);
     doc.setFillColor(236, 240, 241);
     doc.rect(130, startY + 45, 66, 20, 'FD');
-    
+
     doc.setFontSize(14);
     doc.text(`NOTE FINALE :        / 20`, 135, startY + 58);
 
@@ -2546,7 +2577,7 @@ window.exportOralDisplayGlobal = function() {
 
     const { jsPDF } = window.jspdf;
     // Basculement en mode Portrait ('p') pour une lecture verticale standard
-    const doc = new jsPDF('p', 'mm', 'a4'); 
+    const doc = new jsPDF('p', 'mm', 'a4');
     const primaryColor = [44, 62, 80]; // Bleu institutionnel
 
     // 1. Mise à plat et enrichissement des données pour le tri
@@ -2556,7 +2587,7 @@ window.exportOralDisplayGlobal = function() {
             // Récupération de la salle associée au jury via le vivier des professeurs[cite: 1]
             const profs = DB.oralConfig.teachers.filter(t => t.jury === jury);
             const salle = profs.length > 0 ? (profs[0].salle || "---") : "---";
-            
+
             allPassages.push({
                 heure: slot.startTime,
                 jury: jury,
@@ -2576,7 +2607,7 @@ window.exportOralDisplayGlobal = function() {
     doc.setTextColor(...primaryColor);
     doc.setFont("helvetica", "bold");
     doc.text(`Vie Scolaire : Liste Chronologique des Oraux`, 14, 15);
-    
+
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     doc.text(`${DB.config.schoolName || "Établissement"} - Session ${DB.config.year}`, 14, 20);
@@ -2684,7 +2715,7 @@ window.exportOralJuryPochettes = function() {
 
     const { jsPDF } = window.jspdf;
     // Format A3 Paysage pour pliage A4 central
-    const doc = new jsPDF('l', 'mm', 'a3'); 
+    const doc = new jsPDF('l', 'mm', 'a3');
     const primaryColor = [44, 62, 80];
     const sessionYear = DB.config.year || "2026";
 
@@ -2697,7 +2728,7 @@ window.exportOralJuryPochettes = function() {
         // =========================================================
         // PAGE DE DROITE (RECTO / GARDE) : x de 210 à 420
         // =========================================================
-        
+
         // 1. Logo du collège (Adaptatif)
         if (DB.config.logo) {
             try {
@@ -2713,7 +2744,7 @@ window.exportOralJuryPochettes = function() {
         doc.setTextColor(...primaryColor);
         doc.setFont("helvetica", "bold");
         doc.text(`Oral du DNB - Session ${sessionYear}`, 320, 25, { align: 'center' });
-        
+
         doc.setFontSize(18);
         doc.text(`DOSSIER JURY N°${juryName}`, 320, 35, { align: 'center' });
 
@@ -2749,9 +2780,9 @@ window.exportOralJuryPochettes = function() {
             theme: 'grid',
             headStyles: { fillColor: primaryColor, fontSize: 10, halign: 'center' },
             styles: { fontSize: 9, cellPadding: 2, valign: 'middle' },
-            columnStyles: { 
-                0: { cellWidth: 20, halign: 'center' }, 
-                1: { cellWidth: 50 }, 
+            columnStyles: {
+                0: { cellWidth: 20, halign: 'center' },
+                1: { cellWidth: 50 },
                 2: { cellWidth: 15, halign: 'center' },
                 3: { cellWidth: 'auto' }
             }
@@ -2767,11 +2798,11 @@ window.exportOralJuryPochettes = function() {
             "  La note ainsi qu'une appréciation sont obligatoires.",
             "- Rendre le dossier complet au secrétariat en fin de session"
         ];
-        
+
         doc.setFontSize(12);
         doc.setFont("helvetica", "bold");
         doc.text("Consignes :", 225, finalY);
-        
+
         doc.setFontSize(10);
         doc.setFont("helvetica", "normal");
         const textX = 225;
@@ -2788,15 +2819,15 @@ window.exportOralJuryPochettes = function() {
         // =========================================================
         // PAGE DE GAUCHE (PV DE SÉANCE) : x de 0 à 210
         // =========================================================
-        
+
         doc.setFontSize(18);
         doc.setFont("helvetica", "bold");
         doc.text("PROCÈS-VERBAL DE SÉANCE", 105, 20, { align: 'center' });
-        
+
         doc.setFontSize(11);
         doc.setFont("helvetica", "normal");
         doc.text(`${DB.config.schoolName || "Établissement"} - Jury N°${juryName}`, 20, 30);
-        
+
         // Statistiques de présence
         const totalCandidats = slots.reduce((acc, s) => acc + s.students.length, 0);
         doc.setFont("helvetica", "bold");
@@ -2812,7 +2843,7 @@ window.exportOralJuryPochettes = function() {
         // Zone de signatures nominatives
         doc.setFont("helvetica", "bold");
         doc.text("Signatures des membres du jury :", 20, 170);
-        
+
         let sigY = 180;
         juryTeachers.forEach(t => {
             const label = `${t.civ || ""} ${t.nom.toUpperCase()} ${t.prenom}`;
@@ -2834,7 +2865,7 @@ window.exportOralJuryPochettes = function() {
 };
 
 /**
- * @why Insère le logo de l'établissement de manière adaptative (ratio préservé) 
+ * @why Insère le logo de l'établissement de manière adaptative (ratio préservé)
  * en haut à gauche d'un document jsPDF.
  * @param {object} doc - L'instance du document jsPDF en cours.
  */
@@ -2914,10 +2945,10 @@ window.exportOralSignLists = function(withParcours = false, withSujet = false) {
         slots.forEach(slot => {
             slot.students.forEach((student, index) => {
                 const timeDisplay = index === 0 ? `${slot.startTime}` : `(Groupe)`;
-                
+
                 // --- CONSTRUCTION DU NOM AVEC OPTIONS ---
                 let candidateDisplay = `${student.nom.toUpperCase()} ${student.prenom}`;
-                
+
                 if (withParcours && student.parcours) {
                     candidateDisplay += `\nParcours : ${student.parcours}`;
                 }
@@ -2940,8 +2971,8 @@ window.exportOralSignLists = function(withParcours = false, withSujet = false) {
             body: body,
             theme: 'grid',
             headStyles: { fillColor: primaryColor, halign: 'center' },
-            styles: { 
-                fontSize: 9, 
+            styles: {
+                fontSize: 9,
                 minCellHeight: 14, // Légèrement augmenté pour le confort
                 valign: 'middle',
                 overflow: 'linebreak' // Force le retour à la ligne
@@ -2970,7 +3001,7 @@ window.exportOralNotationSheets = function() {
 
     const { jsPDF } = window.jspdf;
     // 'p' pour Portrait, 'mm' pour millimètres, 'a4' pour le format papier
-    const doc = new jsPDF('p', 'mm', 'a4'); 
+    const doc = new jsPDF('p', 'mm', 'a4');
     const primaryColor = [44, 62, 80];
     let pageCount = 0;
 
@@ -3001,13 +3032,13 @@ window.exportOralNotationSheets = function() {
         doc.setFontSize(10);
         doc.setTextColor(100);
         doc.setFont("helvetica", "normal");
-        
+
         // Récupération des membres du jury
         const juryMembers = DB.oralConfig.teachers
             .filter(t => String(t.juryNumber || t.jury) === String(juryNum))
             .map(t => t.nom.toUpperCase())
             .join(', ');
-            
+
         doc.text(`Session ${DB.config.year || new Date().getFullYear()} | Membres : ${juryMembers || "Non définis"}`, centerX, 27, { align: 'center' });
 
         // Construction des données du tableau
@@ -3038,12 +3069,12 @@ window.exportOralNotationSheets = function() {
                 3: { halign: 'center', cellWidth: 30, fillColor: [248, 249, 250] } // Note
             },
             // Permet au tableau de continuer sur la page suivante si trop de lignes
-            margin: { left: 14, right: 14, bottom: 30 } 
+            margin: { left: 14, right: 14, bottom: 30 }
         });
 
         // Zone de signatures (en bas de la dernière page du jury ou après le tableau)
         let finalY = doc.lastAutoTable.finalY + 15;
-        
+
         // Sécurité si le tableau finit trop bas sur la page
         if (finalY > 260) {
             doc.addPage();
@@ -3053,7 +3084,7 @@ window.exportOralNotationSheets = function() {
         doc.setFontSize(11);
         doc.setTextColor(0);
         doc.text("Signatures des membres du jury :", 14, finalY);
-        
+
         doc.setDrawColor(150);
         doc.line(14, finalY + 15, 80, finalY + 15);  // Signature 1
         doc.line(120, finalY + 15, 186, finalY + 15); // Signature 2
@@ -3079,7 +3110,7 @@ window.updateSecretariatYearDisplay = function() {
 /**
  * @why Retire un élève spécifique d'un créneau de passage dans la répartition en mémoire.
  * Permet de gérer les aléas (départ d'un élève) sans détruire le travail algorithmique déjà validé.
- * 
+ *
  * @param {string} juryName - Le nom de la clé du jury (ex: "Jury 1")
  * @param {number} slotIndex - L'index du créneau de passage dans le tableau du jury
  * @param {number} studentIndex - L'index de l'élève dans le tableau des étudiants de ce créneau
@@ -3093,7 +3124,7 @@ window.removeStudentFromSlot = function(juryName, slotIndex, studentIndex) {
 
     // 2. Sécurité : Demande de confirmation
     const msg = `⚠️ Voulez-vous vraiment retirer ${student.nom.toUpperCase()} ${student.prenom} de ce créneau de passage ?\n\nCette action libérera sa place. Pensez à sauvegarder votre projet ensuite.`;
-    
+
     if (confirm(msg)) {
         // 3. Mutation : Retrait de l'élève du tableau
         slot.students.splice(studentIndex, 1);
@@ -3107,7 +3138,7 @@ window.removeStudentFromSlot = function(juryName, slotIndex, studentIndex) {
         if (typeof renderOralVisualDistribution === 'function') {
             renderOralVisualDistribution();
         }
-        
+
         console.log(`🧹 Élève retiré avec succès du ${juryName}.`);
     }
 };
@@ -3148,12 +3179,12 @@ function drawEvaluationSheet(doc, data) {
     doc.setFont("helvetica", "bold");
     doc.text(`Candidat(e) : ${data.nom} ${data.prenom}`, 20, 43);
     doc.text(`Classe : ${data.classe}`, 140, 43);
-    
+
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     doc.text(`Jury : ${data.jury}`, 20, 51);
     doc.text(`Date / Heure : ${data.date}`, 140, 51);
-    
+
     doc.setFont("helvetica", "italic");
     doc.text(`Parcours / EPI : ${data.parcours}`, 20, 59);
     doc.text(`Sujet : ${data.sujet}`, 20, 65);
@@ -3161,19 +3192,19 @@ function drawEvaluationSheet(doc, data) {
     // Grille d'évaluation
     const gridBody = [
         [
-            "Maîtrise de l'expression orale\n(Clarté, vocabulaire, fluidité, posture)", 
-            "Prestation Orale\n( / 8 pts)", 
+            "Maîtrise de l'expression orale\n(Clarté, vocabulaire, fluidité, posture)",
+            "Prestation Orale\n( / 8 pts)",
             "" // Case pour la note et remarques
         ],
         [
-            "Maîtrise du sujet et des connaissances\n(Argumentation, pertinence, réponses aux questions)", 
-            "Contenu\n( / 12 pts)", 
-            "" 
+            "Maîtrise du sujet et des connaissances\n(Argumentation, pertinence, réponses aux questions)",
+            "Contenu\n( / 12 pts)",
+            ""
         ],
         [
-            "Points supplémentaires (Optionnel)\n(Utilisation d'une langue étrangère, etc.)", 
-            "Bonus\n( / 20 pts -> Non exclusif)", 
-            "" 
+            "Points supplémentaires (Optionnel)\n(Utilisation d'une langue étrangère, etc.)",
+            "Bonus\n( / 20 pts -> Non exclusif)",
+            ""
         ]
     ];
 
@@ -3223,8 +3254,8 @@ window.exportPrefilledEvalSheets = function() {
     const doc = new jsPDF('p', 'mm', 'a4');
     let pageCount = 0;
 
-    const dateExam = DB.oralConfig.general?.date 
-        ? new Date(DB.oralConfig.general.date).toLocaleDateString('fr-FR') 
+    const dateExam = DB.oralConfig.general?.date
+        ? new Date(DB.oralConfig.general.date).toLocaleDateString('fr-FR')
         : 'Non définie';
 
     Object.keys(DB.oralConfig.distribution).sort((a,b) => a.localeCompare(b, undefined, {numeric: true})).forEach(juryName => {
@@ -3233,7 +3264,7 @@ window.exportPrefilledEvalSheets = function() {
         slots.forEach(slot => {
             slot.students.forEach(student => {
                 if (pageCount > 0) doc.addPage();
-                
+
                 const langueCandidat = (student.langue && student.langue.trim() !== "") ? student.langue.trim() : null;
 
                 const evalData = {
@@ -3256,7 +3287,7 @@ window.exportPrefilledEvalSheets = function() {
 
     const session = DB.config.year || new Date().getFullYear();
     const schoolName = DB.config.schoolName ? DB.config.schoolName.replace(/[^a-z0-9]/gi, '_') : "Etablissement";
-    
+
     doc.save(`Fiches_Evaluation_Oral_${schoolName}_${session}.pdf`);
 };
 
@@ -3288,20 +3319,20 @@ function internalRenderEvalDesign(doc, data) {
     // 3. Bloc d'en-tête (Cadre de 32mm de hauteur)
     doc.setDrawColor(200);
     doc.setFillColor(248, 249, 250);
-    doc.rect(14, 31, 182, 32, 'FD'); 
-    
+    doc.rect(14, 31, 182, 32, 'FD');
+
     doc.setFontSize(11);
     doc.setTextColor(0);
-    
+
     doc.setFont("helvetica", "bold");
     doc.text(`Candidat(e) : ${data.nom} ${data.prenom} (${data.classe})`, 18, 38);
-    
+
     doc.setFont("helvetica", "bold");
     doc.text(`Parcours : ${data.parcours}`, 18, 44);
-    
+
     doc.setFont("helvetica", "normal");
     doc.text(`Sujet : ${data.sujet}`, 18, 50);
-    
+
     doc.text(`Jury : ${data.jury} | Horaire : ${data.horaire}`, 18, 56);
 
     if (data.langue) {
@@ -3311,22 +3342,22 @@ function internalRenderEvalDesign(doc, data) {
         doc.setTextColor(0);
     }
 
-    let startY = 72; 
-    
+    let startY = 72;
+
     // 4. Fonction interne de génération des tableaux de la grille
     const drawTable = (title, sectionData, maxPts) => {
         if (!sectionData || !sectionData.criteres || sectionData.criteres.length === 0) return;
-        
+
         let maxLvl = 0;
-        sectionData.criteres.forEach(c => { 
-            if (c.niveaux && c.niveaux.length > maxLvl) maxLvl = c.niveaux.length; 
+        sectionData.criteres.forEach(c => {
+            if (c.niveaux && c.niveaux.length > maxLvl) maxLvl = c.niveaux.length;
         });
 
         const head = [['Critères', ...Array.from({length: maxLvl}, (_, i) => `Niv ${i+1}`), 'Note']];
         const body = sectionData.criteres.map(c => [
-            c.label, 
+            c.label,
             ...Array.from({length: maxLvl}, (_, i) => c.niveaux[i] !== undefined ? `${c.niveaux[i]} pts` : '-'),
-            "" 
+            ""
         ]);
 
         doc.setFontSize(12);
@@ -3341,9 +3372,9 @@ function internalRenderEvalDesign(doc, data) {
             theme: 'grid',
             headStyles: { fillColor: primaryColor, halign: 'center' },
             styles: { fontSize: 9, cellPadding: 3, valign: 'middle', overflow: 'linebreak' },
-            columnStyles: { 
-                0: { cellWidth: 70 }, 
-                [head[0].length - 1]: { cellWidth: 15, fillColor: [240, 240, 240] } 
+            columnStyles: {
+                0: { cellWidth: 70 },
+                [head[0].length - 1]: { cellWidth: 15, fillColor: [240, 240, 240] }
             }
         });
         startY = doc.lastAutoTable.finalY + 12;
@@ -3351,7 +3382,7 @@ function internalRenderEvalDesign(doc, data) {
 
     // --- AFFICHAGE DES DEUX TABLEAUX DE LA GRILLE ---
     drawTable("Prestation Orale", grille.prestation, 8);
-    
+
     if (startY > 230) { doc.addPage(); startY = 20; }
     drawTable("Contenu de l'exposé", grille.contenu, 12);
 
@@ -3361,10 +3392,10 @@ function internalRenderEvalDesign(doc, data) {
         doc.setTextColor(...primaryColor);
         doc.setFont("helvetica", "bold");
         doc.text(`Bonus LVE : ${data.langue} (Max : +${grille.bonus.maxPoints} pts)`, 14, startY);
-        
+
         const bonusHead = [['Critère', ...grille.bonus.niveaux.map((_, i) => `Niv ${i+1}`), 'Bonus']];
         const bonusBody = [[`Expression en ${data.langue}`, ...grille.bonus.niveaux.map(pts => `${pts} pts`), ""]];
-        
+
         doc.autoTable({
             startY: startY + 2,
             head: bonusHead,
@@ -3372,9 +3403,9 @@ function internalRenderEvalDesign(doc, data) {
             theme: 'grid',
             headStyles: { fillColor: primaryColor },
             styles: { fontSize: 9, cellPadding: 3, valign: 'middle', overflow: 'linebreak' },
-            columnStyles: { 
-                0: { cellWidth: 70 }, 
-                [bonusHead[0].length - 1]: { fillColor: [250, 240, 230], halign: 'center', cellWidth: 15 } 
+            columnStyles: {
+                0: { cellWidth: 70 },
+                [bonusHead[0].length - 1]: { fillColor: [250, 240, 230], halign: 'center', cellWidth: 15 }
             }
         });
         startY = doc.lastAutoTable.finalY + 10;
@@ -3383,15 +3414,15 @@ function internalRenderEvalDesign(doc, data) {
     // 6. Bloc Appréciations, Note Finale et SIGNATURES
     // Sécurité : On anticipe le besoin d'espace supplémentaire pour les signatures
     if (startY > 220) { doc.addPage(); startY = 20; }
-    
+
     doc.setDrawColor(0);
     doc.setLineWidth(0.3);
-    doc.rect(14, startY, 182, 35); 
+    doc.rect(14, startY, 182, 35);
     doc.setFontSize(10);
     doc.setTextColor(0);
     doc.setFont("helvetica", "normal");
     doc.text("Appréciations du jury :", 18, startY + 6);
-    
+
     // Cadre de la Note Finale (à droite)
     doc.setFillColor(236, 240, 241);
     doc.rect(130, startY + 38, 66, 15, 'FD');
@@ -3403,7 +3434,7 @@ function internalRenderEvalDesign(doc, data) {
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
     doc.text("Signatures des membres du jury :", 18, startY + 44);
-    
+
     // Ligne de signature esthétique
     doc.setDrawColor(150);
     doc.setLineWidth(0.2);
@@ -3415,7 +3446,7 @@ function internalRenderEvalDesign(doc, data) {
 function initOralNotesMenu() {
     const listCont = document.getElementById('oral-notes-jurys-list');
     const dist = DB.oralConfig.distribution;
-    
+
     if (!dist || Object.keys(dist).length === 0) {
         listCont.innerHTML = '<p style="font-size: 0.8rem; color: #e74c3c; text-align: center;">Aucune répartition générée.</p>';
         return;
@@ -3430,7 +3461,7 @@ function initOralNotesMenu() {
             .join(' / ');
 
         html += `
-            <div class="jury-item" onclick="selectJuryForNotes('${juryId}')" 
+            <div class="jury-item" onclick="selectJuryForNotes('${juryId}')"
                  style="padding: 12px; margin-bottom: 8px; background: white; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; transition: 0.2s;">
                 <div style="font-weight: bold; color: var(--secondary);">Jury ${juryId}</div>
                 <div style="font-size: 0.75rem; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${profs || 'Membres non définis'}</div>
@@ -3451,7 +3482,7 @@ window.selectJuryForNotes = function(juryId) {
         el.style.borderColor = "#ddd";
         el.style.backgroundColor = "white";
     });
-    
+
     const currentEl = event.currentTarget;
     if (currentEl) {
         currentEl.style.borderColor = "var(--secondary)";
@@ -3486,7 +3517,7 @@ window.selectJuryForNotes = function(juryId) {
 
             // On n'affiche l'heure que pour la première ligne du groupe pour plus de lisibilité
             const timeDisplay = (sIdx === 0) ? `<b>${p.startTime}</b>` : `<span style="color:#ccc">${p.startTime}</span>`;
-            
+
             // Style visuel pour marquer le regroupement (bordure plus épaisse entre les créneaux)
             const rowStyle = (sIdx === 0 && rowCounter > 0) ? "border-top: 2px solid #34495e;" : "";
 
@@ -3498,8 +3529,8 @@ window.selectJuryForNotes = function(juryId) {
                         <br><small style="color:#7f8c8d;">${student.parcours || student.sujet || 'Individuel'}</small>
                     </td>
                     <td style="text-align: center; vertical-align: middle;">
-                        <input type="number" step="0.5" min="0" max="20" 
-                               class="oral-note-input" 
+                        <input type="number" step="0.5" min="0" max="20"
+                               class="oral-note-input"
                                data-nav-idx="${rowCounter}"
                                data-student-id="${student.id}"
                                value="${savedNote}"
@@ -3541,7 +3572,7 @@ function saveJuryNotes(juryId) {
     inputs.forEach(input => {
         const studentId = input.getAttribute('data-student-id');
         const val = input.value === "" ? undefined : parseFloat(input.value);
-        
+
         // 1. Mise à jour dans le vivier spécifique à l'oral (pour la persistance du menu actuel)
         const sOral = DB.oralConfig.students.find(s => s.id == studentId);
         if (sOral) sOral.noteOral = val;
@@ -3565,7 +3596,7 @@ function saveJuryNotes(juryId) {
 window.renderOralResultsTable = function() {
     const tbody = document.getElementById('oral-results-tbody');
     const searchTerm = document.getElementById('search-oral-results').value.toLowerCase();
-    
+
     if (!DB.oralConfig.students) return;
 
     // 1. Préparation et Tri des données
@@ -3577,14 +3608,14 @@ window.renderOralResultsTable = function() {
         // Recherche du jury dans la distribution
         let juryId = "-";
         Object.keys(DB.oralConfig.distribution || {}).forEach(jId => {
-            const found = DB.oralConfig.distribution[jId].some(slot => 
+            const found = DB.oralConfig.distribution[jId].some(slot =>
                 slot.students.some(st => st.id === s.id)
             );
             if (found) juryId = jId;
         });
 
         const fullName = `${s.nom.toUpperCase()} ${s.prenom}`;
-        
+
         // Filtre de recherche
         if (searchTerm && !fullName.toLowerCase().includes(searchTerm) && !s.classe?.toLowerCase().includes(searchTerm)) {
             return;
@@ -3616,7 +3647,7 @@ window.editOralNoteInline = function(studentId) {
     if (!student) return;
 
     const newNote = prompt(`Saisir la note de ${student.nom} ${student.prenom} :`, student.noteOral || "");
-    
+
     if (newNote === null) return; // Annulation
 
     const parsedNote = newNote === "" ? undefined : parseFloat(newNote.replace(',', '.'));
@@ -3682,7 +3713,7 @@ window.exportOralResultsPDF = function() {
     const primaryColor = [44, 62, 80]; // Bleu foncé institutionnel
 
     // Position Y par défaut pour le titre (si pas de logo)
-    let startYOffset = 22; 
+    let startYOffset = 22;
 
     // 2. En-tête du document et Logo
     if (DB.config.logo) {
@@ -3690,11 +3721,11 @@ window.exportOralResultsPDF = function() {
             const imgProps = doc.getImageProperties(DB.config.logo);
             const ratio = Math.min(30 / imgProps.width, 25 / imgProps.height);
             doc.addImage(DB.config.logo, 'PNG', 14, 10, imgProps.width * ratio, imgProps.height * ratio, undefined, 'FAST');
-            
+
             // On repousse le titre sous le logo (le logo a une hauteur max de 25, positionné à Y=10)
-            startYOffset = 45; 
-        } catch (e) { 
-            console.error("Erreur logo:", e); 
+            startYOffset = 45;
+        } catch (e) {
+            console.error("Erreur logo:", e);
         }
     }
 
@@ -3713,7 +3744,7 @@ window.exportOralResultsPDF = function() {
 
     // 4. Préparation des données du tableau
     const students = [...DB.oralConfig.students].sort((a, b) => a.nom.localeCompare(b.nom));
-    
+
     const tableBody = students.map(s => {
         let juryId = "-";
         if (DB.oralConfig.distribution) {
@@ -3723,8 +3754,8 @@ window.exportOralResultsPDF = function() {
             });
         }
 
-        const noteAffichage = (s.noteOral !== undefined && s.noteOral !== null && s.noteOral !== "") 
-            ? `${s.noteOral} / 20` 
+        const noteAffichage = (s.noteOral !== undefined && s.noteOral !== null && s.noteOral !== "")
+            ? `${s.noteOral} / 20`
             : "ABS / Non saisie";
 
         return [
@@ -3755,7 +3786,7 @@ window.exportOralResultsPDF = function() {
         didParseCell: function(data) {
             if (data.section === 'body' && data.column.index === 4) {
                 if (data.cell.raw === "ABS / Non saisie") {
-                    data.cell.styles.textColor = [231, 76, 60]; 
+                    data.cell.styles.textColor = [231, 76, 60];
                     data.cell.styles.fontStyle = 'italic';
                 }
             }
@@ -3781,14 +3812,14 @@ window.exportOralResultsPDF = function() {
  */
 function calculateGradeStats(studentsList) {
     const graded = studentsList.filter(s => typeof s.noteOral === 'number' && !isNaN(s.noteOral));
-    
+
     if (graded.length === 0) return { min: "-", max: "-", avg: "-", count: 0 };
-    
+
     const grades = graded.map(s => s.noteOral);
     const min = Math.min(...grades);
     const max = Math.max(...grades);
     const avg = (grades.reduce((sum, val) => sum + val, 0) / grades.length).toFixed(2);
-    
+
     return { min, max, avg, count: graded.length };
 }
 
@@ -3799,7 +3830,7 @@ function calculateGradeStats(studentsList) {
 window.renderOralHarmonisation = function() {
     const cohortBanner = document.getElementById('harmonisation-cohort-banner');
     const cardsGrid = document.getElementById('harmonisation-cards-grid');
-    
+
     if (!cohortBanner || !cardsGrid || !DB.oralConfig.students) return;
 
     // 1. Forçage CSS pour la haute densité (Grid CSS optimisée)
@@ -3808,7 +3839,7 @@ window.renderOralHarmonisation = function() {
 
     // 2. Statistiques globales (La Référence) - Version compacte
     const cohortStats = calculateGradeStats(DB.oralConfig.students);
-    
+
     cohortBanner.style.marginBottom = "15px"; // Moins de marge sous la bannière
     cohortBanner.innerHTML = `
         <article aria-label="Statistiques de la cohorte" style="background: linear-gradient(135deg, #2c3e50, #34495e); color: white; padding: 12px 20px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
@@ -3857,7 +3888,7 @@ window.renderOralHarmonisation = function() {
 
         cardsHtml += `
             <article aria-label="Jury ${juryId}" style="background: white; border-radius: 8px; padding: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.04); ${cardBorder} display: flex; flex-direction: column;">
-                
+
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                     <h4 style="margin: 0; font-size: 0.95rem; color: var(--secondary);">Jury ${juryId} <span style="font-size: 0.8rem; color: #7f8c8d; font-weight: normal;">(${stats.count})</span></h4>
                     <div>${alertBadge}</div>
@@ -3888,7 +3919,7 @@ window.renderOralDataViz = function() {
     const kpiBanner = document.getElementById('dataviz-kpi-banner');
     const demoCharts = document.getElementById('dataviz-demo-charts');
     const parcoursCharts = document.getElementById('dataviz-parcours-charts');
-    
+
     if (!kpiBanner || !demoCharts || !parcoursCharts || !DB.oralConfig.students) return;
 
     const students = DB.oralConfig.students;
@@ -3919,10 +3950,10 @@ window.renderOralDataViz = function() {
     // --- 2. FONCTION HELPER : BARRE DE PROGRESSION CSS ---
     const createVisualBar = (label, stats) => {
         if (stats.count === 0 || stats.avg === "-") return '';
-        
+
         const avgNum = parseFloat(stats.avg);
         const percentage = (avgNum / 20) * 100;
-        
+
         // Colorimétrie sémantique douce
         let barColor = "var(--primary)";
         if (avgNum >= 15) barColor = "#27ae60"; // Vert (Très bien)
@@ -3936,7 +3967,7 @@ window.renderOralDataViz = function() {
                 </div>
                 <!-- Jauge accessible RGAA -->
                 <div style="display: flex; align-items: center; gap: 15px;">
-                    <div style="flex: 1; background: #ecf0f1; border-radius: 6px; height: 14px; overflow: hidden;" 
+                    <div style="flex: 1; background: #ecf0f1; border-radius: 6px; height: 14px; overflow: hidden;"
                          role="progressbar" aria-valuenow="${avgNum}" aria-valuemin="0" aria-valuemax="20" aria-label="Moyenne ${label}">
                         <div style="width: ${percentage}%; background: ${barColor}; height: 100%; border-radius: 6px; transition: width 0.8s ease-out;"></div>
                     </div>
@@ -3951,11 +3982,11 @@ window.renderOralDataViz = function() {
     // --- 3. RENDU DÉMOGRAPHIE ET CLASSES ---
     const girls = students.filter(s => s.sexe === 'F');
     const boys = students.filter(s => s.sexe === 'M');
-    
+
     let htmlDemo = "";
     htmlDemo += createVisualBar("👧 Filles", calculateGradeStats(girls));
     htmlDemo += createVisualBar("👦 Garçons", calculateGradeStats(boys));
-    
+
     htmlDemo += `<div style="height: 1px; background: #eee; margin: 25px 0;"></div>`; // Séparateur
 
     const classes = [...new Set(students.map(s => s.classe || "N/C"))].sort();
@@ -4012,17 +4043,17 @@ window.exportOralHarmonisationPDF = function() {
     // --- 2. Calcul des données ---
     const cohortStats = calculateGradeStats(DB.oralConfig.students);
     const dist = DB.oralConfig.distribution || {};
-    
+
     // Construction des lignes du tableau PDF
     const tableBody = [];
-    
+
     // Première ligne : La Cohorte (Référence)
     tableBody.push([
-        "COHORTE GLOBALE", 
-        cohortStats.count.toString(), 
-        cohortStats.min.toString(), 
-        cohortStats.max.toString(), 
-        cohortStats.avg.toString(), 
+        "COHORTE GLOBALE",
+        cohortStats.count.toString(),
+        cohortStats.min.toString(),
+        cohortStats.max.toString(),
+        cohortStats.avg.toString(),
         "RÉFÉRENCE"
     ]);
 
@@ -4073,7 +4104,7 @@ window.exportOralHarmonisationPDF = function() {
                 data.cell.styles.fillColor = [236, 240, 241]; // Gris très clair
                 data.cell.styles.textColor = [44, 62, 80];
             }
-            
+
             // Coloration de l'écart
             if (data.section === 'body' && data.column.index === 5 && data.row.index > 0) {
                 const ecart = data.cell.raw;
@@ -4107,7 +4138,7 @@ window.exportOralDataVizPDF = function() {
     const doc = new jsPDF('p', 'mm', 'a4');
     const primaryColor = [44, 62, 80]; // Bleu foncé
 
-    let startYOffset = 22; 
+    let startYOffset = 22;
 
     // --- 1. En-tête Institutionnel et Logo ---
     if (DB.config.logo) {
@@ -4115,7 +4146,7 @@ window.exportOralDataVizPDF = function() {
             const imgProps = doc.getImageProperties(DB.config.logo);
             const ratio = Math.min(30 / imgProps.width, 25 / imgProps.height);
             doc.addImage(DB.config.logo, 'PNG', 14, 10, imgProps.width * ratio, imgProps.height * ratio, undefined, 'FAST');
-            startYOffset = 45; 
+            startYOffset = 45;
         } catch (e) { console.error("Erreur logo:", e); }
     }
 
@@ -4140,7 +4171,7 @@ window.exportOralDataVizPDF = function() {
     doc.setTextColor(0, 0, 0);
     doc.setFont("helvetica", "bold");
     doc.text("1. Indicateurs Globaux de la Cohorte", 14, startYOffset + 22);
-    
+
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     doc.text(`Effectif évalué : ${cohortStats.count} candidats`, 14, startYOffset + 28);
@@ -4185,7 +4216,7 @@ window.exportOralDataVizPDF = function() {
     const demoBody = [];
     demoBody.push(["Filles", ...Object.values(calculateGradeStats(students.filter(s => s.sexe === 'F')))]);
     demoBody.push(["Garçons", ...Object.values(calculateGradeStats(students.filter(s => s.sexe === 'M')))]);
-    
+
     const classes = [...new Set(students.map(s => s.classe || "N/C"))].sort();
     classes.forEach(c => {
         demoBody.push([`Classe ${c}`, ...Object.values(calculateGradeStats(students.filter(s => (s.classe || "N/C") === c)))]);
@@ -4200,10 +4231,10 @@ window.exportOralDataVizPDF = function() {
 
     // --- 4. Tableau Parcours ---
     const finalY = doc.lastAutoTable.finalY || (startYOffset + 54);
-    
+
     // Ajout d'une nouvelle page si on manque de place
     if (finalY > 250) doc.addPage();
-    
+
     const parcoursStartY = (finalY > 250) ? 20 : finalY + 15;
 
     doc.setFontSize(12);
@@ -4244,7 +4275,7 @@ window.exportOralJurysPDF = function() {
     const doc = new jsPDF('p', 'mm', 'a4');
     const primaryColor = [44, 62, 80];
 
-    let startYOffset = 22; 
+    let startYOffset = 22;
 
     // 2. En-tête Institutionnel
     if (DB.config.logo) {
@@ -4252,7 +4283,7 @@ window.exportOralJurysPDF = function() {
             const imgProps = doc.getImageProperties(DB.config.logo);
             const ratio = Math.min(30 / imgProps.width, 25 / imgProps.height);
             doc.addImage(DB.config.logo, 'PNG', 14, 10, imgProps.width * ratio, imgProps.height * ratio, undefined, 'FAST');
-            startYOffset = 45; 
+            startYOffset = 45;
         } catch (e) { console.error("Erreur logo:", e); }
     }
 
@@ -4274,7 +4305,7 @@ window.exportOralJurysPDF = function() {
             .filter(t => t.jury && t.jury !== "")
             .map(t => t.jury)
     );
-    
+
     const juriesList = [...juriesSet].sort((a,b) => a.localeCompare(b, undefined, {numeric: true}));
 
     if (juriesList.length === 0) {
@@ -4288,10 +4319,10 @@ window.exportOralJurysPDF = function() {
 
         // CORRECTIF : Recherche de la salle sur les membres du jury (prioritaire)
         let roomDisplay = "Non assignée";
-        
+
         // On cherche le premier prof du jury qui a une salle saisie
         const teacherWithRoom = members.find(t => t.salle && String(t.salle).trim() !== "");
-        
+
         if (teacherWithRoom) {
             roomDisplay = teacherWithRoom.salle;
         } else if (DB.oralConfig.rooms && Array.isArray(DB.oralConfig.rooms)) {
@@ -4380,7 +4411,7 @@ function drawOfficialHeader(doc, title, startY = 15) {
     }
     const sessionYear = DB.config.year || new Date().getFullYear();
     const schoolName = DB.config.schoolName || "Établissement";
-    
+
     // --- MODIFICATION ICI ---
     const rawDate = DB.oralConfig.general?.date || "";
     const oralDate = formatDateFR(rawDate);
@@ -4390,7 +4421,7 @@ function drawOfficialHeader(doc, title, startY = 15) {
     doc.setFontSize(16);
     doc.setTextColor(44, 62, 80);
     doc.text(title, 105, startY + 10, { align: 'center' });
-    
+
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     doc.text(`Session ${sessionYear} - ${schoolName} | Date de l'épreuve : ${oralDate}`, 105, startY + 16, { align: 'center' });
@@ -4403,8 +4434,8 @@ function drawOfficialHeader(doc, title, startY = 15) {
             document.getElementById('convoc-offset-container').style.display = e.target.checked ? 'block' : 'none';
         });
     }
-	
-	
+
+
 	/**
  * Ouvre la modale et pré-remplit avec les dernières valeurs sauvegardées
  */
@@ -4435,11 +4466,11 @@ window.confirmOralConvocGeneration = function() {
         offset: parseInt(document.getElementById('convoc-offset-mins').value) || 0,
         text: document.getElementById('convoc-text-instructions').value
     };
-    
+
     // Persistance dans la base de données locale
     DB.oralConfig.convocParams = params;
-    if (typeof saveDB === 'function') saveDB(); 
-    
+    if (typeof saveDB === 'function') saveDB();
+
     document.getElementById('modal-oral-convoc-settings').style.display = 'none';
     exportOralConvocEleves(params);
 };
@@ -4461,7 +4492,7 @@ window.exportOralConvocEleves = function(params) {
     if (!window.jspdf) return alert("Librairie jsPDF manquante.");
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('p', 'mm', 'a4');
-    
+
     // Utiliser les params passés ou ceux de la DB par défaut
     const p = params || DB.oralConfig.convocParams || { showArrival: false, offset: 0, text: "" };
 
@@ -4503,7 +4534,7 @@ window.exportOralConvocEleves = function(params) {
         const sujetTexte = s.sujet || "Non renseigné";
         const sujetLines = doc.splitTextToSize(sujetTexte, 155);
         const cadre1Height = 48 + ((sujetLines.length - 1) * 5);
-        doc.rect(14, 50, 182, cadre1Height); 
+        doc.rect(14, 50, 182, cadre1Height);
 
         doc.setFontSize(12).setFont("helvetica", "bold");
         doc.text(`${civilite} ${s.nom.toUpperCase()} ${s.prenom}`, 20, 60);
@@ -4511,16 +4542,16 @@ window.exportOralConvocEleves = function(params) {
         doc.text(`Classe : ${s.classe || "N/C"}`, 20, 72);
         doc.setFont("helvetica", "bold").text(`Parcours : ${s.parcours || "Général"}`, 20, 80);
         doc.text("Sujet : ", 20, 86);
-        doc.setFont("helvetica", "normal").text(sujetLines, 35, 86); 
+        doc.setFont("helvetica", "normal").text(sujetLines, 35, 86);
 
         // --- CADRE 2 : INFOS PASSAGE ---
-        const cadre2Y = 50 + cadre1Height + 5; 
+        const cadre2Y = 50 + cadre1Height + 5;
         doc.rect(14, cadre2Y, 182, p.showArrival ? 40 : 30);
         const roomName = (typeof getJuryRoomName === 'function') ? getJuryRoomName(schedule.juryId) : "N/C";
-        
+
         doc.setFont("helvetica", "bold").setFontSize(11);
         doc.text(`JURY ${schedule.juryId.replace('jury-', '')} - Salle ${roomName}`, 20, cadre2Y + 10);
-        
+
         if (p.showArrival) {
             const heureAccueil = getArrivalTime(schedule.startTime, p.offset);
             doc.setFont("helvetica", "bold").setTextColor(231, 76, 60); // Rouge pour attirer l'oeil
@@ -4543,9 +4574,9 @@ window.exportOralConvocEleves = function(params) {
 
         // --- BLOC SIGNATURE ---
         const signatureY = 235;
-        const centerX = 150; 
+        const centerX = 150;
         const city = DB.config.city || "votre ville";
-        
+
         doc.setFontSize(11).setFont("helvetica", "normal");
         doc.text(`Fait à ${city}, le ${new Date().toLocaleDateString('fr-FR')}`, centerX, signatureY, { align: 'center' });
 
@@ -4576,18 +4607,18 @@ window.exportOralPochettesEleves = function() {
     if (typeof window.jspdf === 'undefined') return alert("Librairie jsPDF manquante.");
 
     const { jsPDF } = window.jspdf;
-    
+
     // Format A3 Paysage : Largeur 420mm x Hauteur 297mm
     // Plié en deux, cela fait une chemise A4 standard.
-    const doc = new jsPDF('l', 'mm', 'a3'); 
-    
+    const doc = new jsPDF('l', 'mm', 'a3');
+
     // On extrait la liste unique des classes concernées par l'oral
     const classes = [...new Set(DB.oralConfig.students.map(s => s.classe || "N/C"))].sort();
-    
+
     const year = DB.config.year || new Date().getFullYear();
     const schoolName = DB.config.schoolName || "Établissement";
-    
-    const PG_H = 297; 
+
+    const PG_H = 297;
     const HALF_W = 210; // Milieu de la page (pliure)
     const M = 15; // Marge globale
 
@@ -4607,8 +4638,8 @@ window.exportOralPochettesEleves = function() {
         // ===================================================
         // === PARTIE DROITE (RECTO) : COUVERTURE ===
         // ===================================================
-        const covX = HALF_W + M; 
-        const covW = HALF_W - (2*M); 
+        const covX = HALF_W + M;
+        const covW = HALF_W - (2*M);
         const covCenterX = covX + (covW/2);
 
         // Logo (si disponible dans la config globale)
@@ -4619,22 +4650,22 @@ window.exportOralPochettesEleves = function() {
                 doc.addImage(DB.config.logo, 'PNG', covX, 15, imgProps.width * ratio, imgProps.height * ratio);
             } catch (e) {}
         }
-        
+
         // En-tête Établissement
         doc.setFontSize(18); doc.setFont("helvetica", "bold"); doc.setTextColor(0);
-        doc.text(schoolName, covX + 65, 25); 
+        doc.text(schoolName, covX + 65, 25);
 
         // Titres spécifiques à l'oral
         doc.setFontSize(28); doc.setTextColor(44, 62, 80);
         doc.text("CONVOCATIONS ÉLÈVES", covCenterX, 95, {align:'center'});
-        
+
         doc.setFontSize(20);
         doc.text(`ÉPREUVE ORALE DNB - SESSION ${year}`, covCenterX, 110, {align:'center'});
 
         // Cadre et Classe
         doc.setDrawColor(44, 62, 80); doc.setLineWidth(1.5);
         doc.rect(covX + 35, 135, covW - 70, 55);
-        
+
         doc.setFontSize(75);
         doc.text(className, covCenterX, 178, {align:'center'});
 
@@ -4644,11 +4675,11 @@ window.exportOralPochettesEleves = function() {
         const listX = M;
         const listW = HALF_W - (2*M);
         // On divise la largeur disponible en deux colonnes de tableaux
-        const colW = (listW / 2) - 5; 
+        const colW = (listW / 2) - 5;
 
         // Découpage de la liste en deux (Haut -> Bas, puis changement de colonne)
         const mid = Math.ceil(classStudents.length / 2);
-        
+
         // Fonction de mapping (Intègre les données de passage oral sous le nom)
         const mapStudentRow = (s) => {
             const sch = getStudentOralSchedule(s.id);
@@ -4656,7 +4687,7 @@ window.exportOralPochettesEleves = function() {
             const info = `${s.nom.toUpperCase()} ${s.prenom}\n(Jury ${sch.juryId} - ${sch.startTime})`;
             return [info, ""];
         };
-        
+
         const col1 = classStudents.slice(0, mid).map(mapStudentRow);
         const col2 = classStudents.slice(mid).map(mapStudentRow);
 
@@ -4664,7 +4695,7 @@ window.exportOralPochettesEleves = function() {
             theme: 'grid',
             headStyles: { fillColor: [44, 62, 80], fontSize: 9, cellPadding: 2, halign: 'center' },
             styles: { fontSize: 9, cellPadding: 4, valign: 'middle', lineColor: [200] },
-            columnStyles: { 
+            columnStyles: {
                 0: { cellWidth: 55, fontStyle: 'bold' }, // Nom Prénom + Infos Oral : 5.5cm
                 1: { cellWidth: 'auto' } // Signature : Reste de l'espace
             },
@@ -4689,7 +4720,7 @@ window.exportOralPochettesEleves = function() {
             ...tableConfig,
             head: [['Candidat / Heure de passage', 'Signature']],
             body: col2,
-            margin: { left: listX + colW + 10 }, 
+            margin: { left: listX + colW + 10 },
             tableWidth: colW
         });
 
@@ -4698,7 +4729,7 @@ window.exportOralPochettesEleves = function() {
         // ===================================================
         // Ligne de pliure centrale (pointillés discrets)
         doc.setDrawColor(220); doc.setLineDash([5, 5], 0);
-        doc.line(HALF_W, 0, HALF_W, PG_H); 
+        doc.line(HALF_W, 0, HALF_W, PG_H);
         doc.setLineDash([]);
     });
 
@@ -4728,13 +4759,13 @@ window.openOralProfConvocModal = function() {
  */
 window.confirmOralProfConvocGeneration = function() {
     const text = document.getElementById('prof-text-instructions').value;
-    
+
     // Sauvegarde en DB
     DB.oralConfig.profConvocParams = { text: text };
-    if (typeof saveDB === 'function') saveDB(); 
-    
+    if (typeof saveDB === 'function') saveDB();
+
     document.getElementById('modal-oral-prof-settings').style.display = 'none';
-    
+
     // Lancement de l'export avec les nouvelles données
     exportOralConvocProfs({ text: text });
 };
@@ -4792,7 +4823,7 @@ window.exportOralConvocProfs = function(params) {
     // 2. Filtrage des enseignants (Jury affecté OU coché en Réserve)
     const allTeachers = DB.oralConfig.teachers || [];
     const teachersToConvoque = allTeachers.filter(t => (t.jury && t.jury !== "") || t.isReserve);
-    
+
     if (teachersToConvoque.length === 0) {
         return alert("Aucun enseignant à convoquer (pas de jury assigné et aucun prof en réserve).");
     }
@@ -4822,34 +4853,34 @@ window.exportOralConvocProfs = function(params) {
         if (t.isReserve) {
             // --- CAS A : ENSEIGNANT DE RÉSERVE ---
             drawOfficialHeader(doc, "CONVOCATION - ENSEIGNANT DE RÉSERVE", currentY);
-            
+
             doc.setFontSize(12).setFont("helvetica", "bold").setTextColor(0);
             doc.text(`Enseignant(e) : ${t.nom.toUpperCase()} ${t.prenom || ""}`, 14, 50);
-            
+
             // Cadre d'information visuel pour la Réserve
             doc.setDrawColor(230, 126, 34); // Orange institutionnel
             doc.setFillColor(253, 242, 233);
             doc.rect(14, 60, 182, 35, 'FD');
-            
+
             doc.setFontSize(11).setFont("helvetica", "bold").setTextColor(211, 84, 0);
             doc.text("AFFECTATION : MEMBRE DU JURY DE RÉSERVE", 18, 68);
-            
+
             doc.setFontSize(10).setFont("helvetica", "normal").setTextColor(0);
             doc.text(`Votre présence est requise dans l'établissement de ${p.reserveStart} à ${p.reserveEnd}.`, 18, 78);
             doc.text("Vous pourrez être sollicité(e) à tout moment pour pallier l'absence d'un juré.", 18, 85);
-            
+
             currentY = 110;
-        } 
+        }
         else {
             // --- CAS B : JURY CLASSIQUE ---
             drawOfficialHeader(doc, "CONVOCATION JURY - ÉPREUVE ORALE", currentY);
 
             const juryInfo = juryDataMap[t.jury] || { room: "N/A", members: [] };
-            
+
             doc.setFontSize(12).setFont("helvetica", "bold").setTextColor(0);
             doc.text(`Enseignant(e) : ${t.nom.toUpperCase()} ${t.prenom || ""}`, 14, 50);
             doc.text(`Affectation : JURY ${t.jury} - Salle ${juryInfo.room}`, 14, 60);
-            
+
             const colleagues = juryInfo.members
                 .filter(m => m !== `${t.nom.toUpperCase()} ${t.prenom || ""}`)
                 .join(', ');
@@ -4891,9 +4922,9 @@ window.exportOralConvocProfs = function(params) {
 
         // Bloc Signature
         const signatureY = 235;
-        const centerX = 150; 
+        const centerX = 150;
         const city = DB.config.city || "votre ville";
-        
+
         doc.setFontSize(11).setFont("helvetica", "normal");
         doc.text(`Fait à ${city}, le ${new Date().toLocaleDateString('fr-FR')}`, centerX, signatureY, { align: 'center' });
 
@@ -4913,7 +4944,7 @@ window.exportOralConvocProfs = function(params) {
     // 4. Finalisation du nom de fichier
     const sessionYear = DB.config.year || new Date().getFullYear();
     const schoolName = (DB.config.schoolName || "Export").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]/g, '_');
-    
+
     doc.save(`Convocations_Profs_Oral_${schoolName}_${sessionYear}.pdf`);
 };
 
@@ -4924,7 +4955,7 @@ window.exportOralConvocProfs = function(params) {
 window.triggerOralParcoursExport = function(withSubjects) {
     // 1. Fermeture de la modale proprement
     document.getElementById('modal-oral-subjects-option').style.display = 'none';
-    
+
     // 2. Appel à ta fonction principale de génération avec le paramètre de configuration
     exportOralParcoursJury(withSubjects);
 };
@@ -4953,12 +4984,12 @@ window.exportOralParcoursJury = function(withSubjects = true) {
         // --- 1. En-tête du Jury ---
         const roomName = getJuryRoomName(juryId);
         const members = (DB.oralConfig.teachers || []).filter(t => t.jury == juryId).map(t => t.nom).join(', ');
-        
+
         doc.setFontSize(12);
         doc.setFont("helvetica", "bold");
         doc.setTextColor(44, 62, 80);
         doc.text(`JURY ${juryId} - ${roomName}`, 14, currentY);
-        
+
         doc.setFontSize(10);
         doc.setFont("helvetica", "normal");
         doc.text(`Membres : ${members || "Non définis"}`, 14, currentY + 5);
@@ -4966,7 +4997,7 @@ window.exportOralParcoursJury = function(withSubjects = true) {
         // --- 2. Agrégation Hiérarchique (Parcours > Sujets) ---
         const dataTree = {}; // Structure : { "Parcours": { total: X, sujets: { "Sujet A": Y } } }
         const langueCount = {};
-        
+
         if (dist[juryId]) {
             dist[juryId].forEach(slot => {
                 slot.students.forEach(s => {
@@ -4977,7 +5008,7 @@ window.exportOralParcoursJury = function(withSubjects = true) {
                     if (!dataTree[p]) dataTree[p] = { total: 0, sujets: {} };
                     dataTree[p].total++;
                     dataTree[p].sujets[suj] = (dataTree[p].sujets[suj] || 0) + 1;
-                    
+
                     // Comptage Langues
                     if (s.langue && s.langue.trim() !== "") {
                         const l = s.langue.trim();
@@ -4992,7 +5023,7 @@ window.exportOralParcoursJury = function(withSubjects = true) {
         Object.keys(dataTree).sort().forEach(pName => {
             // Ligne Parent (Le Parcours)
             parcoursBody.push([
-                { content: pName, styles: { fontStyle: 'bold', fillColor: [245, 245, 245] } }, 
+                { content: pName, styles: { fontStyle: 'bold', fillColor: [245, 245, 245] } },
                 { content: dataTree[pName].total.toString(), styles: { fontStyle: 'bold', fillColor: [245, 245, 245] } }
             ]);
 
@@ -5000,7 +5031,7 @@ window.exportOralParcoursJury = function(withSubjects = true) {
             if (withSubjects) {
                 Object.keys(dataTree[pName].sujets).sort().forEach(sujName => {
                     parcoursBody.push([
-                        `   • ${sujName}`, 
+                        `   • ${sujName}`,
                         dataTree[pName].sujets[sujName].toString()
                     ]);
                 });
@@ -5028,7 +5059,7 @@ window.exportOralParcoursJury = function(withSubjects = true) {
 
         // --- 4. Rendu du Tableau des Langues (Si nécessaire) ---
         const langueBody = Object.keys(langueCount).sort().map(lName => [lName, langueCount[lName].toString()]);
-        
+
         if (langueBody.length > 0) {
             doc.autoTable({
                 startY: currentY,
@@ -5057,7 +5088,7 @@ window.exportOralParcoursJury = function(withSubjects = true) {
     const sessionYear = DB.config.year || new Date().getFullYear();
     const schoolName = DB.config.schoolName || "Etablissement";
     const safeName = schoolName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]/g, '_');
-    
+
     // Le nom du fichier indique si c'est une version détaillée ou simplifiée (optionnel, mais bon pour l'UX)
     const fileNameSuffix = withSubjects ? "Détaillé" : "Simplifié";
     doc.save(`Récapitulatif_Jurys_Parcours_${fileNameSuffix}_${safeName}_${sessionYear}.pdf`);
@@ -5069,8 +5100,8 @@ window.exportOralParcoursJury = function(withSubjects = true) {
 
 /**
  * @description Génère un UUID v4 de manière universelle (Standard + Polyfill hors ligne).
- * @why En EPLE, le fichier HTML est souvent ouvert en local (protocole file://). 
- * L'API native crypto.randomUUID() crashe hors HTTPS. Ce polyfill garantit 
+ * @why En EPLE, le fichier HTML est souvent ouvert en local (protocole file://).
+ * L'API native crypto.randomUUID() crashe hors HTTPS. Ce polyfill garantit
  * un fonctionnement ininterrompu, sans serveur web.
  * @returns {string} Identifiant unique sécurisé.
  */
@@ -5112,7 +5143,7 @@ function sanitizeBackupIDs() {
                 if (lot.copies) {
                     lot.copies.forEach(copy => {
                         const changeKey = `${copy.id}_${copy.nom}_${copy.prenom}`;
-                        if (idChanges[changeKey]) copy.id = idChanges[changeKey]; 
+                        if (idChanges[changeKey]) copy.id = idChanges[changeKey];
                     });
                 }
             });
@@ -5128,11 +5159,11 @@ function sanitizeBackupIDs() {
  * @description Création manuelle d'un élève.
  * @why Standardisation de l'ID à la création pour assurer l'intégrité du module Corrections.
  */
-function saveNewStudent() { 
+function saveNewStudent() {
     const n = document.getElementById('modStNom').value;
-    const p = document.getElementById('modStPrenom').value; 
-    
-    if(n && p){ 
+    const p = document.getElementById('modStPrenom').value;
+
+    if(n && p){
         DB.students.push({
             id: generateSecureID(), // Appel de l'utilitaire universel
             nom: String(n).toUpperCase().trim(),
@@ -5140,9 +5171,9 @@ function saveNewStudent() {
             classe: document.getElementById('modStClasse').value,
             sexe: document.getElementById('modStSexe').value,
             tt: document.getElementById('modStTT').checked
-        }); 
-        renderStudents(); 
-        closeStudentModal(); 
+        });
+        renderStudents();
+        closeStudentModal();
     } else {
         alert("⚠️ Les champs Nom et Prénom sont obligatoires.");
     }
@@ -5165,7 +5196,7 @@ function executeStudentImport(data, mapping, isStrictReplace) {
                 nom: String(nom).toUpperCase().trim(),
                 prenom: mapping.prenom && row[mapping.prenom] ? String(row[mapping.prenom]).trim() : "",
                 classe: mapping.classe && row[mapping.classe] ? String(row[mapping.classe]).trim() : "Non Classé",
-                sexe: "M", 
+                sexe: "M",
                 mef: mapping.mef && row[mapping.mef] ? String(row[mapping.mef]).trim() : "",
                 anonymat: mapping.anonymat && row[mapping.anonymat] ? String(row[mapping.anonymat]).trim() : "",
                 tt: false,
@@ -5201,19 +5232,19 @@ function executeStudentImport(data, mapping, isStrictReplace) {
  * @description Création manuelle d'un enseignant.
  * @why Code réécrit sur plusieurs lignes (Clean Code) pour y insérer la génération d'ID manquante.
  */
-function saveNewTeacher() { 
-    const n = document.getElementById('modTeaNom').value; 
-    if(n) { 
+function saveNewTeacher() {
+    const n = document.getElementById('modTeaNom').value;
+    if(n) {
         DB.teachers.push({
             id: generateSecureID(), // Harmonisation totale de la BDD
-            civ: document.getElementById('modTeaCiv').value, 
-            nom: String(n).toUpperCase().trim(), 
-            prenom: document.getElementById('modTeaPrenom').value.trim(), 
+            civ: document.getElementById('modTeaCiv').value,
+            nom: String(n).toUpperCase().trim(),
+            prenom: document.getElementById('modTeaPrenom').value.trim(),
             matiere: document.getElementById('modTeaMatiere').value.trim(),
             noHSE: false // Assure l'intégrité de la propriété
-        }); 
-        renderTeachers(); 
-        closeTeacherModal(); 
+        });
+        renderTeachers();
+        closeTeacherModal();
     } else {
         alert("⚠️ Le nom du professeur est obligatoire.");
     }
@@ -5224,7 +5255,7 @@ function saveNewTeacher() {
  */
 function executeTeacherImport(data, mapping, isStrictReplace) {
     let count = 0;
-    if (isStrictReplace) DB.teachers = []; 
+    if (isStrictReplace) DB.teachers = [];
 
     // 1. On rajoute 'index' ici pour récupérer le numéro de la ligne en cours
     data.forEach((row, index) => {
@@ -5232,7 +5263,7 @@ function executeTeacherImport(data, mapping, isStrictReplace) {
         if(nom) {
             const newT = {
                 // 2. On greffe l'index à la fin de ton ID sécurisé pour forcer l'unicité
-                id: generateSecureID() + "-" + index, 
+                id: generateSecureID() + "-" + index,
                 nom: String(nom).toUpperCase().trim(),
                 prenom: mapping.prenom && row[mapping.prenom] ? String(row[mapping.prenom]).trim() : "",
                 civ: "M.",
@@ -5264,7 +5295,7 @@ function executeTeacherImport(data, mapping, isStrictReplace) {
 window.findStudentInOralDistrib = function(searchTerm) {
     const resultBox = document.getElementById('oral-search-result');
     const search = searchTerm.toLowerCase().trim();
-    
+
     // Si la recherche est vide, on cache le bandeau et on retire les surlignages
     if (!search) {
         resultBox.style.display = 'none';
@@ -5277,7 +5308,7 @@ window.findStudentInOralDistrib = function(searchTerm) {
     }
 
     let foundHtml = "";
-    
+
     // 1. On fouille dans la base de données pour générer le message du bandeau
     if (DB.oralConfig && DB.oralConfig.distribution) {
         for (const [juryName, passages] of Object.entries(DB.oralConfig.distribution)) {
@@ -5287,8 +5318,8 @@ window.findStudentInOralDistrib = function(searchTerm) {
                     if (fullName.includes(search)) {
                         foundHtml += `
                         <div style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed #bce8f1;">
-                            🎓 <strong>${s.nom.toUpperCase()} ${s.prenom}</strong> 
-                            est assigné(e) au jury N° <strong style="color: #2980b9;">${juryName}</strong> 
+                            🎓 <strong>${s.nom.toUpperCase()} ${s.prenom}</strong>
+                            est assigné(e) au jury N° <strong style="color: #2980b9;">${juryName}</strong>
                             <span style="color:#e67e22; font-weight:bold; margin-left: 10px;">
                                 ⏱️ Passage : ${passage.startTime} - ${passage.endTime}
                             </span>
@@ -5311,7 +5342,7 @@ window.findStudentInOralDistrib = function(searchTerm) {
         resultBox.style.borderColor = '#3498db';
         resultBox.innerHTML = `✅ <strong>Résultat(s) de la recherche :</strong><br><br>${foundHtml}`;
     }
-    
+
     // 2. Surlignage visuel directement dans les colonnes Drag & Drop
     document.querySelectorAll('#oral-visual-distrib .dd-student').forEach(el => {
         // On vérifie le texte de l'élément visuel
@@ -5320,7 +5351,7 @@ window.findStudentInOralDistrib = function(searchTerm) {
             el.style.border = 'none';
             el.style.transform = 'scale(1.03)'; // Léger zoom
             el.style.transition = 'all 0.2s ease';
-            
+
             // Fait défiler la page pour que l'élève soit visible (optionnel mais pratique)
             el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         } else {
@@ -5332,7 +5363,7 @@ window.findStudentInOralDistrib = function(searchTerm) {
     });
 };
 /**
- * @why Synchronise la répartition avec les nouvelles données des élèves 
+ * @why Synchronise la répartition avec les nouvelles données des élèves
  * (Changement de parcours, langue, etc. APRES avoir fait la répartition)
  */
 window.syncOralDistributionData = function() {
@@ -5344,12 +5375,12 @@ window.syncOralDistributionData = function() {
                 // On prend l'ID du premier élève du passage (valable même pour les groupes)
                 const refId = passage.students[0].id;
                 const liveStudent = DB.oralConfig.students.find(s => s.id === refId);
-                
+
                 if (liveStudent) {
                     // 1. On met à jour les informations du créneau (affichées sur la carte)
                     passage.theme = liveStudent.parcours || "-";
                     passage.langue = liveStudent.langue ? liveStudent.langue.trim().toUpperCase() : null;
-                    
+
                     // 2. On rafraîchit la référence complète de l'élève à l'intérieur
                     passage.students = passage.students.map(ds => {
                         return DB.oralConfig.students.find(s => s.id === ds.id) || ds;
@@ -5450,7 +5481,7 @@ window.exportOralDistributionExcel = function() {
 
     // Ajustement automatique de la largeur des colonnes (optionnel mais recommandé)
     const wscols = [
-        {wch: 10}, {wch: 20}, {wch: 20}, {wch: 5}, {wch: 25}, 
+        {wch: 10}, {wch: 20}, {wch: 20}, {wch: 5}, {wch: 25},
         {wch: 15}, {wch: 10}, {wch: 15}, {wch: 12}, {wch: 12}, {wch: 50}
     ];
     worksheet['!cols'] = wscols;
@@ -5459,7 +5490,7 @@ window.exportOralDistributionExcel = function() {
     const sessionYear = DB.config.year || new Date().getFullYear();
     const schoolName = DB.config.schoolName || "Export";
     const fileName = `Repartition_Oral_${schoolName}_${sessionYear}.xlsx`;
-    
+
     XLSX.writeFile(workbook, fileName);
 };
 
@@ -5470,7 +5501,7 @@ window.updateJuryTime = function(teacherId, field, value) {
         // Optionnel : si c'est un binôme, on peut synchroniser l'autre membre du jury
         const binome = DB.oralConfig.teachers.find(t => t.jury === teacher.jury && t.id !== teacherId);
         if (binome) binome[field] = value;
-        
+
         saveDB(); // Sauvegarde locale
     }
 };

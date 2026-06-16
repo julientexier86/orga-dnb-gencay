@@ -1975,23 +1975,25 @@ window.generatePochettesPDF = function() {
     const examType = (typeof DB !== 'undefined' && DB.config && DB.config.examType) ? DB.config.examType : "DNB";
     const examYear = (typeof DB !== 'undefined' && DB.config && DB.config.year) ? DB.config.year : new Date().getFullYear();
     const etabName = (typeof DB !== 'undefined' && DB.config && DB.config.schoolName) ? DB.config.schoolName : "Établissement";
+    const cycladesPochetteValue = "Pochette Classe - Convocations Cyclades";
 
     let count = 0;
 
-    checkboxes.forEach(cb => {
+    const addGeneratedPage = () => {
         if (count > 0) doc.addPage("a3", "l");
         count++;
+    };
 
-        const type = cb.getAttribute('data-type');
-        const val = cb.value;
-
-        // Ligne de pliure centrale (pointilles)
+    const drawFoldLine = () => {
         doc.setDrawColor(200);
         doc.setLineDash([5, 5], 0);
         doc.line(HALF_W, 0, HALF_W, PAGE_H);
         doc.setLineDash([]);
+    };
 
-        // PARTIE DROITE DE LA POCHETTE (COUVERTURE)
+    const drawStandardPochette = (type, val) => {
+        addGeneratedPage();
+        drawFoldLine();
         const M = 20;
         const centerX = HALF_W + (HALF_W / 2);
 
@@ -2036,7 +2038,132 @@ window.generatePochettesPDF = function() {
 
             doc.text(val, centerX, boxY + 38, { align: 'center' });
         }
+    };
+
+    const getStudentClass = student => student.classe || student.Classe || student.class || student.clazz || "Non classé";
+    const getStudentName = student => `${student.nom || student.Nom || ""}`.trim();
+    const getStudentFirstName = student => `${student.prenom || student.Prénom || student.Prenom || ""}`.trim();
+
+    const drawCycladesClassPochette = (className, classStudents) => {
+        addGeneratedPage();
+        drawFoldLine();
+
+        const M = 15;
+        const listX = M;
+        const listW = HALF_W - (2 * M);
+        const colW = (listW / 2) - 5;
+        const covX = HALF_W + M;
+        const covW = HALF_W - (2 * M);
+        const covCenterX = covX + (covW / 2);
+
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(0);
+        doc.text("ÉMARGEMENT - REMISE DES CONVOCATIONS OFFICIELLES CYCLADES", listX + (listW / 2), 12, { align: 'center' });
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        doc.text(`Classe ${className} - ${examType} session ${examYear}`, listX + (listW / 2), 18, { align: 'center' });
+
+        const mid = Math.ceil(classStudents.length / 2);
+        const mapStudentRow = student => [
+            `${getStudentName(student).toUpperCase()} ${getStudentFirstName(student)}`.trim(),
+            ""
+        ];
+
+        const tableConfig = {
+            theme: 'grid',
+            headStyles: { fillColor: [44, 62, 80], fontSize: 9, cellPadding: 2, halign: 'center' },
+            styles: { fontSize: 9, cellPadding: 3.5, valign: 'middle', lineColor: [200] },
+            columnStyles: {
+                0: { cellWidth: 58, fontStyle: 'bold' },
+                1: { cellWidth: 'auto' }
+            },
+            startY: 25
+        };
+
+        doc.autoTable({
+            ...tableConfig,
+            head: [['Élève', 'Signature']],
+            body: classStudents.slice(0, mid).map(mapStudentRow),
+            margin: { left: listX },
+            tableWidth: colW
+        });
+
+        doc.autoTable({
+            ...tableConfig,
+            head: [['Élève', 'Signature']],
+            body: classStudents.slice(mid).map(mapStudentRow),
+            margin: { left: listX + colW + 10 },
+            tableWidth: colW
+        });
+
+        if (typeof addSmartLogo === 'function') {
+            addSmartLogo(doc, covX, 12, 38);
+        } else {
+            doc.setFontSize(16);
+            doc.setTextColor(100);
+            doc.text("Académie", covX, 28);
+        }
+
+        doc.setFontSize(18);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(0);
+        doc.text(etabName, covX + 62, 26);
+
+        doc.setFontSize(27);
+        doc.setTextColor(44, 62, 80);
+        doc.text("POCHETTE CLASSE", covCenterX, 88, { align: 'center' });
+
+        doc.setFontSize(19);
+        doc.setFont("helvetica", "normal");
+        doc.text(`CONVOCATIONS OFFICIELLES CYCLADES`, covCenterX, 106, { align: 'center' });
+        doc.text(`${examType} - SESSION ${examYear}`, covCenterX, 121, { align: 'center' });
+
+        doc.setDrawColor(44, 62, 80);
+        doc.setLineWidth(1.5);
+        doc.rect(covX + 35, 145, covW - 70, 55);
+
+        doc.setFontSize(75);
+        doc.setFont("helvetica", "bold");
+        doc.text(className, covCenterX, 188, { align: 'center' });
+
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(80);
+        doc.text("À insérer : convocations officielles DNB issues de Cyclades.", covCenterX, 225, { align: 'center' });
+        doc.text("Le verso sert d'émargement lors de la remise aux élèves.", covCenterX, 235, { align: 'center' });
+    };
+
+    checkboxes.forEach(cb => {
+        const type = cb.getAttribute('data-type');
+        const val = cb.value;
+
+        if (type === 'logistique' && val === cycladesPochetteValue) {
+            const students = (typeof DB !== 'undefined' && Array.isArray(DB.students)) ? DB.students : [];
+            const classes = [...new Set(students.map(getStudentClass))]
+                .filter(Boolean)
+                .sort((a, b) => a.localeCompare(b, 'fr', { numeric: true }));
+
+            classes.forEach(className => {
+                const classStudents = students
+                    .filter(student => getStudentClass(student) === className)
+                    .sort((a, b) => {
+                        const nomCmp = getStudentName(a).localeCompare(getStudentName(b), 'fr', { sensitivity: 'base' });
+                        if (nomCmp !== 0) return nomCmp;
+                        return getStudentFirstName(a).localeCompare(getStudentFirstName(b), 'fr', { sensitivity: 'base' });
+                    });
+                drawCycladesClassPochette(className, classStudents);
+            });
+            return;
+        }
+
+        drawStandardPochette(type, val);
     });
+
+    if (count === 0) {
+        alert("Aucune classe n'a été trouvée. Importez d'abord la liste des élèves.");
+        return;
+    }
 
     doc.save(`Pochettes_Organisation_${examYear}.pdf`);
 };
@@ -2358,89 +2485,15 @@ window.processLotsExcelAndGeneratePDF = function() {
 
             const rows = XLSX.utils.sheet_to_json(worksheet, {header: 1, defval: ""});
 
-            let headerIndex = -1;
-            let headers = [];
+            const { matieresData, matchedRows, detectedRnes } = parseLotsWorkbookRows(rows, rneInput);
 
-            for (let i = 0; i < Math.min(20, rows.length); i++) {
-                const rowStr = rows[i].join(" ");
-                if (rowStr.includes("RNE CE") || rowStr.includes("Numéro lot")) {
-                    headerIndex = i;
-                    headers = rows[i];
-                    break;
-                }
-            }
-
-            if (headerIndex === -1) {
-                feedback.innerHTML = "<span style='color: red;'>Erreur : En-tête introuvable. Est-ce le bon fichier Excel d'anonymat ?</span>";
+            if (matchedRows === 0) {
+                const detectedText = detectedRnes.length > 0 ? ` Centre(s) détecté(s) : ${detectedRnes.join(', ')}.` : "";
+                feedback.innerHTML = `<span style='color: red;'>Aucune donnée de lot trouvée pour le RNE/UAI ${rneInput}.${detectedText}</span>`;
                 return;
             }
 
-            const findIndexPartial = (arr, searchStr) => arr.findIndex(h => typeof h === 'string' && h.includes(searchStr));
-
-            const idxRneCE = findIndexPartial(headers, "RNE CE");
-            const idxComCor = findIndexPartial(headers, "Com Cor");
-            const idxLot = findIndexPartial(headers, "Numéro lot");
-            const idxRang = findIndexPartial(headers, "rang");
-            const idxEpreuve = findIndexPartial(headers, "Libellé épreuve");
-
-            if (idxRneCE < 0 || idxComCor < 0 || idxLot < 0 || idxRang < 0 || idxEpreuve < 0) {
-                feedback.innerHTML = "<span style='color: red;'>Erreur : Colonnes manquantes dans l'Excel.</span>";
-                return;
-            }
-
-            const matieresData = {
-                "FRANCAIS": { commissions: new Set(), sousLots: { "Dictée": new Set(), "Grammaire": new Set(), "Rédaction": new Set() }, lotSizes: {} },
-                "MATHEMATIQUES": { commissions: new Set(), lots: new Set(), lotSizes: {} },
-                "HISTOIRE GEOGRAPHIE EMC": { commissions: new Set(), lots: new Set(), lotSizes: {} },
-                "SCIENCES": { commissions: new Set(), lots: new Set(), lotSizes: {} }
-            };
-
-            for (let i = headerIndex + 1; i < rows.length; i++) {
-                const row = rows[i];
-                if (!row || row.length <= Math.max(idxRneCE, idxEpreuve)) continue;
-
-                const rowRne = String(row[idxRneCE]).trim().toUpperCase();
-                if (rowRne !== rneInput) continue;
-
-                const comCor = String(row[idxComCor]).trim();
-                const lotNum = String(row[idxLot]).trim();
-                const rang = parseInt(String(row[idxRang]).trim(), 10);
-                const epreuveBrut = String(row[idxEpreuve]).trim().toLowerCase();
-
-                if (isNaN(rang)) continue;
-
-                if (epreuveBrut.includes("dictée") || epreuveBrut.includes("grammaire") || epreuveBrut.includes("rédaction")) {
-                    let sousMat = epreuveBrut.includes("dictée") ? "Dictée" : (epreuveBrut.includes("grammaire") ? "Grammaire" : "Rédaction");
-                    matieresData["FRANCAIS"].commissions.add(comCor);
-                    matieresData["FRANCAIS"].sousLots[sousMat].add(lotNum);
-                    if (!matieresData["FRANCAIS"].lotSizes[lotNum] || rang > matieresData["FRANCAIS"].lotSizes[lotNum]) {
-                        matieresData["FRANCAIS"].lotSizes[lotNum] = rang;
-                    }
-                }
-                else if (epreuveBrut.includes("math")) {
-                    matieresData["MATHEMATIQUES"].commissions.add(comCor);
-                    matieresData["MATHEMATIQUES"].lots.add(lotNum);
-                    if (!matieresData["MATHEMATIQUES"].lotSizes[lotNum] || rang > matieresData["MATHEMATIQUES"].lotSizes[lotNum]) {
-                        matieresData["MATHEMATIQUES"].lotSizes[lotNum] = rang;
-                    }
-                }
-                else if (epreuveBrut.includes("histoire") || epreuveBrut.includes("géo") || epreuveBrut.includes("emc")) {
-                    matieresData["HISTOIRE GEOGRAPHIE EMC"].commissions.add(comCor);
-                    matieresData["HISTOIRE GEOGRAPHIE EMC"].lots.add(lotNum);
-                    if (!matieresData["HISTOIRE GEOGRAPHIE EMC"].lotSizes[lotNum] || rang > matieresData["HISTOIRE GEOGRAPHIE EMC"].lotSizes[lotNum]) {
-                        matieresData["HISTOIRE GEOGRAPHIE EMC"].lotSizes[lotNum] = rang;
-                    }
-                }
-                else if (epreuveBrut.includes("science") || epreuveBrut.includes("svt") || epreuveBrut.includes("physique") || epreuveBrut.includes("technologie")) {
-                    matieresData["SCIENCES"].commissions.add(comCor);
-                    matieresData["SCIENCES"].lots.add(lotNum);
-                    if (!matieresData["SCIENCES"].lotSizes[lotNum] || rang > matieresData["SCIENCES"].lotSizes[lotNum]) {
-                        matieresData["SCIENCES"].lotSizes[lotNum] = rang;
-                    }
-                }
-            }
-
-            feedback.innerHTML = "<span style='color: green;'>Fichier analysé avec succès. Génération du PDF...</span>";
+            feedback.innerHTML = `<span style='color: green;'>${matchedRows} ligne(s) de lots analysée(s). Génération du PDF...</span>`;
             generateBordereauxPDF(matieresData, rneInput);
             setTimeout(() => { feedback.innerHTML = ""; }, 4000);
 
@@ -2861,6 +2914,168 @@ window.exportAllGradesExcel = function() {
 // === GESTION LOTS COMMISSIONS V2.7 (3 types de documents) ===
 // ============================================================
 
+function normalizeLotsHeader(value) {
+    return String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, "");
+}
+
+function findLotsColumn(headers, aliases) {
+    const normalizedAliases = aliases.map(normalizeLotsHeader);
+    return headers.findIndex(header => {
+        const normalizedHeader = normalizeLotsHeader(header);
+        return normalizedAliases.some(alias => normalizedHeader === alias || normalizedHeader.includes(alias));
+    });
+}
+
+function isMeaningfulLotsValue(value) {
+    const text = String(value ?? "").trim();
+    return text !== "" && text !== "-";
+}
+
+function normalizeLotsCode(value) {
+    return String(value ?? "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toUpperCase()
+        .replace(/[^A-Z0-9]/g, "");
+}
+
+function parseLotAndRank(lotValue, rankValue) {
+    const rawLot = String(lotValue ?? "").replace(/'/g, "").trim();
+    const rawRank = String(rankValue ?? "").trim();
+    const combinedMatch = rawLot.match(/^(.+?)\s*-\s*(\d+)\s*$/);
+
+    if (combinedMatch) {
+        return {
+            lotNum: combinedMatch[1].replace(/^'/, "").trim(),
+            rang: parseInt(combinedMatch[2], 10)
+        };
+    }
+
+    return {
+        lotNum: rawLot,
+        rang: parseInt(rawRank, 10)
+    };
+}
+
+function emptyLotsMatieresData() {
+    return {
+        "FRANCAIS": { commissions: new Set(), sousLots: { "Dictée": new Set(), "Grammaire": new Set(), "Rédaction": new Set() }, lotSizes: {} },
+        "MATHEMATIQUES": { commissions: new Set(), lots: new Set(), lotSizes: {} },
+        "HISTOIRE GEOGRAPHIE EMC": { commissions: new Set(), lots: new Set(), lotSizes: {} },
+        "SCIENCES": { commissions: new Set(), lots: new Set(), lotSizes: {} }
+    };
+}
+
+function cleanLotsEpreuveLabel(epreuveBrut) {
+    const normalized = String(epreuveBrut || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase();
+
+    if (normalized.includes("dictee")) return "Dictée";
+    if (normalized.includes("grammaire")) return "Grammaire et compréhension";
+    if (normalized.includes("redaction")) return "Rédaction";
+    if (normalized.includes("math")) return "Mathématiques";
+    if (normalized.includes("histoire") || normalized.includes("geo") || normalized.includes("emc") || normalized.includes("moral")) return "Histoire Géographie EMC";
+    if (normalized.includes("science") || normalized.includes("svt") || normalized.includes("physique") || normalized.includes("chimie") || normalized.includes("technologie")) return "Sciences";
+
+    return String(epreuveBrut || "").trim();
+}
+
+function registerLotsRecord(record, matieresData, commissionsData) {
+    const { comCor, lotNum, rang, cleanEpreuve } = record;
+
+    if (cleanEpreuve === "Dictée" || cleanEpreuve === "Grammaire et compréhension" || cleanEpreuve === "Rédaction") {
+        const sousMat = cleanEpreuve === "Grammaire et compréhension" ? "Grammaire" : cleanEpreuve;
+        matieresData["FRANCAIS"].commissions.add(comCor);
+        matieresData["FRANCAIS"].sousLots[sousMat].add(lotNum);
+        matieresData["FRANCAIS"].lotSizes[lotNum] = (matieresData["FRANCAIS"].lotSizes[lotNum] || 0) + 1;
+    } else if (cleanEpreuve === "Mathématiques") {
+        matieresData["MATHEMATIQUES"].commissions.add(comCor);
+        matieresData["MATHEMATIQUES"].lots.add(lotNum);
+        matieresData["MATHEMATIQUES"].lotSizes[lotNum] = (matieresData["MATHEMATIQUES"].lotSizes[lotNum] || 0) + 1;
+    } else if (cleanEpreuve === "Histoire Géographie EMC") {
+        matieresData["HISTOIRE GEOGRAPHIE EMC"].commissions.add(comCor);
+        matieresData["HISTOIRE GEOGRAPHIE EMC"].lots.add(lotNum);
+        matieresData["HISTOIRE GEOGRAPHIE EMC"].lotSizes[lotNum] = (matieresData["HISTOIRE GEOGRAPHIE EMC"].lotSizes[lotNum] || 0) + 1;
+    } else if (cleanEpreuve === "Sciences") {
+        matieresData["SCIENCES"].commissions.add(comCor);
+        matieresData["SCIENCES"].lots.add(lotNum);
+        matieresData["SCIENCES"].lotSizes[lotNum] = (matieresData["SCIENCES"].lotSizes[lotNum] || 0) + 1;
+    }
+
+    if (!commissionsData[comCor]) commissionsData[comCor] = { lots: {} };
+    if (!commissionsData[comCor].lots[lotNum]) commissionsData[comCor].lots[lotNum] = { label: cleanEpreuve, copyCount: 0 };
+    commissionsData[comCor].lots[lotNum].copyCount += 1;
+}
+
+function parseLotsWorkbookRows(rows, rneInput) {
+    let headerIndex = -1;
+    let headers = [];
+    let indices = null;
+
+    for (let i = 0; i < Math.min(30, rows.length); i++) {
+        const candidateHeaders = rows[i] || [];
+        const idxEpreuve = findLotsColumn(candidateHeaders, ["Libellé épreuve", "Libelle epreuve", "Epreuve", "Épreuve"]);
+        const idxComCor = findLotsColumn(candidateHeaders, ["Com Cor", "Com.Cor", "Commission correction", "Commission de correction"]);
+        const idxLot = findLotsColumn(candidateHeaders, ["Numéro lot", "Numero lot", "Lot Copies-Rg", "Lot Copies Rg", "Lot copies", "Lot"]);
+
+        if (idxEpreuve >= 0 && idxComCor >= 0 && idxLot >= 0) {
+            headerIndex = i;
+            headers = candidateHeaders;
+            indices = {
+                rneCE: findLotsColumn(candidateHeaders, ["RNE CE", "RNECE", "Cen.Ep", "Centre épreuves", "Centre epreuves", "Centre d'épreuves"]),
+                comCor: idxComCor,
+                lot: idxLot,
+                rang: findLotsColumn(candidateHeaders, ["rang", "rg"]),
+                epreuve: idxEpreuve
+            };
+            break;
+        }
+    }
+
+    if (headerIndex === -1 || !indices || indices.rneCE < 0) {
+        throw new Error("En-tête introuvable ou colonne RNE/Cen.Ep manquante.");
+    }
+
+    const matieresData = emptyLotsMatieresData();
+    const commissionsData = {};
+    const rneNormalized = normalizeLotsCode(rneInput);
+    let currentRneCE = "";
+    let matchedRows = 0;
+    const detectedRnes = new Set();
+
+    for (let i = headerIndex + 1; i < rows.length; i++) {
+        const row = rows[i] || [];
+        const directRne = normalizeLotsCode(row[indices.rneCE]);
+        if (isMeaningfulLotsValue(directRne)) currentRneCE = directRne;
+
+        const effectiveRne = isMeaningfulLotsValue(directRne) ? directRne : currentRneCE;
+        if (isMeaningfulLotsValue(effectiveRne)) detectedRnes.add(effectiveRne);
+        if (effectiveRne !== rneNormalized) continue;
+
+        const comCor = String(row[indices.comCor] ?? "").trim();
+        const { lotNum, rang } = parseLotAndRank(row[indices.lot], indices.rang >= 0 ? row[indices.rang] : "");
+        const epreuveBrut = String(row[indices.epreuve] ?? "").trim();
+
+        if (!comCor || !lotNum || isNaN(rang) || !epreuveBrut) continue;
+
+        registerLotsRecord({
+            comCor,
+            lotNum,
+            rang,
+            cleanEpreuve: cleanLotsEpreuveLabel(epreuveBrut)
+        }, matieresData, commissionsData);
+        matchedRows++;
+    }
+
+    return { matieresData, commissionsData, matchedRows, headerIndex, headers, detectedRnes: Array.from(detectedRnes) };
+}
+
 window.processLotsExcel = function(docType) {
     const rneInput = document.getElementById('inputRneCe').value.trim().toUpperCase();
     const fileInput = document.getElementById('excelLotsInput');
@@ -2882,92 +3097,15 @@ window.processLotsExcel = function(docType) {
             const worksheet = workbook.Sheets[workbook.SheetNames[0]];
             const rows = XLSX.utils.sheet_to_json(worksheet, {header: 1, defval: ""});
 
-            let headerIndex = -1;
-            let headers = [];
+            const { matieresData, commissionsData, matchedRows, detectedRnes } = parseLotsWorkbookRows(rows, rneInput);
 
-            for (let i = 0; i < Math.min(20, rows.length); i++) {
-                const rowStr = rows[i].join(" ");
-                if (rowStr.includes("RNE CE") || rowStr.includes("Numéro lot")) {
-                    headerIndex = i;
-                    headers = rows[i];
-                    break;
-                }
-            }
-
-            if (headerIndex === -1) {
-                feedback.innerHTML = "<span style='color: red;'>Erreur : En-tête introuvable.</span>";
+            if (matchedRows === 0) {
+                const detectedText = detectedRnes.length > 0 ? ` Centre(s) détecté(s) : ${detectedRnes.join(', ')}.` : "";
+                feedback.innerHTML = `<span style='color: red;'>Aucune donnée de lot trouvée pour le RNE/UAI ${rneInput}.${detectedText}</span>`;
                 return;
             }
 
-            const findIndexPartial = (arr, searchStr) => arr.findIndex(h => typeof h === 'string' && h.includes(searchStr));
-            const idxRneCE = findIndexPartial(headers, "RNE CE");
-            const idxComCor = findIndexPartial(headers, "Com Cor");
-            const idxLot = findIndexPartial(headers, "Numéro lot");
-            const idxRang = findIndexPartial(headers, "rang");
-            const idxEpreuve = findIndexPartial(headers, "Libellé épreuve");
-
-            // 1. Structure pour les Bordereaux (A3)
-            const matieresData = {
-                "FRANCAIS": { commissions: new Set(), sousLots: { "Dictée": new Set(), "Grammaire": new Set(), "Rédaction": new Set() }, lotSizes: {} },
-                "MATHEMATIQUES": { commissions: new Set(), lots: new Set(), lotSizes: {} },
-                "HISTOIRE GEOGRAPHIE EMC": { commissions: new Set(), lots: new Set(), lotSizes: {} },
-                "SCIENCES": { commissions: new Set(), lots: new Set(), lotSizes: {} }
-            };
-
-            // 2. Structure pour les Pochettes Commissions
-            const commissionsData = {};
-
-            for (let i = headerIndex + 1; i < rows.length; i++) {
-                const row = rows[i];
-                if (!row || row.length <= Math.max(idxRneCE, idxEpreuve)) continue;
-
-                const rowRne = String(row[idxRneCE]).trim().toUpperCase();
-                if (rowRne !== rneInput) continue;
-
-                const comCor = String(row[idxComCor]).trim();
-                const lotNum = String(row[idxLot]).trim();
-                const rang = parseInt(String(row[idxRang]).trim(), 10);
-                const epreuveBrut = String(row[idxEpreuve]).trim().toLowerCase();
-
-                if (isNaN(rang)) continue;
-
-                // Nettoyage du nom de l'épreuve
-                let cleanEpreuve = "";
-                if (epreuveBrut.includes("dictée")) cleanEpreuve = "Dictée";
-                else if (epreuveBrut.includes("grammaire")) cleanEpreuve = "Grammaire et compréhension";
-                else if (epreuveBrut.includes("rédaction")) cleanEpreuve = "Rédaction";
-                else if (epreuveBrut.includes("math")) cleanEpreuve = "Mathématiques";
-                else if (epreuveBrut.includes("histoire") || epreuveBrut.includes("géo") || epreuveBrut.includes("emc")) cleanEpreuve = "Histoire Géographie EMC";
-                else if (epreuveBrut.includes("science") || epreuveBrut.includes("svt") || epreuveBrut.includes("physique") || epreuveBrut.includes("technologie")) cleanEpreuve = "Sciences";
-                else cleanEpreuve = String(row[idxEpreuve]).trim();
-
-                // Peuplement Bordereaux (A3)
-                if (cleanEpreuve === "Dictée" || cleanEpreuve === "Grammaire et compréhension" || cleanEpreuve === "Rédaction") {
-                    let sousMat = cleanEpreuve === "Grammaire et compréhension" ? "Grammaire" : cleanEpreuve;
-                    matieresData["FRANCAIS"].commissions.add(comCor);
-                    matieresData["FRANCAIS"].sousLots[sousMat].add(lotNum);
-                    if (!matieresData["FRANCAIS"].lotSizes[lotNum] || rang > matieresData["FRANCAIS"].lotSizes[lotNum]) matieresData["FRANCAIS"].lotSizes[lotNum] = rang;
-                } else if (cleanEpreuve === "Mathématiques") {
-                    matieresData["MATHEMATIQUES"].commissions.add(comCor);
-                    matieresData["MATHEMATIQUES"].lots.add(lotNum);
-                    if (!matieresData["MATHEMATIQUES"].lotSizes[lotNum] || rang > matieresData["MATHEMATIQUES"].lotSizes[lotNum]) matieresData["MATHEMATIQUES"].lotSizes[lotNum] = rang;
-                } else if (cleanEpreuve === "Histoire Géographie EMC") {
-                    matieresData["HISTOIRE GEOGRAPHIE EMC"].commissions.add(comCor);
-                    matieresData["HISTOIRE GEOGRAPHIE EMC"].lots.add(lotNum);
-                    if (!matieresData["HISTOIRE GEOGRAPHIE EMC"].lotSizes[lotNum] || rang > matieresData["HISTOIRE GEOGRAPHIE EMC"].lotSizes[lotNum]) matieresData["HISTOIRE GEOGRAPHIE EMC"].lotSizes[lotNum] = rang;
-                } else if (cleanEpreuve === "Sciences") {
-                    matieresData["SCIENCES"].commissions.add(comCor);
-                    matieresData["SCIENCES"].lots.add(lotNum);
-                    if (!matieresData["SCIENCES"].lotSizes[lotNum] || rang > matieresData["SCIENCES"].lotSizes[lotNum]) matieresData["SCIENCES"].lotSizes[lotNum] = rang;
-                }
-
-                // Peuplement Pochettes Commissions
-                if (!commissionsData[comCor]) commissionsData[comCor] = { lots: {} };
-                if (!commissionsData[comCor].lots[lotNum]) commissionsData[comCor].lots[lotNum] = { label: cleanEpreuve, maxRang: 0 };
-                if (rang > commissionsData[comCor].lots[lotNum].maxRang) commissionsData[comCor].lots[lotNum].maxRang = rang;
-            }
-
-            feedback.innerHTML = "<span style='color: green;'>Génération du PDF...</span>";
+            feedback.innerHTML = `<span style='color: green;'>${matchedRows} ligne(s) de lots analysée(s). Génération du PDF...</span>`;
 
             // Routage selon le type de document
             if (docType === 'bordereaux') {
@@ -2976,6 +3114,8 @@ window.processLotsExcel = function(docType) {
                 generatePochettesCommissionsPDF(commissionsData, rneInput);
             } else if (docType === 'enveloppes') {
                 generateCouverturesEnveloppesPDF(commissionsData, rneInput);
+            } else if (docType === 'local86') {
+                generateLocal86PDF(commissionsData, rneInput);
             }
 
             setTimeout(() => { feedback.innerHTML = ""; }, 3000);
@@ -3024,19 +3164,19 @@ function generatePochettesCommissionsPDF(commissions, rne) {
         const epreuvesGrouped = {};
         Object.keys(comm.lots).sort().forEach(lotNum => {
             const lotInfo = comm.lots[lotNum];
-            if (!epreuvesGrouped[lotInfo.label]) epreuvesGrouped[lotInfo.label] = { lots: [], totalRang: 0 };
+            if (!epreuvesGrouped[lotInfo.label]) epreuvesGrouped[lotInfo.label] = { lots: [], totalCopies: 0 };
             epreuvesGrouped[lotInfo.label].lots.push(lotNum);
-            epreuvesGrouped[lotInfo.label].totalRang += lotInfo.maxRang;
+            epreuvesGrouped[lotInfo.label].totalCopies += lotInfo.copyCount || 0;
         });
 
         // Calcul du total de copies
         let totalCopies = 0;
         const isFrancais = !!epreuvesGrouped["Dictée"] || !!epreuvesGrouped["Grammaire et compréhension"] || !!epreuvesGrouped["Rédaction"];
         if (isFrancais) {
-            if (epreuvesGrouped["Dictée"]) totalCopies = epreuvesGrouped["Dictée"].totalRang;
-            else totalCopies = Object.values(epreuvesGrouped)[0].totalRang;
+            if (epreuvesGrouped["Dictée"]) totalCopies = epreuvesGrouped["Dictée"].totalCopies;
+            else totalCopies = Object.values(epreuvesGrouped)[0].totalCopies;
         } else {
-            Object.values(epreuvesGrouped).forEach(g => { totalCopies += g.totalRang; });
+            Object.values(epreuvesGrouped).forEach(g => { totalCopies += g.totalCopies; });
         }
 
         // Bloc en-tête gauche (Logo + Nom Collège)
@@ -3136,18 +3276,18 @@ function generateCouverturesEnveloppesPDF(commissions, rne) {
 
         Object.keys(comm.lots).sort().forEach(lotNum => {
             const lotInfo = comm.lots[lotNum];
-            if (!epreuvesGrouped[lotInfo.label]) epreuvesGrouped[lotInfo.label] = { lots: [], totalRang: 0 };
+            if (!epreuvesGrouped[lotInfo.label]) epreuvesGrouped[lotInfo.label] = { lots: [], totalCopies: 0 };
             epreuvesGrouped[lotInfo.label].lots.push(lotNum);
-            epreuvesGrouped[lotInfo.label].totalRang += lotInfo.maxRang;
+            epreuvesGrouped[lotInfo.label].totalCopies += lotInfo.copyCount || 0;
         });
 
         let totalCopies = 0;
         const isFrancais = !!epreuvesGrouped["Dictée"] || !!epreuvesGrouped["Grammaire et compréhension"] || !!epreuvesGrouped["Rédaction"];
         if (isFrancais) {
-            if (epreuvesGrouped["Dictée"]) totalCopies = epreuvesGrouped["Dictée"].totalRang;
-            else totalCopies = Object.values(epreuvesGrouped)[0].totalRang;
+            if (epreuvesGrouped["Dictée"]) totalCopies = epreuvesGrouped["Dictée"].totalCopies;
+            else totalCopies = Object.values(epreuvesGrouped)[0].totalCopies;
         } else {
-            Object.values(epreuvesGrouped).forEach(g => { totalCopies += g.totalRang; });
+            Object.values(epreuvesGrouped).forEach(g => { totalCopies += g.totalCopies; });
         }
 
         // Bloc en-tête gauche
@@ -3211,4 +3351,142 @@ function generateCouverturesEnveloppesPDF(commissions, rne) {
 
     if (count === 0) return alert("Aucune donnée trouvée !");
     doc.save(`Couvertures_Enveloppes_A4_${rne}_${examYear}.pdf`);
+}
+
+function getLocal86SchoolParts(rne) {
+    const schoolName = (typeof DB !== 'undefined' && DB.config && DB.config.schoolName)
+        ? DB.config.schoolName
+        : "Collège";
+    const schoolCity = (typeof DB !== 'undefined' && DB.config && DB.config.city)
+        ? DB.config.city
+        : "";
+    return {
+        name: String(schoolName || "Collège").replace(/^Collège\s+/i, "").toUpperCase(),
+        city: String(schoolCity || "").toUpperCase(),
+        rne
+    };
+}
+
+function getLocal86ExamLine() {
+    const examType = (typeof getExamTitle === 'function') ? getExamTitle() : "DNB";
+    return String(examType || "DNB").includes("DNB") ? "DNB GENERAL" : String(examType || "DNB").toUpperCase();
+}
+
+function getLocal86Subject(labelCounts) {
+    const labels = Object.keys(labelCounts);
+    if (labels.some(label => ["Dictée", "Grammaire et compréhension", "Rédaction"].includes(label))) return "Français";
+    if (labels.some(label => label === "Mathématiques")) return "Mathématiques";
+    if (labels.some(label => label === "Histoire Géographie EMC")) return "Histoire-Géographie EMC";
+    if (labels.some(label => label === "Sciences")) return "Sciences";
+    return labels.join(" / ") || "Épreuve";
+}
+
+function getLocal86CopyCount(labelCounts) {
+    const frenchLabels = ["Dictée", "Grammaire et compréhension", "Rédaction"];
+    const isFrench = Object.keys(labelCounts).some(label => frenchLabels.includes(label));
+    if (isFrench) {
+        return Math.max(...frenchLabels.map(label => labelCounts[label] || 0));
+    }
+    return Object.values(labelCounts).reduce((sum, value) => sum + value, 0);
+}
+
+function buildLocal86Records(commissions) {
+    return Object.keys(commissions).sort((a, b) => a.localeCompare(b, 'fr', { numeric: true })).map(comCor => {
+        const labelCounts = {};
+        const lots = [];
+        Object.values(commissions[comCor].lots || {}).forEach(lotInfo => {
+            labelCounts[lotInfo.label] = (labelCounts[lotInfo.label] || 0) + (lotInfo.copyCount || 0);
+        });
+        Object.keys(commissions[comCor].lots || {}).sort((a, b) => a.localeCompare(b, 'fr', { numeric: true })).forEach(lotNum => {
+            lots.push(lotNum);
+        });
+        return {
+            commission: comCor,
+            subject: getLocal86Subject(labelCounts),
+            copies: getLocal86CopyCount(labelCounts),
+            lots
+        };
+    }).filter(record => record.copies > 0);
+}
+
+function generateLocal86PDF(commissions, rne) {
+    if (typeof window.jspdf === 'undefined') return alert("Erreur : jsPDF non chargé.");
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('l', 'mm', 'a3');
+    const examYear = (typeof DB !== 'undefined' && DB.config && (DB.config.year || DB.config.examYear))
+        ? (DB.config.year || DB.config.examYear)
+        : new Date().getFullYear();
+    const records = buildLocal86Records(commissions);
+    if (records.length === 0) return alert("Aucune commission à imprimer.");
+
+    const school = getLocal86SchoolParts(rne);
+    const examLine = getLocal86ExamLine();
+    const pageW = 420;
+    const pageH = 297;
+    const halfW = 210;
+    const margin = 20;
+    const rightX = halfW + margin;
+    const rightW = halfW - (2 * margin);
+    const centerX = halfW + (halfW / 2);
+    const red = [210, 0, 0];
+
+    const drawRightPanel = (record) => {
+        doc.setDrawColor(200);
+        doc.setLineDash([5, 5], 0);
+        doc.line(halfW, 0, halfW, pageH);
+        doc.setLineDash([]);
+
+        doc.setDrawColor(0);
+        doc.setLineWidth(0.4);
+        doc.rect(rightX, 22, rightW, pageH - 44);
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(22);
+        doc.setTextColor(0);
+        doc.text("Collège", centerX - 52, 48, { align: "right" });
+        doc.setTextColor(...red);
+        doc.text(school.name, centerX - 46, 48);
+        doc.setTextColor(0);
+        doc.text("-", centerX + 26, 48);
+        doc.setTextColor(...red);
+        doc.text(school.city, centerX + 34, 48);
+
+        doc.setTextColor(0);
+        doc.setFontSize(24);
+        doc.text(examLine, centerX, 80, { align: "center" });
+        doc.text(`JUIN ${examYear}`, centerX, 96, { align: "center" });
+
+        doc.setTextColor(...red);
+        doc.setFontSize(28);
+        doc.text(record.subject, centerX, 132, { align: "center" });
+
+        doc.setTextColor(0);
+        doc.setFontSize(20);
+        doc.text("Commission", centerX - 10, 165, { align: "right" });
+        doc.setTextColor(...red);
+        doc.text(record.commission, centerX + 5, 165);
+
+        doc.setTextColor(0);
+        doc.text("Nombre de copies", centerX - 10, 192, { align: "right" });
+        doc.setTextColor(...red);
+        doc.text(String(record.copies), centerX + 5, 192);
+
+        doc.setTextColor(0);
+        doc.setFontSize(13);
+        doc.setFont("helvetica", "normal");
+        const lotText = record.lots.length > 0 ? `Lot(s) : ${record.lots.join(" / ")}` : "";
+        doc.text(doc.splitTextToSize(lotText, rightW - 28), centerX, 220, { align: "center" });
+
+        doc.setFontSize(14);
+        doc.text("Classement des copies par numéros d'anonymats", centerX, 252, { align: "center" });
+        doc.setFont("helvetica", "bold");
+        doc.text("croissants", centerX, 262, { align: "center" });
+    };
+
+    records.forEach((record, index) => {
+        if (index > 0) doc.addPage("a3", "l");
+        drawRightPanel(record);
+    });
+
+    doc.save(`Local_86_${rne}_${examYear}.pdf`);
 }

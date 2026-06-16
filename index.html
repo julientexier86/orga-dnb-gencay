@@ -88,6 +88,7 @@
                 </button>
                 <div id="secretariatMenu" class="submenu">
                     <button class="submenu-item" onclick="nav('sec-orga', this); initPochettesClasses()">Pochettes Organisation</button>
+                    <button class="submenu-item" onclick="nav('sec-pochettes', this)"><i class="fas fa-folder"></i> Pochettes Surveillants</button>
                     <button class="submenu-item" onclick="nav('sec-affichages', this); initAffichagesRooms();">Affichages</button>
                     <button class="submenu-item" onclick="nav('sec-matieres', this)">Pochettes Matières</button>
                     <button class="submenu-item" onclick="nav('sec-lots', this)">Pochettes lots de copie</button>
@@ -838,7 +839,7 @@ Aucune sortie anticipée n'est autorisée. Vous devez rester assis et silencieux
                         <label style="font-weight:bold; display:block; margin-bottom:5px;">Consignes sur la convocation
                             (Recto & Verso) :</label>
 
-                        <textarea id="txtConvocInfo" rows="15"
+                        <textarea id="txtConvocInfo" rows="15" onchange="DB.config.convocText = this.value; if(typeof autoSave === 'function') autoSave();"
                             style="width:100%; height:300px; padding:10px; border:1px solid #ccc; border-radius:5px; font-family:sans-serif; font-size:0.9rem; line-height:1.4;">- Attention : Les aménagements accordés pour ce DNB Blanc ne préjugent pas de la décision finale qui sera rendue par les services du Rectorat pour l'examen officiel.
 - Présence obligatoire 15 minutes avant le début des épreuves.
 - Pièce d'identité ou carnet de correspondance obligatoire.
@@ -877,6 +878,8 @@ Aucune sortie anticipée n'est autorisée. Vous devez rester assis et silencieux
                         <button class="btn btn-dark" style="font-size:1.1rem; padding:10px 20px;"
                             onclick="exportConvocationTeachersSurveillanceOnly()"><i class="fas fa-print"></i> PDF
                             Surveillances seules</button>
+                        <button class="btn btn-secondary" style="font-size:1.1rem; padding:10px 20px; background-color: #7f8c8d; color: white; border: none;"
+                            onclick="exportTeachersReceiptSheet()"><i class="fas fa-signature"></i> Liste d'émargement</button>
                     </div>
                 </div>
             </div>
@@ -1019,6 +1022,7 @@ Aucune sortie anticipée n'est autorisée. Vous devez rester assis et silencieux
                                 <label class="pochette-checkbox-label"><input type="checkbox" class="poch-chk" data-type="logistique" value="Étiquettes Tables"> Étiquettes Tables</label>
                                 <label class="pochette-checkbox-label"><input type="checkbox" class="poch-chk" data-type="logistique" value="Pochette Secrétariat"> Pochette Secrétariat</label>
                                 <label class="pochette-checkbox-label"><input type="checkbox" class="poch-chk" data-type="logistique" value="Pochette Direction"> Pochette Direction</label>
+                                <label class="pochette-checkbox-label"><input type="checkbox" class="poch-chk" data-type="logistique" value="Pochette Classe - Convocations Cyclades"> Pochette Classe - Convocations Cyclades</label>
                             </div>
                         </fieldset>
                         <fieldset style="flex: 1; min-width: 300px; border: 1px solid #ccc; padding: 20px; border-radius: 8px;">
@@ -1162,6 +1166,9 @@ Aucune sortie anticipée n'est autorisée. Vous devez rester assis et silencieux
                                     </button>
                                     <button class="btn btn-dark" style="font-size: 1rem; padding: 10px; border-radius: 8px;" onclick="processLotsExcel('enveloppes')">
                                         <i class="fas fa-envelope"></i> Générer les Couvertures d'Enveloppes (A4 Paysage)
+                                    </button>
+                                    <button class="btn btn-dark" style="font-size: 1rem; padding: 10px; border-radius: 8px;" onclick="processLotsExcel('local86')">
+                                        <i class="fas fa-folder-open"></i> Local 86
                                     </button>
                                 </div>
                             </div>

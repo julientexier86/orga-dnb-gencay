@@ -125,7 +125,7 @@ window.renderExamTable = function () {
             <td><input type="date" value="${e.date}" onchange="updateExam(${i},'date',this.value)"></td>
             <td><input type="time" value="${e.time}" onchange="updateExam(${i},'time',this.value)"></td>
             <td><input type="time" value="${e.timeTT || e.time}" style="background-color:#fef9e7;" onchange="updateExam(${i},'timeTT',this.value)"></td>
-            
+
             <td><input type="number" value="${e.durStd}" style="width:90px; text-align:center" onchange="updateExam(${i},'durStd',this.value)"></td>
             <td style="color:var(--tt-color)"><input type="number" value="${e.durTT}" style="width:90px; text-align:center" onchange="updateExam(${i},'durTT',this.value)"></td>
         </tr>`;
@@ -412,6 +412,57 @@ window.exportConvocationTeachersSurveillanceOnly = function () {
 
 window.exportConvocationTeachersWithOrals = function () {
     exportConvocationTeachers(true);
+};
+
+window.exportTeachersReceiptSheet = function () {
+    if (typeof window.jspdf === 'undefined') return alert("⚠️ Librairie PDF non chargée.");
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'mm', 'a4');
+
+    if (typeof addSmartLogo === 'function') addSmartLogo(doc, 15, 10, 30);
+    doc.setFontSize(14); doc.setTextColor(44, 62, 80); doc.setFont("helvetica", "bold");
+    doc.text(DB.config.schoolName || "Collège", 105, 18, { align: 'center' });
+    doc.setFontSize(16); doc.setTextColor(0);
+    doc.text("Émargement - Remise des convocations", 105, 35, { align: 'center' });
+
+    let tableData = [];
+    DB.teachers.forEach(teacher => {
+        const duties = getTeacherSurveillanceDuties(teacher);
+        const oralDuties = getTeacherOralDuties(teacher);
+
+        // N'inclure que les professeurs ayant au moins une convocation
+        if (duties.length === 0 && oralDuties.length === 0) return;
+
+        tableData.push([
+            (teacher.nom || "").toUpperCase(),
+            teacher.prenom || "",
+            teacher.matiere || teacher.matieres || "",
+            ""
+        ]);
+    });
+
+    tableData.sort((a, b) => a[0].localeCompare(b[0]));
+
+    if (tableData.length === 0) {
+        return alert("Aucun professeur n'a de convocation actuellement (aucune surveillance et aucun oral attribué).");
+    }
+
+    doc.autoTable({
+        head: [['Nom', 'Prénom', 'Matière', 'Signature pour réception']],
+        body: tableData,
+        startY: 50,
+        theme: 'grid',
+        headStyles: { fillColor: [44, 62, 80] },
+        columnStyles: {
+            0: { fontStyle: 'bold', cellWidth: 50 },
+            1: { cellWidth: 40 },
+            2: { cellWidth: 40 },
+            3: { cellWidth: 50 }
+        },
+        styles: { minCellHeight: 12, valign: 'middle' }
+    });
+
+    doc.save("Emargement_Remise_Convocations_Profs.pdf");
 };
 
 
@@ -954,13 +1005,13 @@ window.renderPlanning = function () {
             const safeRoomName = room.nom.replace(/'/g, "\\'"); // Protection apostrophe
             const survControlHtml = `
                 <div style="margin-top:5px; display:flex; align-items:center; gap:3px; background:#f0f0f0; padding:2px 4px; border-radius:12px; border:1px solid #ccc; width:fit-content; margin-left:auto; margin-right:auto;">
-                    <button onclick="changeRoomSurvCount('${safeRoomName}', -1)" 
+                    <button onclick="changeRoomSurvCount('${safeRoomName}', -1)"
                             title="Moins de surveillants"
                             style="cursor:pointer; border:none; background:#e74c3c; color:white; width:18px; height:18px; border-radius:50%; font-weight:bold; display:flex; align-items:center; justify-content:center; padding:0; font-size:12px;">-</button>
-                    
+
                     <span style="font-weight:bold; font-size:0.8rem; color:#333; min-width:15px; text-align:center;">${room.nbSurv}</span>
-                    
-                    <button onclick="changeRoomSurvCount('${safeRoomName}', 1)" 
+
+                    <button onclick="changeRoomSurvCount('${safeRoomName}', 1)"
                             title="Plus de surveillants"
                             style="cursor:pointer; border:none; background:#27ae60; color:white; width:18px; height:18px; border-radius:50%; font-weight:bold; display:flex; align-items:center; justify-content:center; padding:0; font-size:12px;">+</button>
                 </div>`;
@@ -1343,7 +1394,7 @@ function renderProfSynthesis(container, cleanFn) {
     </div>
 
     <div style="overflow-x:auto;">
-        <table class="table table-bordered table-striped table-hover text-center align-middle" 
+        <table class="table table-bordered table-striped table-hover text-center align-middle"
                style="width: auto !important; table-layout: auto !important; min-width: 600px;">
 	            <thead class="table-dark sticky-top">
 	                <tr>
@@ -1465,7 +1516,7 @@ function renderProfPlanningMatrix(container) {
 
     // 3. Construction HTML
     let html = `
-    
+
     <div style="overflow-x:auto;">
     <table class="table table-bordered table-sm text-center" style="font-size:0.85rem;">
         <thead class="table-dark">
@@ -1971,6 +2022,7 @@ window.exportPochettesPDF = function () {
     const txtEleves = document.getElementById('txtPochetteEleves').value;
 
     const year = DB.config.year || "2025";
+    const examTitle = typeof getExamTitle === 'function' ? getExamTitle() : (DB.config.examType || "DNB Blanc").toUpperCase();
     let pageCount = 0;
     const PG_H = 297; const HALF_W = 210; const M = 15;
 
@@ -1996,7 +2048,7 @@ window.exportPochettesPDF = function () {
 
             doc.setFontSize(16); doc.setTextColor(0); doc.setFont("helvetica", "bold");
             doc.text("PROCÈS-VERBAL DE SALLE", pvCenterX, 20, { align: 'center' });
-            doc.setFontSize(12); doc.text(`DNB BLANC ${year}`, pvCenterX, 28, { align: 'center' });
+            doc.setFontSize(12); doc.text(`${examTitle} ${year}`, pvCenterX, 28, { align: 'center' });
 
             doc.setDrawColor(0); doc.setLineWidth(0.4); doc.rect(pvX, 35, pvW, 25);
             doc.setFontSize(11);
@@ -2034,7 +2086,7 @@ window.exportPochettesPDF = function () {
             addSmartLogo(doc, covX, 10, 45); // <--- LOGO ICI
 
             doc.setFontSize(22); doc.setTextColor(44, 62, 80); doc.setFont("helvetica", "bold");
-            doc.text(`DNB BLANC ${year}`, covCenterX, 30, { align: 'center' });
+            doc.text(`${examTitle} ${year}`, covCenterX, 30, { align: 'center' });
 
             const startY = 45;
             doc.setDrawColor(200); doc.setFillColor(248, 249, 250); doc.rect(covX, startY, covW, 40, 'FD');
@@ -2089,7 +2141,7 @@ window.exportPochettesPDF = function () {
             doc.setFontSize(11); doc.setTextColor(0); doc.setFont("helvetica", "normal"); doc.text(doc.splitTextToSize(txtEleves, rW), rX, 40);
         });
     });
-    doc.save("Pochettes_Surveillants.pdf");
+    doc.save(`Pochettes_Surveillants_${examTitle.replace(/[^A-Z0-9]+/g, '_')}_${year}.pdf`);
 };
 
 
@@ -2852,7 +2904,7 @@ window.renderLabels = function () {
         html += `
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; background:#f8f9fa; padding:5px; border-radius:4px; border-left: 5px solid ${l.color}">
             <div style="flex:1">
-                <strong>${l.code}</strong> 
+                <strong>${l.code}</strong>
                 <span style="font-size:0.8em; color:#666; margin-left:10px;">${l.name || ''}</span>
             </div>
             <div>
@@ -2964,7 +3016,7 @@ window.renderAmenagements = function () {
 
             // --- LE CORRECTIF EST ICI ---
             // On a ajouté ", this" dans les parenthèses de toggleStudentLabel
-            badges += `<span onclick="toggleStudentLabel(${s.id}, '${l.code}', this)" 
+            badges += `<span onclick="toggleStudentLabel(${s.id}, '${l.code}', this)"
                        style="cursor:pointer; padding:4px 8px; border-radius:12px; font-size:0.75rem; margin-right:5px; transition:all 0.1s; display:inline-block; margin-bottom:3px; user-select:none; ${style}">
                        ${l.code}</span>`;
         });
@@ -3110,20 +3162,20 @@ window.renderExamTable = function () {
         row.innerHTML = `
         <td>
             <div style="display:flex; gap:5px; margin-bottom:4px;">
-                <input type="text" value="${e.name}" 
-                       style="font-weight:bold; width:100%; border:1px solid #ccc; padding:4px;" 
+                <input type="text" value="${e.name}"
+                       style="font-weight:bold; width:100%; border:1px solid #ccc; padding:4px;"
                        onchange="updateExam(${i},'name',this.value)">
-                
-                <button class="btn btn-danger btn-sm" onclick="removeExam(${i})" 
+
+                <button class="btn btn-danger btn-sm" onclick="removeExam(${i})"
                         style="padding:2px 8px; font-size:1rem;" title="Supprimer">🗑️</button>
             </div>
-            <button class="btn btn-sm" style="${btnStyle}; font-size:0.75rem; padding:2px 6px; width:100%;" 
+            <button class="btn btn-sm" style="${btnStyle}; font-size:0.75rem; padding:2px 6px; width:100%;"
                     onclick="openSlotConfig(${i})">${btnText}</button>
         </td>
         <td style="vertical-align:top"><input type="date" value="${e.date}" onchange="updateExam(${i},'date',this.value)"></td>
         <td style="vertical-align:top"><input type="time" value="${e.time}" onchange="updateExam(${i},'time',this.value)"></td>
         <td style="vertical-align:top"><input type="time" value="${e.timeTT || e.time}" style="background-color:#fef9e7;" onchange="updateExam(${i},'timeTT',this.value)"></td>
-        
+
         <td style="vertical-align:top"><input type="number" value="${e.durStd}" style="width:70px; text-align:center" onchange="updateExam(${i},'durStd',this.value)"></td>
         <td style="vertical-align:top; color:var(--tt-color)"><input type="number" value="${e.durTT}" style="width:70px; text-align:center" onchange="updateExam(${i},'durTT',this.value)"></td>
         `;
