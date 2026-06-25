@@ -92,6 +92,7 @@
                     <button class="submenu-item" onclick="nav('sec-affichages', this); initAffichagesRooms();">Affichages</button>
                     <button class="submenu-item" onclick="nav('sec-matieres', this)">Pochettes Matières</button>
                     <button class="submenu-item" onclick="nav('sec-lots', this)">Pochettes lots de copie</button>
+                    <button class="submenu-item" onclick="nav('sec-aesh', this); initAeshConvocations()"><i class="fas fa-hands-helping"></i> Convocations AESH</button>
                 </div>
             </div>
 
@@ -1130,6 +1131,31 @@ Aucune sortie anticipée n'est autorisée. Vous devez rester assis et silencieux
                     </div>
                     <div style="margin-top: 40px; text-align: center;">
                         <button class="btn btn-dark" style="font-size: 1.2rem; padding: 12px 40px; border-radius: 30px;" onclick="generatePochettesMatieresPDF()"><i class="fas fa-print"></i> Générer le PDF (A3)</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION CONVOCATIONS AESH -->
+            <div id="sec-aesh" class="section">
+                <div class="card">
+                    <h2><i class="fas fa-hands-helping"></i> Convocations AESH</h2>
+                    <p>Sélectionnez les <b>épreuves comportant un tiers-temps</b>, indiquez le ou les AESH mobilisés et choisissez leur salle d'affectation.</p>
+                    <div style="display: grid; grid-template-columns: minmax(520px, 1.6fr) minmax(300px, 1fr); gap: 20px; margin-top: 20px;">
+                        <fieldset style="border: 1px solid #ccc; padding: 20px; border-radius: 8px; min-width:0;">
+                            <legend style="font-weight: bold; padding: 0 10px; font-size: 1.1rem;">Épreuves tiers-temps</legend>
+                            <div id="aeshExamAssignments"></div>
+                        </fieldset>
+                        <fieldset style="border: 1px solid #ccc; padding: 20px; border-radius: 8px;">
+                            <legend style="font-weight: bold; padding: 0 10px; font-size: 1.1rem;">Consignes</legend>
+                            <label for="txtAeshInstructions" style="font-weight:bold; display:block; margin-bottom:8px;">Texte ajouté à chaque convocation</label>
+                            <textarea id="txtAeshInstructions" rows="12" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px; font-family:sans-serif; font-size:0.9rem; line-height:1.4;">Merci de vous présenter au secrétariat d'examen 15 minutes avant le début de la première épreuve accompagnée.
+Vous êtes affecté(e) à l'épreuve et à la salle mentionnées sur cette convocation.
+En cas de difficulté, prévenir immédiatement le secrétariat d'examen.</textarea>
+                        </fieldset>
+                    </div>
+                    <div id="aeshConvocPreview" style="margin-top:20px; padding:15px; background:#f8f9fa; border-radius:8px; border:1px solid #e5e7eb;"></div>
+                    <div style="margin-top: 25px; text-align: center;">
+                        <button class="btn btn-dark" style="font-size: 1.1rem; padding: 12px 35px; border-radius: 30px;" onclick="exportAeshConvocationsPDF()"><i class="fas fa-print"></i> Générer PDF AESH</button>
                     </div>
                 </div>
             </div>

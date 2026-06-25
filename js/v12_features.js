@@ -3490,3 +3490,345 @@ function generateLocal86PDF(commissions, rne) {
 
     doc.save(`Local_86_${rne}_${examYear}.pdf`);
 }
+
+// =========================================================================
+// === CONVOCATIONS AESH - SECRÉTARIAT D'EXAMEN ============================
+// =========================================================================
+
+const DEFAULT_AESH_INSTRUCTIONS = `Merci de vous présenter au secrétariat d'examen 15 minutes avant le début de la première épreuve accompagnée.
+Vous êtes affecté(e) à l'épreuve et à la salle mentionnées sur cette convocation.
+En cas de difficulté, prévenir immédiatement le secrétariat d'examen.`;
+
+function getAeshConvocationConfig() {
+    if (!DB.config) DB.config = {};
+    if (!DB.config.aeshConvocations) {
+        DB.config.aeshConvocations = {
+            assignments: {},
+            instructions: DEFAULT_AESH_INSTRUCTIONS
+        };
+    }
+    if (!DB.config.aeshConvocations.assignments || typeof DB.config.aeshConvocations.assignments !== "object") {
+        DB.config.aeshConvocations.assignments = {};
+    }
+    if (typeof DB.config.aeshConvocations.instructions !== "string") {
+        DB.config.aeshConvocations.instructions = DEFAULT_AESH_INSTRUCTIONS;
+    } else if (DB.config.aeshConvocations.instructions.includes("Vous accompagnez uniquement les élèves mentionnés")) {
+        DB.config.aeshConvocations.instructions = DEFAULT_AESH_INSTRUCTIONS;
+    }
+    return DB.config.aeshConvocations;
+}
+
+function formatAeshDate(dateStr) {
+    if (typeof formatDateLongFR === "function") return formatDateLongFR(dateStr);
+    if (!dateStr) return "";
+    const date = new Date(dateStr);
+    if (Number.isNaN(date.getTime())) return dateStr;
+    return date.toLocaleDateString("fr-FR", {
+        weekday: "long",
+        day: "2-digit",
+        month: "long",
+        year: "numeric"
+    });
+}
+
+function getAeshExamKey(exam, index) {
+    return `${exam.date || ""}|${exam.timeTT || exam.time || ""}|${exam.name || ""}|${index}`;
+}
+
+function getAeshTtExams() {
+    return (DB.exams || []).map((exam, index) => ({ exam, index }))
+        .filter(({ exam }) => {
+            const explicitTtSlots = exam.slots && Array.isArray(exam.slots.tt) && exam.slots.tt.length > 0;
+            const ttDuration = Number(exam.durTT || 0);
+            const standardDuration = Number(exam.durStd || 0);
+            return explicitTtSlots ||
+                ttDuration > standardDuration ||
+                (!!exam.timeTT && exam.timeTT !== exam.time);
+        })
+        .sort((a, b) => {
+            const dateCompare = String(a.exam.date || "").localeCompare(String(b.exam.date || ""));
+            if (dateCompare !== 0) return dateCompare;
+            return String(a.exam.timeTT || a.exam.time || "").localeCompare(String(b.exam.timeTT || b.exam.time || ""));
+        });
+}
+
+function getAeshTtRooms() {
+    return (DB.rooms || []).filter(room => room.isTT === true || room.isTT === "true")
+        .sort((a, b) => String(a.nom || "").localeCompare(String(b.nom || ""), "fr", { numeric: true }));
+}
+
+function getAeshTtSlot(exam) {
+    const slots = typeof window.getComputedSlots === "function"
+        ? window.getComputedSlots(exam, "tt")
+        : [];
+    if (slots.length > 0) return slots[0];
+    const start = exam.timeTT || exam.time || "";
+    return {
+        start,
+        end: typeof addMinutes === "function" ? addMinutes(start, Number(exam.durTT || 0)) : ""
+    };
+}
+
+function updateAeshExamAssignment(examKey, field, value) {
+    const config = getAeshConvocationConfig();
+    if (!config.assignments[examKey]) {
+        config.assignments[examKey] = { enabled: false, roomName: "", aeshNames: "" };
+    }
+    config.assignments[examKey][field] = value;
+    renderAeshConvocPreview();
+    if (typeof autoSave === "function") autoSave();
+}
+
+function renderAeshExamAssignments() {
+    const container = document.getElementById("aeshExamAssignments");
+    if (!container) return;
+    const config = getAeshConvocationConfig();
+    const exams = getAeshTtExams();
+    const rooms = getAeshTtRooms();
+
+    if (exams.length === 0) {
+        container.innerHTML = `<div style="padding:15px; background:#fff3cd; border:1px solid #ffe69c; border-radius:6px;">
+            Aucune épreuve avec horaire ou durée tiers-temps n'est configurée.
+        </div>`;
+        return;
+    }
+
+    const rows = exams.map(({ exam, index }) => {
+        const key = getAeshExamKey(exam, index);
+        const keyArgument = escapeHTML(JSON.stringify(key));
+        const assignment = config.assignments[key] || { enabled: false, roomName: "", aeshNames: "" };
+        const slot = getAeshTtSlot(exam);
+        const selectedRoom = rooms.some(room => room.nom === assignment.roomName) ? assignment.roomName : "";
+        const roomOptions = rooms.map(room =>
+            `<option value="${escapeHTML(room.nom)}" ${room.nom === selectedRoom ? "selected" : ""}>${escapeHTML(room.nom)}</option>`
+        ).join("");
+        return `
+            <tr>
+                <td style="text-align:center;">
+                    <input type="checkbox" ${assignment.enabled ? "checked" : ""}
+                        onchange="updateAeshExamAssignment(${keyArgument}, 'enabled', this.checked)">
+                </td>
+                <td>
+                    <b>${escapeHTML(exam.name || "")}</b>
+                    <div style="font-size:0.82rem; color:#6c757d;">${escapeHTML(formatAeshDate(exam.date || ""))}</div>
+                </td>
+                <td style="white-space:nowrap; color:#8e44ad; font-weight:bold;">
+                    ${escapeHTML(slot.start || "")} - ${escapeHTML(slot.end || "")}
+                </td>
+                <td>
+                    <select style="width:100%; padding:7px; border:1px solid #ccc; border-radius:5px;"
+                        onchange="updateAeshExamAssignment(${keyArgument}, 'roomName', this.value)">
+                        <option value="">-- Choisir une salle TT --</option>
+                        ${roomOptions}
+                    </select>
+                </td>
+                <td>
+                    <input type="text" value="${escapeHTML(assignment.aeshNames || "")}"
+                        placeholder="Nom de l'AESH"
+                        style="width:100%; padding:7px; border:1px solid #ccc; border-radius:5px;"
+                        onchange="updateAeshExamAssignment(${keyArgument}, 'aeshNames', this.value)">
+                </td>
+            </tr>
+        `;
+    }).join("");
+
+    const roomWarning = rooms.length === 0
+        ? `<div style="margin-bottom:12px; padding:10px; color:#842029; background:#f8d7da; border:1px solid #f5c2c7; border-radius:6px;">
+            Aucune salle n'est marquée « Tiers-Temps » dans les données Salles.
+        </div>`
+        : "";
+
+    container.innerHTML = `
+        ${roomWarning}
+        <div style="overflow-x:auto;">
+            <table class="table" style="width:100%; min-width:760px; margin:0;">
+                <thead>
+                    <tr>
+                        <th style="width:52px; text-align:center;">Inclure</th>
+                        <th>Épreuve</th>
+                        <th style="width:125px;">Horaire TT</th>
+                        <th style="width:190px;">Salle</th>
+                        <th style="width:210px;">AESH</th>
+                    </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table>
+        </div>
+        <small style="display:block; margin-top:10px; color:#666;">
+            Pour plusieurs AESH sur une même épreuve, séparez les noms par une virgule.
+        </small>
+    `;
+}
+
+function getSelectedAeshExamAssignments() {
+    const config = getAeshConvocationConfig();
+    return getAeshTtExams().map(({ exam, index }) => {
+        const key = getAeshExamKey(exam, index);
+        return { exam, index, key, assignment: config.assignments[key] || {} };
+    }).filter(item => item.assignment.enabled);
+}
+
+function splitAeshNames(value) {
+    return String(value || "")
+        .split(/[,;\n]+/)
+        .map(name => name.trim())
+        .filter(Boolean);
+}
+
+function normalizeAeshName(value) {
+    return String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toUpperCase()
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+function groupAeshAssignmentsByPerson(selected) {
+    const people = new Map();
+    selected.forEach(({ exam, assignment }) => {
+        splitAeshNames(assignment.aeshNames).forEach(aeshName => {
+            const normalizedName = normalizeAeshName(aeshName);
+            if (!people.has(normalizedName)) {
+                people.set(normalizedName, { name: aeshName, duties: [] });
+            }
+            people.get(normalizedName).duties.push({
+                exam,
+                roomName: assignment.roomName
+            });
+        });
+    });
+    return [...people.values()].sort((a, b) => a.name.localeCompare(b.name, "fr"));
+}
+
+function renderAeshConvocPreview() {
+    const preview = document.getElementById("aeshConvocPreview");
+    if (!preview) return;
+    const selected = getSelectedAeshExamAssignments();
+    if (selected.length === 0) {
+        preview.innerHTML = `<b>Aucune convocation sélectionnée.</b> Cochez une ou plusieurs épreuves tiers-temps.`;
+        return;
+    }
+    const people = groupAeshAssignmentsByPerson(selected);
+    preview.innerHTML = `
+        <b>${people.length} convocation(s) individuelle(s) prévue(s)</b>
+        <div style="font-size:0.88rem; color:#666; margin-top:4px;">${selected.length} épreuve(s) tiers-temps sélectionnée(s)</div>
+        <ul style="margin:8px 0 0; padding-left:20px;">
+            ${people.length > 0
+                ? people.map(person => `<li><b>${escapeHTML(person.name)}</b> : ${person.duties.length} épreuve(s)</li>`).join("")
+                : "<li>AESH à préciser dans les épreuves sélectionnées.</li>"}
+        </ul>
+    `;
+}
+
+window.initAeshConvocations = function () {
+    const config = getAeshConvocationConfig();
+    const instructionsInput = document.getElementById("txtAeshInstructions");
+    if (!instructionsInput) return;
+    instructionsInput.value = config.instructions || DEFAULT_AESH_INSTRUCTIONS;
+    instructionsInput.oninput = () => {
+        config.instructions = instructionsInput.value;
+        if (typeof autoSave === "function") autoSave();
+    };
+    renderAeshExamAssignments();
+    renderAeshConvocPreview();
+};
+
+window.exportAeshConvocationsPDF = function () {
+    const config = getAeshConvocationConfig();
+    const instructionsInput = document.getElementById("txtAeshInstructions");
+    if (instructionsInput) config.instructions = instructionsInput.value;
+
+    const selected = getSelectedAeshExamAssignments();
+    if (selected.length === 0) return alert("Sélectionnez au moins une épreuve tiers-temps.");
+    const incomplete = selected.filter(item => !item.assignment.roomName || !String(item.assignment.aeshNames || "").trim());
+    if (incomplete.length > 0) {
+        return alert("Pour chaque épreuve sélectionnée, renseignez une salle tiers-temps et au moins un AESH.");
+    }
+    const people = groupAeshAssignmentsByPerson(selected);
+    if (people.length === 0) return alert("Renseignez au moins un AESH.");
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF("p", "mm", "a4");
+    const year = DB.config && DB.config.year ? DB.config.year : new Date().getFullYear();
+    const schoolName = DB.config && DB.config.schoolName ? DB.config.schoolName : "Établissement";
+    const city = DB.config && DB.config.city ? DB.config.city : "";
+    const pageW = 210;
+    const margin = 16;
+
+    people.forEach((person, index) => {
+        if (index > 0) doc.addPage();
+
+        if (typeof addSmartLogo === "function") addSmartLogo(doc, 10, 8, 36);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(14);
+        doc.text(schoolName, 52, 18);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        if (city) doc.text(city, 52, 25);
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(18);
+        doc.text("CONVOCATION AESH", pageW / 2, 44, { align: "center" });
+        doc.setFontSize(12);
+        doc.text(`DNB - Session ${year}`, pageW / 2, 52, { align: "center" });
+
+        doc.setDrawColor(52, 73, 94);
+        doc.setFillColor(245, 247, 250);
+        doc.roundedRect(margin, 62, pageW - (margin * 2), 20, 2, 2, "FD");
+        doc.setFontSize(12);
+        doc.setTextColor(44, 62, 80);
+        doc.text("AESH convoqué(e) :", margin + 5, 70);
+        doc.setFont("helvetica", "bold");
+        doc.text(person.name, margin + 50, 70);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.text("Mission : accompagnement des candidats bénéficiant du tiers-temps.", margin + 5, 78);
+
+        const rows = person.duties
+            .sort((a, b) => {
+                const dateCompare = String(a.exam.date || "").localeCompare(String(b.exam.date || ""));
+                if (dateCompare !== 0) return dateCompare;
+                return String(a.exam.timeTT || a.exam.time || "").localeCompare(String(b.exam.timeTT || b.exam.time || ""));
+            })
+            .map(({ exam, roomName }) => {
+                const slot = getAeshTtSlot(exam);
+                return [
+                    formatAeshDate(exam.date || ""),
+                    exam.name || "",
+                    `${slot.start || ""} - ${slot.end || ""}`,
+                    roomName
+                ];
+            });
+
+        doc.autoTable({
+            startY: 92,
+            head: [["Date", "Épreuve", "Horaire tiers-temps", "Salle"]],
+            body: rows,
+            theme: "grid",
+            styles: { fontSize: 10, cellPadding: 4, valign: "middle" },
+            headStyles: { fillColor: [52, 73, 94], textColor: 255 },
+            columnStyles: {
+                0: { cellWidth: 45 },
+                1: { cellWidth: 62 },
+                2: { cellWidth: 42 },
+                3: { cellWidth: 29 }
+            }
+        });
+
+        let y = doc.lastAutoTable.finalY + 12;
+        if (y > 235) {
+            doc.addPage();
+            y = 20;
+        }
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
+        doc.text("Consignes", margin, y);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        const instructionLines = doc.splitTextToSize(config.instructions || DEFAULT_AESH_INSTRUCTIONS, pageW - (margin * 2));
+        doc.text(instructionLines, margin, y + 8);
+    });
+
+    doc.save(`Convocations_AESH_DNB_${year}.pdf`);
+};
