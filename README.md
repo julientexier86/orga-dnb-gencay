@@ -4,6 +4,10 @@ Application locale de préparation et de gestion des examens en collège : DNB b
 
 L'application centralise les élèves, les aménagements, les salles, les surveillants, les convocations, le secrétariat d'examen, les résultats et les exports administratifs.
 
+Le calendrier d'utilisation sur l'année scolaire (quel module à quel moment) est décrit dans [CALENDRIER_UTILISATION.md](CALENDRIER_UTILISATION.md).
+
+Le mode d'emploi technique des imports (élèves, professeurs, extraction EDT/Pronote, heures enseignants, notes, CSV Cyclades) est décrit dans [MODE_EMPLOI_TECHNIQUE.md](MODE_EMPLOI_TECHNIQUE.md).
+
 ## 1. Principes importants
 
 - L'application fonctionne dans le navigateur, sans serveur applicatif.
