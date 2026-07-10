@@ -165,11 +165,7 @@ function checkTeacherCollision(teacherName, dateStr, startStr, endStr, myKey) {
     return false; // Pas de conflit
 }
 
-// Helpers Temps
-function timeToMin(t) {
-    const [h, m] = t.split(':').map(Number);
-    return h * 60 + m;
-}
+// [Nettoyage 07/2026] `timeToMin` supprimée ici : doublon mort, la version active est dans js/stage_orals.js.
 function getMinutesDiff(start, end) {
     return timeToMin(end) - timeToMin(start);
 }
@@ -248,6 +244,10 @@ function getTeacherOralDuties(teacher) {
 window.saveTeacherConvocInstructions = function () {
     const textarea = document.getElementById('txtConvocProfInstructions');
     if (!textarea) return;
+    if (typeof setInstructionTemplate === 'function') {
+        setInstructionTemplate('teachers', textarea.value);
+        return;
+    }
     if (!DB.config) DB.config = {};
     DB.config.teacherConvocInstructions = textarea.value;
     if (typeof autoSave === 'function') autoSave();
@@ -256,7 +256,9 @@ window.saveTeacherConvocInstructions = function () {
 function loadTeacherConvocInstructions() {
     const textarea = document.getElementById('txtConvocProfInstructions');
     if (!textarea) return;
-    textarea.value = (DB.config && DB.config.teacherConvocInstructions) || '';
+    textarea.value = typeof getInstructionTemplate === 'function'
+        ? getInstructionTemplate('teachers')
+        : ((DB.config && DB.config.teacherConvocInstructions) || '');
 }
 
 window.addEventListener('load', loadTeacherConvocInstructions);
@@ -265,7 +267,10 @@ window.exportConvocationTeachers = function (includeOrals = false) {
     DB.config.schoolName = document.getElementById('schoolName').value;
     DB.config.year = document.getElementById('sessionYear').value;
     const instructionsBox = document.getElementById('txtConvocProfInstructions');
-    if (instructionsBox) DB.config.teacherConvocInstructions = instructionsBox.value;
+    if (instructionsBox) {
+        if (typeof setInstructionTemplate === 'function') setInstructionTemplate('teachers', instructionsBox.value);
+        else DB.config.teacherConvocInstructions = instructionsBox.value;
+    }
     if (!DB.config.director) DB.config.director = { civ: "M. le Principal", name: "" };
     cleanupPlanningAssignments();
 
@@ -283,17 +288,22 @@ window.exportConvocationTeachers = function (includeOrals = false) {
         if (count > 0) doc.addPage();
         count++;
 
-        // --- MÊME HEADER QUE PRECEDEMMENT ---
-        addSmartLogo(doc, 15, 10, 45);
-        doc.setFontSize(10); doc.setTextColor(100);
-        doc.text("DNB", 195, 12, { align: 'right' });
-        doc.text(`Session ${DB.config.year}`, 195, 17, { align: 'right' });
-
-        doc.setFontSize(14); doc.setTextColor(44, 62, 80); doc.setFont("helvetica", "bold");
-        doc.text(DB.config.schoolName || "Collège", 105, 18, { align: 'center' });
-
-        doc.setFontSize(18); doc.setTextColor(0);
-        doc.text(includeOrals ? "CONVOCATION PROFESSEUR" : "CONVOCATION SURVEILLANCE", 105, 40, { align: 'center' });
+        if (typeof drawExamPdfHeader === 'function') {
+            drawExamPdfHeader(doc, {
+                title: includeOrals ? "CONVOCATION PROFESSEUR" : "CONVOCATION SURVEILLANCE",
+                y: 8,
+                logoSize: 34
+            });
+        } else {
+            addSmartLogo(doc, 15, 10, 45);
+            doc.setFontSize(10); doc.setTextColor(100);
+            doc.text("DNB", 195, 12, { align: 'right' });
+            doc.text(`Session ${DB.config.year}`, 195, 17, { align: 'right' });
+            doc.setFontSize(14); doc.setTextColor(44, 62, 80); doc.setFont("helvetica", "bold");
+            doc.text(DB.config.schoolName || "Collège", 105, 18, { align: 'center' });
+            doc.setFontSize(18); doc.setTextColor(0);
+            doc.text(includeOrals ? "CONVOCATION PROFESSEUR" : "CONVOCATION SURVEILLANCE", 105, 40, { align: 'center' });
+        }
 
         // Info Prof
         doc.setFillColor(248, 249, 250); doc.setDrawColor(44, 62, 80);
@@ -357,7 +367,9 @@ window.exportConvocationTeachers = function (includeOrals = false) {
             });
         }
 
-        const instructions = (DB.config.teacherConvocInstructions || '').trim();
+        const instructions = (typeof getInstructionTemplate === 'function'
+            ? getInstructionTemplate('teachers')
+            : (DB.config.teacherConvocInstructions || '')).trim();
         if (instructions) {
             if (currentY + 35 > 270) { doc.addPage(); currentY = 20; }
             doc.setFillColor(248, 249, 250);
@@ -1335,8 +1347,13 @@ window.exportTeacherHoursPDF = function () {
     const cleanFn = (s) => s ? s.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim() : "";
     const data = getTeacherHoursData(cleanFn);
 
-    doc.setFontSize(16);
-    doc.text("Bilan des Heures Supplémentaires (HSE)", 105, 15, { align: "center" });
+    const startY = typeof drawExamPdfHeader === 'function'
+        ? drawExamPdfHeader(doc, { title: "Bilan des Heures Supplémentaires (HSE)", y: 8, logoSize: 26 })
+        : 25;
+    if (typeof drawExamPdfHeader !== 'function') {
+        doc.setFontSize(16);
+        doc.text("Bilan des Heures Supplémentaires (HSE)", 105, 15, { align: "center" });
+    }
 
     const formatTime = (m) => m <= 0 ? "-" : `${Math.floor(m / 60)}h${Math.round(m % 60).toString().padStart(2, '0')}`;
 
@@ -1350,7 +1367,7 @@ window.exportTeacherHoursPDF = function () {
     doc.autoTable({
         head: [['Professeur', 'Heures Libérées', 'Heures Surv.', 'Balance', 'Détail']],
         body: body,
-        startY: 25,
+        startY,
         theme: 'grid',
         styles: { halign: 'center' },
         columnStyles: { 0: { halign: 'left' } },
@@ -1835,14 +1852,20 @@ window.exportPlanningSummaryPDF = function () {
         ];
     });
 
-    addSmartLogo(doc, 2, 2, 24);
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`Tableau des surveillances du DNB - Session ${DB.config.year || ''}`, 148, 14, { align: 'center' });
+    const title = `Tableau des surveillances - ${typeof getExamDisplayName === 'function' ? getExamDisplayName() : 'DNB'}`;
+    const startY = typeof drawExamPdfHeader === 'function'
+        ? drawExamPdfHeader(doc, { title, y: 4, logoSize: 22, titleFontSize: 13 })
+        : 25;
+    if (typeof drawExamPdfHeader !== 'function') {
+        addSmartLogo(doc, 2, 2, 24);
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Tableau des surveillances du DNB - Session ${DB.config.year || ''}`, 148, 14, { align: 'center' });
+    }
     doc.autoTable({
         head,
         body,
-        startY: 25,
+        startY,
         theme: 'grid',
         styles: { fontSize: 7.5, cellPadding: 2, lineWidth: 0.1, lineColor: [0, 0, 0], valign: 'middle' },
         headStyles: { textColor: [0, 0, 0], fontStyle: 'bold', lineColor: [0, 0, 0], lineWidth: 0.1 },
@@ -2171,11 +2194,15 @@ window.autoFillPlanning = function () {
         const msg = hasAnyEdt
             ? "🚀 LANCER L'AFFECTATION HSE ?\nAucun cours annulé n'est chargé. Les cours maintenus seront évités, puis les autres surveillances seront réparties automatiquement par demi-journée."
             : "🚀 LANCER L'AFFECTATION HSE ?\nAucun import EDT n'est chargé. Les professeurs seront affectés automatiquement au-delà de leurs disponibilités ordinaires, avec une seule salle par demi-journée.";
-        showConfirm(msg, () => autoFillPlanningWithoutEdt(activeRooms));
+        showConfirm(msg, () => {
+            if (typeof createActionBackup === 'function') createActionBackup('Avant planning automatique');
+            autoFillPlanningWithoutEdt(activeRooms);
+        });
         return;
     }
 
 	    showConfirm("🚀 LANCER L'AFFECTATION ?\nPriorité aux profs du fichier Vert (Dû).", () => {
+	        if (typeof createActionBackup === 'function') createActionBackup('Avant planning automatique');
 	        clearActivePlanningSlots(activeRooms);
 	        cleanupPlanningAssignments();
 	        const nbSurv = DB.config.nbSurv || 1;
@@ -2630,6 +2657,134 @@ function autoFillPlanningWithoutEdt(activeRooms) {
     showAlertModal(msg, missing > 0 ? 'warning' : 'success');
 }
 
+function getPlanningProposalStats(planning, reserves) {
+    const assignments = Object.entries(planning || {}).filter(([, name]) => !!name);
+    const teachers = new Set(assignments.map(([, name]) => name));
+    const reserveCount = Object.values(reserves || {}).filter(Boolean).length;
+    const dictCount = assignments.filter(([key]) => key.includes('_dictation_')).length;
+    const byTeacher = {};
+    assignments.forEach(([key, name]) => {
+        const duty = getPlanningDuty(key);
+        byTeacher[name] = byTeacher[name] || { count: 0, days: new Set() };
+        byTeacher[name].count++;
+        if (duty && duty.exam && duty.exam.date) byTeacher[name].days.add(duty.exam.date);
+    });
+    Object.values(reserves || {}).forEach(name => {
+        if (!name) return;
+        byTeacher[name] = byTeacher[name] || { count: 0, days: new Set() };
+        byTeacher[name].count++;
+    });
+    const maxLoad = Math.max(0, ...Object.values(byTeacher).map(item => item.count));
+    const minLoad = Math.min(...Object.values(byTeacher).map(item => item.count), maxLoad);
+    const teacherDays = Object.values(byTeacher).reduce((sum, item) => sum + item.days.size, 0);
+    return {
+        assignments: assignments.length,
+        teachers: teachers.size,
+        reserveCount,
+        dictCount,
+        maxLoad,
+        minLoad,
+        teacherDays
+    };
+}
+
+window.simulateAutoFillPlanning = function () {
+    if (!DB.edt) DB.edt = { cancelled: [], maintained: [] };
+    const hasCancelledEdt = DB.edt.cancelled && DB.edt.cancelled.length > 0;
+    const hasMaintainedEdt = DB.edt.maintained && DB.edt.maintained.length > 0;
+    const activeRooms = DB.rooms.filter(r => (DB.distribution[r.nom] || []).length > 0);
+
+    if (!DB.teachers || DB.teachers.length === 0) return showToast("Aucun professeur n'est configuré.", 'warning');
+    if (activeRooms.length === 0) return showToast("Aucune salle active. Faites d'abord la répartition.", 'warning');
+    if (hasCancelledEdt) {
+        showAlertModal("Simulation indisponible pour l'instant avec un fichier EDT de cours annulés.\n\nLa simulation est active pour le mode sans EDT ou avec cours maintenus uniquement.", 'info');
+        return;
+    }
+
+    const previousPlanning = JSON.parse(JSON.stringify(DB.planning || {}));
+    const previousReserve = JSON.parse(JSON.stringify(DB.planningReserve || {}));
+    const originalAutoSave = window.autoSave;
+    const originalRenderPlanning = window.renderPlanning;
+    const originalRenderDashboard = window.renderDashboard;
+    const originalShowAlertModal = window.showAlertModal;
+
+    try {
+        window.autoSave = function () {};
+        window.renderPlanning = function () {};
+        window.renderDashboard = function () {};
+        window.showAlertModal = function () {};
+
+        autoFillPlanningWithoutEdt(activeRooms);
+        const proposalPlanning = JSON.parse(JSON.stringify(DB.planning || {}));
+        const proposalReserve = JSON.parse(JSON.stringify(DB.planningReserve || {}));
+
+        DB.planning = previousPlanning;
+        DB.planningReserve = previousReserve;
+        window.autoSave = originalAutoSave;
+        window.renderPlanning = originalRenderPlanning;
+        window.renderDashboard = originalRenderDashboard;
+        window.showAlertModal = originalShowAlertModal;
+        if (typeof renderPlanning === 'function') renderPlanning();
+
+        DB.planningSimulation = {
+            createdAt: new Date().toISOString(),
+            planning: proposalPlanning,
+            planningReserve: proposalReserve,
+            withMaintainedEdt: hasMaintainedEdt
+        };
+        showPlanningSimulationResult(DB.planningSimulation);
+    } catch (error) {
+        DB.planning = previousPlanning;
+        DB.planningReserve = previousReserve;
+        window.autoSave = originalAutoSave;
+        window.renderPlanning = originalRenderPlanning;
+        window.renderDashboard = originalRenderDashboard;
+        window.showAlertModal = originalShowAlertModal;
+        console.error(error);
+        showAlertModal(`Simulation impossible : ${error.message}`, 'error');
+    }
+};
+
+function showPlanningSimulationResult(simulation) {
+    const stats = getPlanningProposalStats(simulation.planning, simulation.planningReserve);
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay-custom';
+    overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:99999; display:flex; align-items:center; justify-content:center; padding:20px;';
+    overlay.innerHTML = `
+        <div style="background:white; width:min(620px, 96vw); border-radius:10px; box-shadow:0 15px 40px rgba(0,0,0,0.25); padding:22px;">
+            <h3 style="margin:0 0 8px; color:#2c3e50;">Simulation du planning automatique</h3>
+            <p style="margin:0 0 14px; color:#566573;">Le planning actuel n'a pas été modifié.</p>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:10px; margin:14px 0;">
+                <div style="background:#f8f9fa; border-radius:8px; padding:12px;"><b>${stats.assignments}</b><br><span style="font-size:0.85rem; color:#666;">affectations</span></div>
+                <div style="background:#f8f9fa; border-radius:8px; padding:12px;"><b>${stats.teachers}</b><br><span style="font-size:0.85rem; color:#666;">enseignants mobilisés</span></div>
+                <div style="background:#f8f9fa; border-radius:8px; padding:12px;"><b>${stats.reserveCount}</b><br><span style="font-size:0.85rem; color:#666;">réserves</span></div>
+                <div style="background:#f8f9fa; border-radius:8px; padding:12px;"><b>${stats.dictCount}</b><br><span style="font-size:0.85rem; color:#666;">renforts dictée</span></div>
+                <div style="background:#f8f9fa; border-radius:8px; padding:12px;"><b>${stats.minLoad} à ${stats.maxLoad}</b><br><span style="font-size:0.85rem; color:#666;">charges par enseignant</span></div>
+                <div style="background:#f8f9fa; border-radius:8px; padding:12px;"><b>${stats.teacherDays}</b><br><span style="font-size:0.85rem; color:#666;">venues enseignant/jour</span></div>
+            </div>
+            <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:18px; flex-wrap:wrap;">
+                <button class="btn btn-secondary" onclick="this.closest('.modal-overlay-custom').remove()">Ignorer</button>
+                <button class="btn btn-primary" onclick="applyPlanningSimulation()">Appliquer cette proposition</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+}
+
+window.applyPlanningSimulation = function () {
+    const simulation = DB.planningSimulation;
+    if (!simulation || !simulation.planning) return showToast("Aucune simulation disponible.", 'warning');
+    if (typeof createActionBackup === 'function') createActionBackup('Avant application simulation planning');
+    DB.planning = JSON.parse(JSON.stringify(simulation.planning));
+    DB.planningReserve = JSON.parse(JSON.stringify(simulation.planningReserve || {}));
+    delete DB.planningSimulation;
+    document.querySelector('.modal-overlay-custom')?.remove();
+    if (typeof renderPlanning === 'function') renderPlanning();
+    if (typeof renderDashboard === 'function') renderDashboard();
+    if (typeof autoSave === 'function') autoSave();
+    showToast("Simulation appliquée au planning.", 'success');
+};
+
 // --- FONCTION D'OPTIMISATION (Avec Popup & Règle Multi-Profs) ---
 // --- FONCTION D'OPTIMISATION AVANCÉE (Bouche-trous + Échanges) ---
 window.optimizePlanningMoves = function (silentMode = false) {
@@ -2804,6 +2959,7 @@ window.optimizePlanningMoves = function (silentMode = false) {
 };
 window.resetPlanning = function () {
     showConfirm("🗑️ Attention : Vous allez effacer TOUT le planning.\nContinuer ?", () => {
+        if (typeof createActionBackup === 'function') createActionBackup('Avant reset planning');
         DB.planning = {};
         DB.planningReserve = {};
         renderPlanning();
@@ -3118,6 +3274,8 @@ window.addExam = function () {
     });
 
     renderExamTable();
+    if (typeof saveActiveExamProfile === 'function') saveActiveExamProfile();
+    if (typeof renderDashboard === 'function') renderDashboard();
     if (typeof autoSave === 'function') autoSave();
 };
 
@@ -3139,6 +3297,8 @@ window.removeExam = function (index) {
             }
         });
 
+        if (typeof saveActiveExamProfile === 'function') saveActiveExamProfile();
+        if (typeof renderDashboard === 'function') renderDashboard();
         renderExamTable();
         if (typeof autoSave === 'function') autoSave();
     });

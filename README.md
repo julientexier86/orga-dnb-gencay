@@ -1,125 +1,303 @@
-# 📋 Orga DNB Gençay
+# Orga Exam Gençay
 
-> Application web de gestion complète des examens **DNB Blanc** — Collège de Gençay.
+Application locale de préparation et de gestion des examens en collège : DNB blanc, DNB officiel et autres sessions d'examen.
 
----
+L'application centralise les élèves, les aménagements, les salles, les surveillants, les convocations, le secrétariat d'examen, les résultats et les exports administratifs.
 
-## 🎯 Présentation
+## 1. Principes importants
 
-**Orga DNB Gençay** est un outil tout-en-un conçu pour organiser les épreuves du DNB Blanc (Diplôme National du Brevet) au sein d'un collège. Il centralise la gestion des élèves, des salles, des professeurs, de la répartition et des exports, sans nécessiter de serveur ni de connexion internet (fonctionnement 100 % local).
+- L'application fonctionne dans le navigateur, sans serveur applicatif.
+- Les données sont conservées dans le navigateur via `localStorage`.
+- Les fichiers élèves, notes et résultats restent sur l'ordinateur utilisé.
+- Le **DNB blanc** et le **DNB officiel** sont traités comme deux sources distinctes.
+- L'import des résultats officiels Cyclades n'écrase pas les notes du DNB blanc.
+- Les relevés de notes utilisent exclusivement les élèves et notes du DNB blanc.
+- Il faut sauvegarder régulièrement le projet et conserver plusieurs copies du fichier exporté.
 
----
+## 2. Démarrage
 
-## ✨ Fonctionnalités Exhaustives
+### Utilisation locale
 
-### ⚙️ Configuration & Paramétrage
-- Personnalisation de l'établissement (Nom, Ville, Logo, Session).
-- Gestion de la direction (Titre, Nom, Signature scannée pour les documents officiels).
-- Paramétrage précis des épreuves (Dates, Heures de début standards et Tiers-Temps, Durées).
-- Choix dynamique des matières scientifiques (SVT, Physique-Chimie, Technologie).
+1. Télécharger ou cloner le dépôt.
+2. Ouvrir `index.html` dans Chrome, Edge ou Firefox.
+3. Configurer l'établissement avant d'importer les données.
 
-### 👨‍🎓 Élèves & Aménagements
-- Import rapide depuis vos fichiers Excel (Pronote, bases académiques).
-- Gestion experte des profils particuliers : Tiers-Temps (auto-détecté et calculé), SEGPA, ULIS, DNB Pro.
-- Attributions de labels personnalisés (Ordi, Assistant Lecteur, AESH, Dictée Aménagée, etc.).
-- Génération automatique de codes d'anonymat uniques pour le secrétariat.
+Un serveur local n'est normalement pas nécessaire. Pour un environnement qui bloque certains fichiers locaux, lancer depuis le dossier du projet :
 
-### 🏫 Salles & Répartition
-- Configuration des salles d'examen (Capacités modulables, Salles dédiées Tiers-Temps ou Aménagements).
-- **Algorithme de répartition intelligent** respectant les contraintes des élèves (Standard vs Tiers-Temps).
-- Interface interactive de glisser-déposer (Drag & Drop) pour ajuster finement la répartition manuellement.
-- File d'attente "Zone Tampon" pour gérer les cas d'élèves en surplus.
-
-### 👨‍🏫 Professeurs & Planning de surveillance
-- Import de l'équipe enseignante avec gestion des civilités automatiques.
-- **Import intelligent des Emplois du Temps (EDT)** : Distinction entre les cours annulés (disponibilité due) et les cours maintenus (indisponibilité).
-- **Gestion des HSE** : Case à cocher pour les professeurs refusant les heures supplémentaires (ne seront placés que sur leurs heures de cours annulées).
-- Matrice interactive de placement des surveillants (Détection des conflits horaires avec alerte rouge).
-- Vue globale du planning : Par salles (matrice) ou par enseignant (liste de synthèse).
-
-### 🗣️ Oraux de Stage
-- Création et gestion complète des jurys (Salles, Membres).
-- Configuration des horaires de passage, des durées et des temps de pause.
-- Placement automatique ou manuel des élèves sur les créneaux générés.
-- Calcul intelligent des horaires en incluant le Tiers-Temps pour les oraux.
-
-### 🖨️ Logistique & Secrétariat (Nouveautés)
-- Génération de listes d'émargement PDF complètes (avec logos, tri alphabétique, et colonnes de signature).
-- Éditeur intégré pour les **Pochettes Surveillants** (Textes pour le recto-verso, actions à réaliser, consignes de lecture).
-- Création d'étiquettes de table et d'étiquettes de copies personnalisées.
-
-### 📤 Convocations & Exports PDF/Excel
-- Convocations des élèves ultra-détaillées avec gestion de l'anonymat, de la salle assignée et du tableau des horaires personnalisés (Temps majoré affiché si élève TT).
-- Impression intelligente des convocations volumineuses sur 2 pages (Prêt pour le Recto-Verso de l'imprimante).
-- Listes d'affichage par salle, feuilles d'émargement d'épreuve.
-- Exports Excel bruts pour traitement administratif ultérieur.
-
-### 📊 Résultats, Datavisualisation & Simulation
-- Saisie manuelle ou import Excel massif des notes (Contrôle continu et épreuves écrites/orales).
-- Algorithme de simulation du DNB (Calcul exact 60% Épreuves / 40% Contrôle continu).
-- Attribution des mentions (Admis, Assez Bien, Bien, Très Bien, Félicitations).
-- Graphiques statistiques (Chart.js) pour visualiser la moyenne générale et la répartition des notes.
-- Édition de relevés de notes individuels (triés par classe ou alphabétiquement).
-
-### 🛡️ Technique & Sécurité
-- Fonctionnement **100% hors-ligne / Local** dans le navigateur (Aucun envoi de données sensibles sur le net).
-- Sauvegarde continue (Auto-save) transparente via `localStorage`.
-- Système de 3 slots de Backups tournants (Restauration possible des 5, 10, 15 dernières minutes).
-- Mode sombre intégral pour le confort visuel.
-- Code source ultra-modulaire (facilement maintenable et extensible).
-
----
-
-## 🏗️ Architecture
-
-Application **Vanilla JS** modulaire, sans framework ni bundler — fonctionne en ouvrant simplement `index.html`.
-
-```
-orga-dnb-gencay/
-├── index.html              # Interface principale (~1700 lignes)
-├── style.css               # Styles (~1500 lignes, variables CSS)
-└── js/                     # Modules
-    ├── globals.js           # Variables globales, toasts, backups
-    ├── ui.js                # Navigation, onglets, menus
-    ├── ui_extra.js          # Modales supplémentaires
-    ├── config.js            # Configuration établissement & épreuves
-    ├── data_import.js       # Parsing fichiers Excel (SheetJS)
-    ├── import_extended.js   # Import étendu (mapping colonnes)
-    ├── data_management.js   # CRUD élèves, salles, professeurs
-    ├── students_rooms.js    # Affichage & répartition visuelle
-    ├── teachers_amenagements.js  # Aménagements & labels
-    ├── grades_simulation.js # Saisie et simulation des notes
-    ├── grades_extended.js   # Calculs avancés (HGEMC, Sciences)
-    ├── planning_distribution.js  # Algorithme planning surveillance
-    ├── stage_orals.js       # Gestion oraux de stage
-    ├── export_pdf_excel.js  # Exports jsPDF & XLSX
-    ├── labels_engine.js     # Moteur d'étiquettes
-    └── datavis.js           # Graphiques & statistiques
+```bash
+python3 -m http.server 8765
 ```
 
----
+Puis ouvrir <http://localhost:8765>.
 
-## 🚀 Utilisation
+### Première configuration
 
-1. Cloner ou télécharger le dépôt
-2. Ouvrir `index.html` dans un navigateur moderne (Chrome recommandé)
-3. Aucune installation requise
+Dans **Configuration** :
 
-> ⚠️ Les librairies externes (jsPDF, SheetJS, Chart.js) sont chargées via CDN — une connexion internet est nécessaire au premier chargement.
+1. renseigner le nom de l'établissement et la ville ;
+2. renseigner l'année de session ;
+3. sélectionner le type d'examen : DNB blanc, DNB officiel ou examen personnalisé ;
+4. importer le logo de l'établissement ;
+5. renseigner la direction et la signature si nécessaire ;
+6. vérifier les matières scientifiques activées ;
+7. vérifier les dates, horaires, durées et créneaux de tiers-temps ;
+8. enregistrer le projet.
 
----
+Le profil d'épreuves est séparé pour chaque type d'examen. Avant toute génération, vérifier le titre, l'année et les horaires affichés dans les documents.
 
-## 📚 Librairies utilisées
+## 3. Préparer les données
 
-| Librairie | Usage |
-|-----------|-------|
-| [jsPDF](https://github.com/parallax/jsPDF) + jsPDF-AutoTable | Génération PDF |
-| [SheetJS (XLSX)](https://sheetjs.com/) | Import/Export Excel |
-| [ExcelJS](https://github.com/exceljs/exceljs) | Export Excel avancé |
-| [Chart.js](https://www.chartjs.org/) | Graphiques statistiques |
+### Élèves
 
----
+Dans **Données → Élèves** :
 
-## 📄 Licence
+1. importer le fichier Excel ou CSV ;
+2. contrôler les colonnes `Nom`, `Prénom`, `Classe` et `Sexe` ;
+3. vérifier les doublons et les élèves sans classe ;
+4. renseigner les codes d'anonymat si nécessaire ;
+5. contrôler les élèves ayant un statut particulier.
 
-Usage interne — Non destiné à une distribution publique.
+Le champ sexe sert notamment aux statistiques par filles/garçons. Si une information manque, elle doit être corrigée avant l'édition des rapports statistiques.
+
+### Aménagements
+
+Dans **Données → Aménagements** :
+
+- activer le tiers-temps ;
+- préciser les aménagements individuels ;
+- identifier les élèves nécessitant une salle dédiée ;
+- vérifier les besoins AESH, lecteur, secrétaire ou dictée aménagée ;
+- contrôler les horaires calculés.
+
+Les salles et horaires adaptés doivent être vérifiés avant de lancer la répartition automatique.
+
+### Salles
+
+Dans **Données → Salles** :
+
+- créer les salles utilisées ;
+- indiquer leur capacité ;
+- préciser les salles tiers-temps ou aménagées ;
+- vérifier les salles indisponibles ou réservées à une fonction particulière.
+
+## 4. Répartir les élèves par salle
+
+Dans **Répartition** :
+
+1. lancer l'assistant si les données sont complètes ;
+2. contrôler la capacité de chaque salle ;
+3. utiliser la zone tampon pour les élèves restant à affecter ;
+4. déplacer les élèves par glisser-déposer ;
+5. verrouiller la répartition une fois validée ;
+6. produire les listes, l'émargement et les exports Excel.
+
+Le bouton **Reset** remet les élèves dans la zone tampon afin de permettre une nouvelle répartition manuelle. Vérifier ensuite que le compteur de la zone tampon correspond aux élèves non affectés.
+
+## 5. Organiser les surveillances
+
+Dans **Planning** :
+
+### Avec import EDT
+
+1. importer les cours annulés ;
+2. importer les cours maintenus ;
+3. contrôler les disponibilités obtenues ;
+4. lancer le planning automatique ;
+5. ajuster manuellement les enseignants et les salles ;
+6. vérifier les conflits et les créneaux tiers-temps ;
+7. exporter le planning en PDF et Excel.
+
+### Sans import EDT
+
+Le planning automatique utilise les disponibilités ordinaires des enseignants. Un enseignant peut occuper une salle par demi-journée. L'algorithme cherche à :
+
+- répartir équitablement la charge ;
+- limiter le nombre de jours de présence ;
+- respecter les indisponibilités et les aménagements ;
+- privilégier les enseignants de français pendant les 20 dernières minutes de l'épreuve de français consacrées à la dictée ;
+- conserver une possibilité d'ajustement manuel après génération.
+
+Toujours contrôler la **Vue Professeurs**, qui affiche les horaires réels des surveillances.
+
+## 6. Documents de secrétariat
+
+Dans **Secrétariat d'examen** :
+
+- pochettes d'organisation et pochettes classe ;
+- pochettes surveillants du DNB blanc et du DNB officiel ;
+- convocations AESH individuelles, par épreuve et par salle ;
+- affichages de salles ;
+- pochettes matières ;
+- lots et commissions d'anonymat ;
+- documents A3 et listes d'émargement.
+
+Avant impression, vérifier le type d'examen sélectionné : les documents officiels ne doivent pas afficher `DNB Blanc`.
+
+## 7. Convocations
+
+Dans **Convocations → Professeurs**, deux générations sont disponibles :
+
+- **PDF Oral + surveillances** : ajoute les convocations d'oral et les créneaux de surveillance ;
+- **PDF Surveillances seules** : ne contient que les horaires de surveillance.
+
+Un encart de consignes peut être renseigné dans la configuration et repris dans les documents.
+
+Les convocations AESH sont individuelles et concernent uniquement les épreuves comportant des élèves avec tiers-temps, avec choix de salle.
+
+## 8. Notes et relevés du DNB blanc
+
+Dans **Résultats → Import Notes** :
+
+1. importer les notes du DNB blanc ;
+2. contrôler l'aperçu ;
+3. vérifier Français, Mathématiques, HG/EMC, Sciences, Oral et contrôle continu ;
+4. utiliser **Simulation** pour contrôler les moyennes et mentions.
+
+Dans **Résultats → Relevés de Notes** :
+
+- les relevés utilisent uniquement `DB.students` et leurs notes du DNB blanc ;
+- les résultats Cyclades ne sont jamais utilisés ;
+- les pochettes de classe sont également générées à partir de cette source ;
+- le PDF peut être trié par classe ou par ordre alphabétique.
+
+## 9. Résultats officiels et comparaison
+
+Dans **Résultats → Import Notes**, importer séparément le CSV officiel Cyclades.
+
+Puis utiliser **Résultats → DNB officiel & comparaison** pour :
+
+- analyser les résultats officiels ;
+- afficher les moyennes par discipline ;
+- suivre les mentions, dont les félicitations du jury ;
+- rapprocher les élèves du DNB blanc et du DNB officiel ;
+- repérer les élèves non rapprochés ;
+- exporter la comparaison en Excel, PDF ou PowerPoint.
+
+Le rapprochement utilise le nom, le prénom, puis si nécessaire le premier prénom et la classe. Toute ligne `DNB officiel uniquement` ou `DNB blanc uniquement` doit être vérifiée.
+
+Les sciences prennent en compte les résultats disponibles en SVT, Physique-Chimie ou Technologie.
+
+## 10. Analyse statistique
+
+Dans **Résultats → DNB blanc** ou **DNB officiel & comparaison** :
+
+- graphiques de distribution des notes ;
+- tableau statistique par cohorte, sexe et classe ;
+- moyennes, médianes, minimums, maximums et écarts-types ;
+- répartition des mentions ;
+- rapports PDF enrichis ;
+- exports Excel ;
+- présentation PowerPoint pour diffusion.
+
+Le rapport contrôle les sous-groupes. Si le sexe d'un élève ne peut pas être déterminé, une ligne **Sexe non renseigné** apparaît afin d'éviter qu'un candidat disparaisse des totaux.
+
+## 11. Comparaison des années
+
+Dans **Résultats → Comparaison des années** :
+
+1. choisir la source à archiver : DNB blanc ou DNB officiel ;
+2. exporter la **Feuille statistique** ;
+3. conserver le fichier avec l'année et le type d'examen dans son nom ;
+4. utiliser les feuilles `Archive annuelle` et `Détail élèves` pour les comparaisons futures.
+
+Chaque archive contient les effectifs, moyennes, résultats par discipline, mentions, félicitations du jury et taux associés.
+
+## 12. Exports et contrôle avant impression
+
+Avant de générer un document définitif :
+
+1. vérifier l'établissement, l'année et le type d'examen ;
+2. vérifier le nombre d'élèves ;
+3. contrôler les salles et capacités ;
+4. contrôler les aménagements ;
+5. vérifier les horaires et les dates ;
+6. vérifier les enseignants affectés ;
+7. ouvrir au moins un PDF généré ;
+8. contrôler le logo, les marges, les titres et les colonnes ;
+9. sauvegarder le projet après validation.
+
+Le tableau de bord propose une checklist et des contrôles de cohérence avant impression.
+
+## 13. Sauvegarde et restauration
+
+La sauvegarde automatique utilise plusieurs emplacements locaux. Il est recommandé de créer une sauvegarde nommée :
+
+- avant un reset de répartition ;
+- avant un planning automatique ;
+- avant un nouvel import ;
+- avant une modification importante de configuration ;
+- avant l'impression finale.
+
+Utiliser **Sauvegarder Projet** pour exporter le fichier de données, puis conserver une copie sur un emplacement sécurisé. Pour restaurer, charger le fichier depuis l'écran principal.
+
+Les données étant locales au navigateur, une suppression du stockage du navigateur peut les effacer. Les exports de sauvegarde sont donc indispensables.
+
+## 14. Dépannage rapide
+
+### Un changement n'apparaît pas
+
+- recharger complètement la page ;
+- fermer puis rouvrir l'application ;
+- régénérer le document, car un PDF déjà téléchargé ne se met pas à jour ;
+- si l'application vient de GitHub Pages, vérifier que la dernière version a été publiée.
+
+### Les résultats officiels ne s'affichent pas
+
+- vérifier que le fichier est bien le CSV Cyclades ;
+- vérifier que la ligne d'en-tête est présente ;
+- consulter le nombre de résultats importés ;
+- vérifier les élèves non rapprochés ;
+- ne pas confondre l'écran DNB blanc avec l'écran DNB officiel.
+
+### Les totaux statistiques semblent incohérents
+
+- vérifier les élèves sans sexe ;
+- vérifier les élèves sans notes ;
+- vérifier les doublons ;
+- contrôler les lignes `uniquement` dans la comparaison ;
+- régénérer le rapport après correction des données.
+
+### Les documents affichent le mauvais examen
+
+Retourner dans **Configuration**, sélectionner le bon type d'examen, vérifier les dates et régénérer les documents.
+
+## 15. Architecture technique
+
+Application Vanilla JavaScript, sans framework ni bundler.
+
+```text
+index.html                  Interface et sections principales
+style.css                   Styles et mise en page
+js/globals.js               Base de données locale et état global
+js/ui.js                    Navigation et rafraîchissements
+js/config.js                Configuration établissement et examens
+js/data_import.js           Import de données
+js/import_extended.js       Mapping des imports Excel/CSV
+js/data_management.js       Gestion élèves, salles et professeurs
+js/students_rooms.js        Répartition et affichage des salles
+js/teachers_amenagements.js Aménagements et labels
+js/grades_simulation.js     Notes, simulation et relevés DNB blanc
+js/grades_extended.js       Calculs HG/EMC et Sciences
+js/planning_distribution.js Planning des surveillances
+js/stage_orals.js            Oraux et jurys
+js/export_pdf_excel.js       Exports administratifs
+js/datavis.js                Statistiques, comparaison et exports
+js/datavis_reports.js        Rapports statistiques complémentaires
+js/exam_foundations.js       Fondations des profils d'examen
+js/vendor/                  Bibliothèques locales et polices
+```
+
+## 16. Vérification développeur
+
+Après une modification :
+
+```bash
+npm test
+git diff --check
+```
+
+`npm test` vérifie la syntaxe des modules JavaScript et la cohérence minimale de l'interface.
+
+## 17. Licence
+
+Usage interne à l'établissement. Le projet n'est pas destiné à une distribution publique sans adaptation de la gestion des données et des responsabilités associées.

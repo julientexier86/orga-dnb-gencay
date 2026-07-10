@@ -32,7 +32,7 @@ const DEFAULT_LABELS = [
 ];
 
 var DB = {
-    config: { schoolName: "", year: "2026", logo: "", nbSurv: 1, director: { civ: "M. le Principal", name: "" }, signature: "", scienceSubjects: ['SVT', 'PC', 'TECH'] }, students: [], rooms: [], teachers: [], distribution: {}, planning: {},
+    config: { schoolName: "", year: "2026", logo: "", nbSurv: 1, examType: "DNB Blanc", customExamName: "", director: { civ: "M. le Principal", name: "" }, signature: "", scienceSubjects: ['SVT', 'PC', 'TECH'], datavisSource: "blank", resultsWorkspace: "blank" }, students: [], rooms: [], teachers: [], distribution: {}, planning: {}, officialResults: [],
     stage: { // MODULE STAGE (Ancien)
         config: { date: "2026-06-01", start: "08:00", end: "17:00", duration: 20, break: 0, lunchStart: "12:00", lunchEnd: "13:30" },
         juries: [], // { id, name, room, members: [] }
@@ -67,11 +67,44 @@ function setDirectorCiv(val) {
     const sActive = "padding:12px; border:2px solid #3498db; background:#ebf5fb; border-radius:8px; cursor:pointer; text-align:center; transition:0.2s; font-weight:bold; color:#2c3e50; transform:translateY(-2px); box-shadow:0 3px 5px rgba(0,0,0,0.1);";
     const sInactive = "padding:12px; border:2px solid #eee; background:#fff; border-radius:8px; cursor:pointer; text-align:center; transition:0.2s; color:#7f8c8d;";
 
-    // 3. Mise à jour visuelle des 4 blocs
-    document.getElementById('civ-principal').style.cssText = (val === 'M. le Principal') ? sActive : sInactive;
-    document.getElementById('civ-principale').style.cssText = (val === 'Mme la Principale') ? sActive : sInactive;
-    document.getElementById('civ-adj').style.cssText = (val === 'M. le Principal Adjoint') ? sActive : sInactive;
-    document.getElementById('civ-adje').style.cssText = (val === 'Mme la Principale Adjointe') ? sActive : sInactive;
+    // 3. Mise à jour visuelle des blocs
+    const choices = {
+        'civ-principal': 'M. le Principal',
+        'civ-principale': 'Mme la Principale',
+        'civ-adj': 'M. le Principal Adjoint',
+        'civ-adje': 'Mme la Principale Adjointe',
+        'civ-prov-adj': 'M. le Proviseur Adjoint',
+        'civ-prov-adje': 'Mme la Proviseure Adjointe'
+    };
+    Object.entries(choices).forEach(([id, label]) => {
+        const el = document.getElementById(id);
+        if (el) el.style.cssText = (val === label) ? sActive : sInactive;
+    });
+}
+
+// --- SAUVEGARDE SÉCURISÉE (gestion du quota localStorage ~5 Mo) ---
+var lastQuotaAlertTime = 0;
+function safeSetItem(key, value) {
+    try {
+        localStorage.setItem(key, value);
+        return true;
+    } catch (e) {
+        const isQuota = e && (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED' || e.code === 22);
+        console.error('safeSetItem : échec de sauvegarde pour', key, e);
+        // Alerte au maximum une fois par minute pour ne pas spammer l'utilisateur
+        if (Date.now() - lastQuotaAlertTime > 60 * 1000) {
+            lastQuotaAlertTime = Date.now();
+            const msg = isQuota
+                ? "🚨 Stockage du navigateur PLEIN : la sauvegarde automatique a échoué ! Exportez immédiatement votre projet en fichier .data (bouton Sauvegarder), puis allégez les données (logo/signature moins lourds)."
+                : "⚠️ Échec de la sauvegarde locale : " + (e && e.message ? e.message : e);
+            if (typeof showToast === 'function' && document.getElementById('toast-container')) {
+                showToast(msg, 'error');
+            } else {
+                alert(msg);
+            }
+        }
+        return false;
+    }
 }
 
 // --- DARK MODE LOGIC ---
@@ -80,7 +113,7 @@ function toggleDarkMode() {
     body.classList.toggle('dark-mode');
 
     const isDark = body.classList.contains('dark-mode');
-    localStorage.setItem('DNB_DarkMode', isDark);
+    safeSetItem('DNB_DarkMode', isDark);
 
     // Update button icon
     const btn = document.getElementById('btnDarkMode');
@@ -123,7 +156,7 @@ function restoreFromBackup(slotIdx) {
 
     showConfirm(`⚠️ Restaurer le Backup ${slotIdx} ?\n\nCela écrasera les données actuelles. La page va se recharger.`, () => {
         // On met ce backup en 'Current' pour que le reload le charge
-        localStorage.setItem('DNB_Manager_Current', data);
+        if (!safeSetItem('DNB_Manager_Current', data)) return;
         location.reload();
     });
 }

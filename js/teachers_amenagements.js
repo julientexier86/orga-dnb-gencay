@@ -12,7 +12,7 @@ function saveDB() {
     if (typeof autoSave === 'function') {
         autoSave();
     } else {
-        localStorage.setItem('DNB_Manager_Current', JSON.stringify(DB));
+        safeSetItem('DNB_Manager_Current', JSON.stringify(DB));
     }
 }
 
@@ -362,7 +362,7 @@ window.exportAmenagPDF = function (sortMode) {
     const doc = new jsPDF();
 
     addSmartLogo(doc, 10, 10, 45);
-    doc.setFontSize(16); doc.text("Liste des Aménagements DNB Blanc", 105, 15, { align: 'center' });
+    doc.setFontSize(16); doc.text(`Liste des Aménagements ${typeof getExamDisplayName === 'function' ? getExamDisplayName() : 'DNB Blanc'}`, 105, 15, { align: 'center' });
     doc.setFontSize(11); doc.text(`Session ${DB.config.year} - ${DB.config.schoolName}`, 105, 22, { align: 'center' });
 
     if (sortMode === 'room') {

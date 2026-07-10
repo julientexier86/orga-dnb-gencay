@@ -9,20 +9,207 @@
 // === GESTION DU TITRE DE L'EXAMEN (GENERIQUE) ===
 // =========================================================
 
+function cloneExamList(exams) {
+    return JSON.parse(JSON.stringify(exams || []));
+}
+
+function cloneExamAttendanceList(entries) {
+    return JSON.parse(JSON.stringify(entries || []));
+}
+
+window.getExamProfileKey = function(examType = null, customName = null) {
+    const type = examType || (DB.config && DB.config.examType) || "DNB Blanc";
+    if (type === "CUSTOM") {
+        const custom = customName !== null ? customName : (DB.config && DB.config.customExamName);
+        const label = (custom || "Evaluation personnalisee").trim() || "Evaluation personnalisee";
+        return `CUSTOM:${label}`;
+    }
+    return type;
+};
+
+function getDefaultDnbBlancExams() {
+    return [
+        { name: "Français (Grammaire)", date: "2026-04-16", time: "09:00", timeTT: "09:00", durStd: 90, durTT: 120 },
+        { name: "Français (Rédaction)", date: "2026-04-16", time: "11:00", timeTT: "11:00", durStd: 90, durTT: 120 },
+        { name: "Mathématiques", date: "2026-04-16", time: "14:30", timeTT: "14:30", durStd: 120, durTT: 160 },
+        { name: "Hist-Géo / EMC", date: "2026-04-17", time: "09:00", timeTT: "09:00", durStd: 120, durTT: 160 },
+        { name: "Sciences", date: "2026-04-17", time: "13:30", timeTT: "13:30", durStd: 60, durTT: 80 }
+    ];
+}
+
+function getDefaultOfficialDnbExams() {
+    const year = DB.config && DB.config.year ? DB.config.year : "2026";
+    return [
+        { name: "Français (Grammaire / Dictée)", date: `${year}-06-26`, time: "09:00", timeTT: "08:30", durStd: 90, durTT: 120 },
+        { name: "Français (Rédaction)", date: `${year}-06-26`, time: "10:45", timeTT: "10:45", durStd: 90, durTT: 120 },
+        { name: "Histoire-Géographie / EMC", date: `${year}-06-29`, time: "09:00", timeTT: "09:00", durStd: 120, durTT: 160 },
+        { name: "Sciences", date: `${year}-06-29`, time: "13:30", timeTT: "13:30", durStd: 60, durTT: 80 },
+        { name: "Mathématiques", date: `${year}-06-30`, time: "09:00", timeTT: "09:00", durStd: 120, durTT: 160 }
+    ];
+}
+
+window.getDefaultExamPreset = function(profileKey = null) {
+    const key = profileKey || getExamProfileKey();
+    if (key === "DNB") return getDefaultOfficialDnbExams();
+    if (key === "DNB Blanc") return getDefaultDnbBlancExams();
+    return cloneExamList(DB.exams || getDefaultDnbBlancExams());
+};
+
+function isDefaultDnbBlancExamSet(exams) {
+    const list = exams || [];
+    return list.length === 5 &&
+        String(list[0].name || "").includes("Français") &&
+        String(list[0].date || "") === "2026-04-16" &&
+        String(list[2].name || "").includes("Mathématiques") &&
+        String(list[3].date || "") === "2026-04-17";
+}
+
+window.ensureExamProfiles = function() {
+    if (!DB.examProfiles || typeof DB.examProfiles !== "object" || Array.isArray(DB.examProfiles)) DB.examProfiles = {};
+    if (!DB.examAttendanceProfiles || typeof DB.examAttendanceProfiles !== "object" || Array.isArray(DB.examAttendanceProfiles)) DB.examAttendanceProfiles = {};
+
+    const currentKey = getExamProfileKey();
+    if (DB.config.activeExamProfileKey && DB.config.activeExamProfileKey !== currentKey) {
+        const previousKey = DB.config.activeExamProfileKey;
+        if (!DB.examProfiles[previousKey]) DB.examProfiles[previousKey] = cloneExamList(DB.exams || []);
+        if (!DB.examAttendanceProfiles[previousKey]) DB.examAttendanceProfiles[previousKey] = cloneExamAttendanceList(DB.examAttendance || []);
+        DB.exams = cloneExamList(DB.examProfiles[currentKey] || getDefaultExamPreset(currentKey));
+        DB.examAttendance = cloneExamAttendanceList(DB.examAttendanceProfiles[currentKey] || []);
+        DB.config.activeExamProfileKey = currentKey;
+    }
+
+    if (!DB.config.activeExamProfileKey) {
+        if (currentKey === "DNB" && isDefaultDnbBlancExamSet(DB.exams) && !DB.examProfiles[currentKey]) {
+            DB.exams = cloneExamList(getDefaultOfficialDnbExams());
+            DB.examAttendance = [];
+        }
+        DB.config.activeExamProfileKey = currentKey;
+    }
+
+    if (!DB.examProfiles[DB.config.activeExamProfileKey]) {
+        DB.examProfiles[DB.config.activeExamProfileKey] = cloneExamList(DB.exams || getDefaultExamPreset(DB.config.activeExamProfileKey));
+    }
+    if (!DB.examAttendanceProfiles[DB.config.activeExamProfileKey]) {
+        DB.examAttendanceProfiles[DB.config.activeExamProfileKey] = cloneExamAttendanceList(DB.examAttendance || []);
+    }
+};
+
+window.saveActiveExamProfile = function() {
+    ensureExamProfiles();
+    const key = DB.config.activeExamProfileKey || getExamProfileKey();
+    DB.examProfiles[key] = cloneExamList(DB.exams);
+    DB.examAttendanceProfiles[key] = cloneExamAttendanceList(DB.examAttendance || []);
+};
+
+window.loadExamProfile = function(profileKey) {
+    ensureExamProfiles();
+    const preset = getDefaultExamPreset(profileKey);
+    DB.exams = cloneExamList(DB.examProfiles[profileKey] || preset);
+    DB.examAttendance = cloneExamAttendanceList(DB.examAttendanceProfiles[profileKey] || []);
+    DB.config.activeExamProfileKey = profileKey;
+};
+
+window.refreshExamDependentViews = function() {
+    if (typeof renderExamTable === "function") renderExamTable();
+    if (typeof renderExamProfileInfo === "function") renderExamProfileInfo();
+    if (typeof renderDashboard === "function") renderDashboard();
+    if (typeof renderPlanning === "function") renderPlanning();
+    if (typeof renderPlanningProfs === "function") renderPlanningProfs();
+    if (typeof renderExamAttendance === "function") renderExamAttendance();
+};
+
+window.getExamProfileLabel = function(profileKey = null) {
+    const key = profileKey || getExamProfileKey();
+    if (key === "DNB") return "DNB officiel";
+    if (key === "DNB Blanc") return "DNB blanc";
+    if (key === "Devoir Commun") return "Devoir commun";
+    if (key.startsWith("CUSTOM:")) return key.replace("CUSTOM:", "");
+    return key;
+};
+
+window.renderExamProfileInfo = function() {
+    const box = document.getElementById('examProfileInfo');
+    if (!box) return;
+    ensureExamProfiles();
+    const profileKey = DB.config.activeExamProfileKey || getExamProfileKey();
+    const label = getExamProfileLabel(profileKey);
+    const examCount = (DB.exams || []).length;
+    const firstDate = (DB.exams || []).map(exam => exam.date).filter(Boolean).sort()[0] || "-";
+    const lastDate = (DB.exams || []).map(exam => exam.date).filter(Boolean).sort().slice(-1)[0] || "-";
+    const attendanceCount = (DB.examAttendance || []).length;
+    box.innerHTML = `
+        <strong>Profil actif :</strong> ${escapeHTML(label)}
+        <span style="color:#7f8c8d;">- ${examCount} épreuve(s), du ${escapeHTML(firstDate)} au ${escapeHTML(lastDate)}, ${attendanceCount} signalement(s) Jour J</span>
+    `;
+};
+
+window.handleCustomExamNameChange = function(value) {
+    if (!DB.config) DB.config = {};
+    ensureExamProfiles();
+    saveActiveExamProfile();
+    DB.config.customExamName = value;
+    if (DB.config.examType === "CUSTOM") {
+        loadExamProfile(getExamProfileKey("CUSTOM", value));
+        refreshExamDependentViews();
+    } else if (typeof renderExamProfileInfo === "function") {
+        renderExamProfileInfo();
+    }
+    if (typeof autoSave === 'function') autoSave();
+};
+
+window.handleSessionYearChange = function(value) {
+    if (!DB.config) DB.config = {};
+    DB.config.year = value;
+    if (typeof renderExamProfileInfo === "function") renderExamProfileInfo();
+    if (typeof renderDashboard === "function") renderDashboard();
+    if (typeof autoSave === 'function') autoSave();
+};
+
+window.resetSelectedExamProfileToDefault = function() {
+    ensureExamProfiles();
+    const profileKey = getExamProfileKey();
+    const label = getExamProfileLabel(profileKey);
+    const message = `Réinitialiser les épreuves du profil "${label}" ?\n\nLes dates, horaires, durées et signalements absences/retards de ce profil seront remplacés par le modèle par défaut.`;
+    const reset = () => {
+        if (typeof createActionBackup === 'function') createActionBackup(`Avant réinitialisation épreuves ${label}`);
+        DB.exams = cloneExamList(getDefaultExamPreset(profileKey));
+        DB.examAttendance = [];
+        DB.config.activeExamProfileKey = profileKey;
+        saveActiveExamProfile();
+        refreshExamDependentViews();
+        if (typeof autoSave === 'function') autoSave();
+        if (typeof showToast === 'function') showToast(`Modèle ${label} réinitialisé.`, 'success');
+    };
+    if (typeof showConfirm === 'function') showConfirm(message, reset);
+    else if (confirm(message)) reset();
+};
+
 // Fonction appelee quand le menu deroulant change
 window.handleExamTypeChange = function(value) {
-    DB.config.examType = value;
+    if (!DB.config) DB.config = {};
+    ensureExamProfiles();
+    saveActiveExamProfile();
+
+    DB.config.examType = value || "DNB Blanc";
     const customContainer = document.getElementById('customExamContainer');
     const customInput = document.getElementById('customExamInput');
 
     if (value === 'CUSTOM') {
-        customContainer.style.display = 'block';
-        customContainer.setAttribute('aria-hidden', 'false');
-        customInput.focus();
+        if (customContainer) {
+            customContainer.style.display = 'block';
+            customContainer.setAttribute('aria-hidden', 'false');
+        }
+        if (customInput) customInput.focus();
     } else {
-        customContainer.style.display = 'none';
-        customContainer.setAttribute('aria-hidden', 'true');
+        if (customContainer) {
+            customContainer.style.display = 'none';
+            customContainer.setAttribute('aria-hidden', 'true');
+        }
     }
+
+    loadExamProfile(getExamProfileKey());
+    refreshExamDependentViews();
+    if (typeof autoSave === 'function') autoSave();
 };
 
 // Helper appele par TOUS les exports PDF pour recuperer le bon titre
@@ -34,6 +221,55 @@ window.getExamTitle = function() {
                : "ÉVALUATION";
     }
     return type.toUpperCase();
+};
+
+window.getExamDisplayName = function() {
+    const type = DB.config.examType || "DNB Blanc";
+    if (type === 'CUSTOM') {
+        return (DB.config.customExamName && DB.config.customExamName.trim() !== "")
+            ? DB.config.customExamName.trim()
+            : "Évaluation";
+    }
+    if (type === "DNB") return "DNB";
+    return type;
+};
+
+window.getExamSessionLabel = function() {
+    const title = typeof getExamDisplayName === 'function' ? getExamDisplayName() : (DB.config.examType || "DNB Blanc");
+    return `${title} - Session ${DB.config.year || ""}`.trim();
+};
+
+window.isOfficialDnbExam = function() {
+    return !!(DB.config && DB.config.examType === "DNB");
+};
+
+window.syncExamTypeUI = function() {
+    if (!DB.config) DB.config = {};
+    if (!DB.config.examType) DB.config.examType = "DNB Blanc";
+
+    const select = document.getElementById('examTypeSelect');
+    const customContainer = document.getElementById('customExamContainer');
+    const customInput = document.getElementById('customExamInput');
+    const allowedValues = ["DNB Blanc", "DNB", "Devoir Commun", "CUSTOM"];
+
+    if (!allowedValues.includes(DB.config.examType)) {
+        DB.config.customExamName = DB.config.customExamName || DB.config.examType;
+        DB.config.examType = "CUSTOM";
+    }
+
+    if (select) select.value = DB.config.examType;
+    if (customInput) customInput.value = DB.config.customExamName || "";
+    if (customContainer) {
+        const showCustom = DB.config.examType === "CUSTOM";
+        customContainer.style.display = showCustom ? "block" : "none";
+        customContainer.setAttribute('aria-hidden', showCustom ? 'false' : 'true');
+    }
+
+    if (typeof updateSecretariatMenuVisibility === 'function') {
+        updateSecretariatMenuVisibility(DB.config.examType);
+    }
+    ensureExamProfiles();
+    renderExamProfileInfo();
 };
 
 // =========================================================
@@ -499,6 +735,7 @@ window.renderCorrectionsConfig = function() {
 window.resetCorrectionSubject = function() {
     const subj = document.getElementById('corrSubjectSelect').value;
     if (confirm(`Voulez-vous vraiment RAZ complète de l'équipe pour cette matière ?`)) {
+        if (typeof createActionBackup === 'function') createActionBackup(`Avant reset équipe correction ${subj.toUpperCase()}`);
 
         if (DB.corrections && DB.corrections.settings) {
             DB.corrections.settings[subj] = {
@@ -569,6 +806,7 @@ window.generateDistributionLots = function() {
 
     if(pool.length === 0) return alert("Aucun élève ne possède de code d'anonymat.");
     if(!config || config.teachers.length === 0) return alert("Veuillez ajouter des correcteurs.");
+    if (typeof createActionBackup === 'function') createActionBackup(`Avant génération lots corrections ${subj.toUpperCase()}`);
 
     let profsMap = {};
     config.teachers.forEach(tc => {
@@ -1545,7 +1783,7 @@ function getComparisonTableHtml(subj) {
 // FONCTIONS D'EXPORTATION (EXCEL & PDF) - Tableau comparatif
 // ============================================================================
 
-window.exportTableToExcel = function(tableId, filename = 'Comparatif_DNB_Blanc.xls') {
+window.exportTableToExcel = function(tableId, filename = null) {
     const table = document.getElementById(tableId);
     if (!table) {
         alert("Tableau introuvable pour l'export.");
@@ -1572,7 +1810,8 @@ window.exportTableToExcel = function(tableId, filename = 'Comparatif_DNB_Blanc.x
 
     const a = document.createElement('a');
     a.href = url;
-    a.download = filename;
+    const safeExamLabel = typeof getSafeExamFileLabel === 'function' ? getSafeExamFileLabel() : 'Examen';
+    a.download = filename || `Comparatif_${safeExamLabel}.xls`;
     document.body.appendChild(a);
     a.click();
 
@@ -1624,7 +1863,8 @@ window.exportTableToPDF = function() {
         }
     });
 
-    doc.save(`Comparatif_DNB_Blanc_${year}.pdf`);
+    const safeExamLabel = typeof getSafeExamFileLabel === 'function' ? getSafeExamFileLabel() : 'Examen';
+    doc.save(`Comparatif_${safeExamLabel}_${year}.pdf`);
 };
 
 // =========================================================
@@ -1638,6 +1878,7 @@ function resetLots(subjectKey) {
 
     if (confirm(confirmMessage)) {
         try {
+            if (typeof createActionBackup === 'function') createActionBackup(`Avant reset lots ${subjectKey.toUpperCase()}`);
             DB.corrections.lots[subjectKey] = [];
 
             if (typeof saveDB === 'function') {
@@ -3725,9 +3966,12 @@ window.initAeshConvocations = function () {
     const config = getAeshConvocationConfig();
     const instructionsInput = document.getElementById("txtAeshInstructions");
     if (!instructionsInput) return;
-    instructionsInput.value = config.instructions || DEFAULT_AESH_INSTRUCTIONS;
+    instructionsInput.value = typeof getInstructionTemplate === "function"
+        ? getInstructionTemplate("aesh")
+        : (config.instructions || DEFAULT_AESH_INSTRUCTIONS);
     instructionsInput.oninput = () => {
-        config.instructions = instructionsInput.value;
+        if (typeof setInstructionTemplate === "function") setInstructionTemplate("aesh", instructionsInput.value);
+        else config.instructions = instructionsInput.value;
         if (typeof autoSave === "function") autoSave();
     };
     renderAeshExamAssignments();
@@ -3737,7 +3981,10 @@ window.initAeshConvocations = function () {
 window.exportAeshConvocationsPDF = function () {
     const config = getAeshConvocationConfig();
     const instructionsInput = document.getElementById("txtAeshInstructions");
-    if (instructionsInput) config.instructions = instructionsInput.value;
+    if (instructionsInput) {
+        if (typeof setInstructionTemplate === "function") setInstructionTemplate("aesh", instructionsInput.value);
+        else config.instructions = instructionsInput.value;
+    }
 
     const selected = getSelectedAeshExamAssignments();
     if (selected.length === 0) return alert("Sélectionnez au moins une épreuve tiers-temps.");
@@ -3826,7 +4073,10 @@ window.exportAeshConvocationsPDF = function () {
         doc.text("Consignes", margin, y);
         doc.setFont("helvetica", "normal");
         doc.setFontSize(10);
-        const instructionLines = doc.splitTextToSize(config.instructions || DEFAULT_AESH_INSTRUCTIONS, pageW - (margin * 2));
+        const instructionText = typeof getInstructionTemplate === "function"
+            ? getInstructionTemplate("aesh")
+            : (config.instructions || DEFAULT_AESH_INSTRUCTIONS);
+        const instructionLines = doc.splitTextToSize(instructionText, pageW - (margin * 2));
         doc.text(instructionLines, margin, y + 8);
     });
 

@@ -150,75 +150,9 @@ function processMapping() {
     }
 }
 
-// --- IMPORT : EXECUTION ÉLÈVES ---
-function executeStudentImport(data, mapping, isStrictReplace) {
-    let count = 0;
-    if (isStrictReplace) {
-        showConfirm("Attention : Le mode Remplacement va effacer tous les élèves existants. Continuer ?", () => {
-            DB.students = [];
-            executeStudentImport(data, mapping, false); // relance sans flag strict
-        });
-        return;
-    }
-    data.forEach(row => {
-        const nom = mapping.nom ? row[mapping.nom] : null;
-        if (nom) {
-            const newS = {
-                id: Date.now() + Math.random(),
-                nom: String(nom).toUpperCase().trim(),
-                prenom: mapping.prenom && row[mapping.prenom] ? String(row[mapping.prenom]).trim() : "",
-                classe: mapping.classe && row[mapping.classe] ? String(row[mapping.classe]).trim() : "Non Classé",
-                sexe: "M",
-                mef: mapping.mef && row[mapping.mef] ? String(row[mapping.mef]).trim() : "",
-                anonymat: mapping.anonymat && row[mapping.anonymat] ? String(row[mapping.anonymat]).trim() : "",
-                tt: false,
-                grades: {}
-            };
-            if (mapping.sexe && row[mapping.sexe]) {
-                const val = String(row[mapping.sexe]).toLowerCase();
-                if (val.includes('f') || val === '2' || val === 'mlle' || val === 'mme') newS.sexe = "F";
-            }
-            const existingIdx = DB.students.findIndex(s => s.nom === newS.nom && s.prenom === newS.prenom);
-            if (existingIdx >= 0) {
-                DB.students[existingIdx].classe = newS.classe;
-                DB.students[existingIdx].mef = newS.mef;
-                if(newS.anonymat) DB.students[existingIdx].anonymat = newS.anonymat;
-            } else {
-                DB.students.push(newS);
-                count++;
-            }
-        }
-    });
-    renderStudents();
-    showToast('✅ ' + count + ' nouveaux élèves ajoutés.', 'success');
-}
+// [Nettoyage 07/2026] `executeStudentImport` supprimée ici : doublon mort, la version active est dans js/oral_dnb.js.
 
-// --- IMPORT : EXECUTION PROFESSEURS ---
-function executeTeacherImport(data, mapping, isStrictReplace) {
-    let count = 0;
-    if (isStrictReplace) DB.teachers = [];
-    data.forEach(row => {
-        const nom = mapping.nom ? row[mapping.nom] : null;
-        if(nom) {
-            const newT = {
-                id: Date.now() + Math.random(),
-                nom: String(nom).toUpperCase().trim(),
-                prenom: mapping.prenom && row[mapping.prenom] ? String(row[mapping.prenom]).trim() : "",
-                civ: "M.",
-                matiere: mapping.matiere && row[mapping.matiere] ? String(row[mapping.matiere]).trim() : "Divers",
-                noHSE: false
-            };
-            if(mapping.civ && row[mapping.civ]) {
-                const c = String(row[mapping.civ]).toLowerCase();
-                if(c.includes('mme') || c.includes('f')) newT.civ = "Mme";
-            }
-            const existing = DB.teachers.find(t => t.nom === newT.nom);
-            if(!existing) { DB.teachers.push(newT); count++; }
-        }
-    });
-    renderTeachers();
-    showToast('✅ ' + count + ' professeurs ajoutés.', 'success');
-}
+// [Nettoyage 07/2026] `executeTeacherImport` supprimée ici : doublon mort, la version active est dans js/oral_dnb.js.
 
 // --- IMPORT : EXECUTION NOTES ---
 function executeImport(data, mapping, isStrictReplace) {

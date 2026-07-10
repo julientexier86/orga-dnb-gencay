@@ -1,41 +1,4 @@
-// === MODULE: ui_extra ===
-// --- ÉTIQUETTES DE TABLE ---
-function generateTableLabelsPDF(nbCols, nbRows) {
-    if (window.syncDistributionData) window.syncDistributionData();
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    const items = [];
-    if (DB.distribution && Object.keys(DB.distribution).length > 0) {
-        Object.keys(DB.distribution).sort().forEach(roomName => {
-            if (roomName === "Zone Tampon") return;
-            DB.distribution[roomName].forEach(s => {
-                items.push({ room: roomName, name: `${s.nom} ${s.prenom}`, classe: s.classe, code: s.anonymat || "" });
-            });
-        });
-    } else {
-        DB.students.forEach(s => items.push({ room: "NON PLACÉ", name: `${s.nom} ${s.prenom}`, classe: s.classe, code: s.anonymat || "" }));
-    }
-    const m = 10;
-    const boxW = (210 - 2*m) / nbCols;
-    const boxH = (297 - 2*m) / nbRows;
-    const perPage = nbCols * nbRows;
-    items.forEach((item, i) => {
-        const idxPage = i % perPage;
-        if (i > 0 && idxPage === 0) doc.addPage();
-        const col = idxPage % nbCols;
-        const row = Math.floor(idxPage / nbCols);
-        const x = m + col * boxW;
-        const y = m + row * boxH;
-        const cx = x + boxW/2;
-        const cy = y + boxH/2;
-        doc.setDrawColor(200); doc.setLineDash([1, 1]); doc.rect(x, y, boxW, boxH); doc.setLineDash([]);
-        doc.setFontSize(8); doc.setTextColor(100); doc.text(`DNB ${DB.config.year || ""} - Salle ${item.room}`, cx, y + 8, {align:'center'});
-        doc.setFontSize(12); doc.setTextColor(0); doc.setFont("helvetica", "bold"); doc.text(item.name, cx, cy, {align:'center'});
-        doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.text(item.classe, cx, cy + 6, {align:'center'});
-        if (item.code) { doc.setFontSize(11); doc.setTextColor(192, 57, 43); doc.text(item.code, cx, y + boxH - 6, {align:'center'}); }
-    });
-    doc.save("Etiquettes_Table.pdf");
-}
+// [Nettoyage 07/2026] `generateTableLabelsPDF` supprimée ici : doublon mort, la version active est dans js/v12_features.js.
 
 
 // --- SYNCHRONISATION DONNÉES DE RÉPARTITION ---

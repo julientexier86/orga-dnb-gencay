@@ -1,7 +1,23 @@
 // === MODULE: export_pdf_excel ===
 
 // [PDF Exports]
-function drawHeader(doc, title, subtitle) { addSmartLogo(doc, 10, 10, 28); doc.setFontSize(18); doc.text(DB.config.schoolName, 48, 20); doc.setFontSize(14); doc.text("DNB Blanc - Session " + DB.config.year, 48, 28); doc.setFontSize(16); doc.text(title, 14, 48); if (subtitle) { doc.setFontSize(12); doc.text(subtitle, 14, 55); } return 64; }
+function drawHeader(doc, title, subtitle) {
+    if (typeof drawExamPdfHeader === 'function') {
+        return drawExamPdfHeader(doc, { title, subtitle, y: 8, logoSize: 28 });
+    }
+    addSmartLogo(doc, 10, 10, 28);
+    doc.setFontSize(18);
+    doc.text(DB.config.schoolName, 48, 20);
+    doc.setFontSize(14);
+    doc.text(typeof getExamSessionLabel === 'function' ? getExamSessionLabel() : "DNB Blanc - Session " + DB.config.year, 48, 28);
+    doc.setFontSize(16);
+    doc.text(title, 14, 48);
+    if (subtitle) {
+        doc.setFontSize(12);
+        doc.text(subtitle, 14, 55);
+    }
+    return 64;
+}
 function exportDisplayPDF() { const { jsPDF } = window.jspdf; const doc = new jsPDF(); let pageCount = 0; DB.rooms.forEach((r) => { if ((DB.distribution[r.nom] || []).length === 0) return; if (pageCount > 0) doc.addPage(); drawHeader(doc, `Liste d'affichage - Salle ${r.nom}`, r.isTT ? "Tiers-Temps" : "Standard"); const body = (DB.distribution[r.nom] || []).map(s => [s.nom, s.prenom, s.classe, s.tt ? "OUI" : ""]); doc.autoTable({ head: [['Nom', 'Prénom', 'Classe', 'TT']], body: body, startY: 60 }); pageCount++; }); doc.save("listes_affichage.pdf"); }
 function exportDisplayXLSX() { const data = [["Salle", "Type", "Nom", "Prénom", "Classe", "TT"]]; DB.rooms.forEach((r) => { if ((DB.distribution[r.nom] || []).length === 0) return; const roomType = r.isTT ? "Tiers-Temps" : "Standard"; (DB.distribution[r.nom] || []).forEach(s => { data.push([r.nom, roomType, s.nom, s.prenom, s.classe, s.tt ? "OUI" : ""]); }); }); const ws = XLSX.utils.aoa_to_sheet(data); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Listes_Affichage"); XLSX.writeFile(wb, "Listes_Affichage.xlsx"); }
 function exportSignPDF() { const { jsPDF } = window.jspdf; const doc = new jsPDF(); let pageCount = 0; DB.exams.forEach(exam => { DB.rooms.forEach(room => { if ((DB.distribution[room.nom] || []).length === 0) return; if (pageCount > 0) doc.addPage(); const dur = room.isTT ? exam.durTT : exam.durStd; const startTime = room.isTT ? (exam.timeTT || exam.time) : exam.time; const endTime = addMinutes(startTime, dur); drawHeader(doc, `Émargement - ${exam.name} - Salle ${room.nom}`, `Date: ${exam.date} | Horaire: ${startTime} - ${endTime}`); const body = (DB.distribution[room.nom] || []).map(s => [s.nom, s.prenom, s.classe, s.tt ? "TT" : "", ""]); doc.autoTable({ head: [['Nom', 'Prénom', 'Classe', 'TT', 'Signature']], body: body, startY: 65, columnStyles: { 4: { minCellWidth: 40 } } }); pageCount++; }); }); doc.save("feuilles_emargement.pdf"); }
@@ -64,7 +80,7 @@ window.exportConvocationStudents = function (targetId = null) {
             if (typeof addSmartLogo === 'function') addSmartLogo(doc, 15, 10, 45);
 
             doc.setFontSize(10); doc.setTextColor(100);
-            doc.text("DNB BLANC", 195, 15, { align: 'right' });
+            doc.text(typeof getExamTitle === 'function' ? getExamTitle() : "DNB BLANC", 195, 15, { align: 'right' });
             doc.text(`Session ${DB.config.year}`, 195, 20, { align: 'right' });
 
             doc.setFontSize(14); doc.setTextColor(44, 62, 80); doc.setFont("helvetica", "bold");
@@ -277,7 +293,7 @@ window.exportConvocationTeachers = function () {
         if (count > 0) doc.addPage(); count++;
 
         addSmartLogo(doc, 15, 10, 45);
-        doc.setFontSize(10); doc.setTextColor(100); doc.text("DNB BLANC", 195, 12, { align: 'right' }); doc.text(`Session ${DB.config.year}`, 195, 17, { align: 'right' });
+        doc.setFontSize(10); doc.setTextColor(100); doc.text(typeof getExamTitle === 'function' ? getExamTitle() : "DNB BLANC", 195, 12, { align: 'right' }); doc.text(`Session ${DB.config.year}`, 195, 17, { align: 'right' });
         doc.setFontSize(14); doc.setTextColor(44, 62, 80); doc.setFont("helvetica", "bold"); doc.text(DB.config.schoolName || "Collège", 105, 18, { align: 'center' });
         doc.setFontSize(18); doc.setTextColor(0); doc.text("CONVOCATION SURVEILLANCE", 105, 40, { align: 'center' });
 

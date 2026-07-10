@@ -84,39 +84,7 @@ function updateAno(id, val) {
     if (s) s.anonymat = val;
 }
 
-// --- ROOMS LOGIC ---
-function renderRooms() {
-    const tbody = document.querySelector('#tableRooms tbody');
-    if(!tbody) return;
-    tbody.innerHTML = '';
-    
-    let list = [...DB.rooms];
-    const k = sortState.type === 'rooms' ? sortState.key : 'nom';
-    const o = sortState.order === 'asc' ? 1 : -1;
-    list.sort((a, b) => {
-        let valA = a[k] || "";
-        let valB = b[k] || "";
-        if (typeof valA === 'string') valA = valA.toLowerCase();
-        if (typeof valB === 'string') valB = valB.toLowerCase();
-        if (valA < valB) return -1 * o;
-        if (valA > valB) return 1 * o;
-        return 0;
-    });
-
-    list.forEach((r, idx) => {
-        const isLocked = (DB.uiState && DB.uiState.locked && DB.uiState.locked.rooms);
-        const disabled = isLocked ? 'disabled' : '';
-        const acts = isLocked ? `<button class="btn btn-danger btn-sm" disabled><i class="fas fa-trash-alt"></i></button>` : `<button class="btn btn-danger btn-sm" onclick="DB.rooms.splice(${idx}, 1); renderRooms();"><i class="fas fa-trash-alt"></i></button>`;
-
-        tbody.innerHTML += `<tr>
-            <td><input type="text" value="${r.nom}" onchange="DB.rooms[${idx}].nom=this.value; renderRooms();" ${disabled}></td>
-            <td style="text-align:center;"><input type="number" value="${r.capacite}" style="width:60px; text-align:center" onchange="DB.rooms[${idx}].capacite=parseInt(this.value); renderRooms();" ${disabled}></td>
-            <td style="text-align:center;"><input type="checkbox" ${r.isTT ? 'checked' : ''} onchange="DB.rooms[${idx}].isTT=this.checked; renderRooms();" ${disabled}></td>
-            <td style="text-align:center;"><input type="checkbox" ${r.isAmen ? 'checked' : ''} onchange="DB.rooms[${idx}].isAmen=this.checked; renderRooms();" ${disabled}></td>
-            <td style="text-align:center;">${acts}</td>
-        </tr>`;
-    });
-}
+// [Nettoyage 07/2026] `renderRooms` supprimée ici : doublon mort, la version active est dans js/students_rooms.js.
 
 // --- TEACHERS LOGIC ---
 function renderTeachers() {
@@ -217,58 +185,11 @@ function sortData(type, key) {
     if (type === 'rooms' && typeof renderRooms === 'function') renderRooms();
 }
 
-function openStudentModal() {
-    const nom = prompt("Nom de l'élève :");
-    if (!nom) return;
-    const prenom = prompt("Prénom de l'élève :");
-    if (!prenom) return;
-    
-    DB.students.push({
-        id: Date.now().toString(),
-        nom: nom.toUpperCase(),
-        prenom: prenom,
-        classe: "Non Classé",
-        sexe: "M",
-        tt: false,
-        anonymat: "",
-        amenagements: [] // Toujours initialiser comme tableau pour inclure TTEMPS via checkbox
-    });
-    
-    // NOUVEAU : Enregistre immédiatement l'action
-    if(typeof saveGlobalData === 'function') saveGlobalData(true);
-    if(typeof renderStudents === 'function') renderStudents();
-}
+// [Nettoyage 07/2026] `openStudentModal` supprimée ici : doublon mort, la version active est dans js/students_rooms.js.
 
-function openRoomModal() {
-    const nom = prompt("Nom de la salle :");
-    if (!nom) return;
-    
-    DB.rooms.push({
-        nom: nom.toUpperCase(),
-        capacite: 20,
-        isTT: false,
-        isAmen: false
-    });
-    
-    if(typeof saveGlobalData === 'function') saveGlobalData(true);
-    if(typeof renderRooms === 'function') renderRooms();
-}
+// [Nettoyage 07/2026] `openRoomModal` supprimée ici : doublon mort, la version active est dans js/students_rooms.js.
 
-function openTeacherModal() {
-    const nom = prompt("Nom du professeur :");
-    if (!nom) return;
-    
-    DB.teachers.push({
-        nom: nom.toUpperCase(),
-        prenom: "",
-        civ: "M.",
-        matiere: "Divers",
-        refuseHSE: false
-    });
-    
-    if(typeof saveGlobalData === 'function') saveGlobalData(true);
-    if(typeof renderTeachers === 'function') renderTeachers();
-}
+// [Nettoyage 07/2026] `openTeacherModal` supprimée ici : doublon mort, la version active est dans js/students_rooms.js.
 
 // Fonction de validation
 function editStudent(id) {

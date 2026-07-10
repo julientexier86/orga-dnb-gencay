@@ -255,10 +255,10 @@ function saveNewRoom() {
 }
 function openStudentModal() { document.getElementById('modStNom').value = ""; document.getElementById('studentModal').style.display = 'flex'; }
 function closeStudentModal() { document.getElementById('studentModal').style.display = 'none'; }
-function saveNewStudent() { const n = document.getElementById('modStNom').value, p = document.getElementById('modStPrenom').value; if (n && p) { DB.students.push({ id: Date.now(), nom: n, prenom: p, classe: document.getElementById('modStClasse').value, sexe: document.getElementById('modStSexe').value, tt: document.getElementById('modStTT').checked }); renderStudents(); closeStudentModal(); } }
+// [Nettoyage 07/2026] `saveNewStudent` supprimée ici : doublon mort, la version active est dans js/oral_dnb.js.
 function openTeacherModal() { document.getElementById('modTeaNom').value = ""; document.getElementById('teacherModal').style.display = 'flex'; }
 function closeTeacherModal() { document.getElementById('teacherModal').style.display = 'none'; }
-function saveNewTeacher() { const n = document.getElementById('modTeaNom').value; if (n) { DB.teachers.push({ civ: document.getElementById('modTeaCiv').value, nom: n, prenom: document.getElementById('modTeaPrenom').value, matiere: document.getElementById('modTeaMatiere').value }); renderTeachers(); closeTeacherModal(); } }
+// [Nettoyage 07/2026] `saveNewTeacher` supprimée ici : doublon mort, la version active est dans js/oral_dnb.js.
 function toggleDistribLock() { if (!DB.uiState.locked.distrib) DB.uiState.locked.distrib = false; DB.uiState.locked.distrib = !DB.uiState.locked.distrib; updateDistribLock(); }
 function updateDistribLock() { const locked = DB.uiState.locked.distrib; const btn = document.getElementById('lock-distrib'), cont = document.getElementById('visualDistrib'), btnWiz = document.getElementById('btnLaunchDistrib'), btnReset = document.getElementById('btnResetDistrib'); if (locked) { btn.innerHTML = "🔒 Déverrouiller"; btn.classList.add('locked'); cont.classList.add('is-locked-disabled'); btnWiz.disabled = true; btnReset.disabled = true; } else { btn.innerHTML = "🔓 Verrouiller"; btn.classList.remove('locked'); cont.classList.remove('is-locked-disabled'); btnWiz.disabled = false; btnReset.disabled = false; } }
 function syncDistributionBuffer() {
@@ -412,6 +412,7 @@ function handleDrop(e, targetRoomName) {
 }
 function resetDistribution() {
     showConfirm("Tout effacer ?", () => {
+        if (typeof createActionBackup === 'function') createActionBackup('Avant reset répartition élèves');
         DB.distribution = {};
         DB.rooms.forEach(r => DB.distribution[r.nom] = []);
         DB.distribution["Zone Tampon"] = [...DB.students];
@@ -426,6 +427,7 @@ function wizGoToStep(n) { document.querySelectorAll('.wizard-step').forEach(s =>
 function wizGoToStep2() { const mode = document.querySelector('input[name="wizTTMode"]:checked').value; wizData.selectedTTIds = []; if (mode === 'auto') wizData.selectedTTIds = DB.students.filter(s => s.tt).map(s => normalizeStudentId(s.id)); else document.querySelectorAll('#wizTTListContainer input:checked').forEach(cb => wizData.selectedTTIds.push(normalizeStudentId(cb.value))); const ttCount = wizData.selectedTTIds.length; const ttRooms = DB.rooms.filter(r => r.isTT); const ttCap = ttRooms.reduce((acc, r) => acc + (parseInt(r.capacite) || 0), 0); const totalStudents = DB.students.length; const stdCount = totalStudents - ttCount; const stdRooms = DB.rooms.filter(r => !r.isTT); const stdCap = stdRooms.reduce((acc, r) => acc + (parseInt(r.capacite) || 0), 0); const msgDiv = document.getElementById('wizCapCheckMsg'); const btnNext = document.getElementById('btnWizStep2Next'); let html = ""; let error = false; if (ttCount > ttCap) { html += `<div style="color:#c0392b;margin-bottom:10px;"><strong>⛔ TT Insuffisant !</strong> Besoin:${ttCount} / Dispo:${ttCap}</div>`; error = true; } else html += `<div style="color:#27ae60;margin-bottom:10px;"><strong>✅ TT OK</strong> (${ttCount}/${ttCap})</div>`; if (stdCount > stdCap) { html += `<div style="color:#c0392b;"><strong>⛔ Standard Insuffisant !</strong> Besoin:${stdCount} / Dispo:${stdCap}</div>`; error = true; } else html += `<div style="color:#27ae60;"><strong>✅ Standard OK</strong> (${stdCount}/${stdCap})</div>`; msgDiv.innerHTML = html; if (error) { msgDiv.style.background = "#fdedec"; btnNext.style.display = 'none'; } else { msgDiv.style.background = "#e8f6f3"; btnNext.style.display = 'inline-block'; } wizGoToStep(2); }
 function wizGoToStep3() { wizGoToStep(3); }
 function executeDistribution() {
+    if (typeof createActionBackup === 'function') createActionBackup('Avant assistant répartition élèves');
     // 1. Récupération des options de l'assistant
     const sortMode = document.querySelector('input[name="wizSortMode"]:checked').value;
     const fillTT = document.querySelector('input[name="wizFillTT"]:checked').value;

@@ -773,7 +773,7 @@ window.exportPochettesJuryPDF = function () {
 
         doc.setFontSize(16); doc.setTextColor(0); doc.setFont("helvetica", "bold");
         doc.text("PROCÈS-VERBAL DE JURY", pvCenterX, 20, { align: 'center' });
-        doc.setFontSize(12); doc.text(`ORAUX - DNB BLANC ${year}`, pvCenterX, 28, { align: 'center' });
+        doc.setFontSize(12); doc.text(`ORAUX - ${typeof getExamTitle === 'function' ? getExamTitle() : 'DNB BLANC'} ${year}`, pvCenterX, 28, { align: 'center' });
 
         doc.setDrawColor(0); doc.setLineWidth(0.4); doc.rect(pvX, 35, pvW, 25);
         doc.setFontSize(11);
@@ -833,7 +833,7 @@ window.exportPochettesJuryPDF = function () {
         if (typeof addSmartLogo === 'function') addSmartLogo(doc, covX, 10, 45);
 
         doc.setFontSize(22); doc.setTextColor(44, 62, 80); doc.setFont("helvetica", "bold");
-        doc.text(`ORAUX - DNB BLANC ${year}`, covCenterX, 30, { align: 'center' });
+        doc.text(`ORAUX - ${typeof getExamTitle === 'function' ? getExamTitle() : 'DNB BLANC'} ${year}`, covCenterX, 30, { align: 'center' });
 
         const startY = 45;
         doc.setDrawColor(200); doc.setFillColor(248, 249, 250); doc.rect(covX, startY, covW, 40, 'FD');

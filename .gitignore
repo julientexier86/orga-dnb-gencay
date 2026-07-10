@@ -16,6 +16,7 @@ Desktop.ini
 # Fichiers temporaires
 *.tmp
 *.log
+test_ids.js
 
 # Anciens fichiers monolithiques conservés hors application
 legacy/

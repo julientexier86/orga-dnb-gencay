@@ -5,6 +5,12 @@
 // Helper : retourne un nombre valide ou null
 function validNum(v) { if (v == null || v === "") return null; const n = parseFloat(v); return isNaN(n) ? null : n; }
 
+// Les relevés de notes sont volontairement basés uniquement sur la base
+// pédagogique du DNB blanc. Les résultats Cyclades vivent dans DB.officialResults.
+function getBlankGradeStudents() {
+    return (DB.students || []).filter(student => student && student.grades);
+}
+
 function renderGrades() {
     const tbody = document.querySelector('#tableGradesPreview tbody');
     if (!tbody) return;
@@ -146,7 +152,7 @@ function sortSimulation(key) {
 
 // MENU VISUEL POUR LES RELEVÉS DE NOTES (Remplace l'ancien menu liste)
 function openReleveOptions() {
-    if (DB.students.length === 0) return showToast("Aucun élève dans la base.", 'error');
+    if (getBlankGradeStudents().length === 0) return showToast("Aucun élève avec des notes de DNB blanc dans la base.", 'error');
 
     // --- 1. CRÉATION DU FOND (OVERLAY) ---
     const overlay = document.createElement('div');
@@ -266,16 +272,17 @@ window.exportRelevesNotes = function (sortMode, targetId) {
     DB.config.schoolName = document.getElementById('schoolName').value;
     DB.config.year = document.getElementById('sessionYear').value;
     const activeSciences = DB.config.scienceSubjects || ['SVT', 'PC', 'TECH'];
-    const examTitle = typeof getExamTitle === 'function' ? getExamTitle() : "DNB Blanc";
+    const examTitle = "DNB blanc";
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('p', 'mm', 'a4');
     let count = 0;
 
+    const blankStudents = getBlankGradeStudents();
     let studentsToPrint = [];
     if (targetId && targetId !== 'all') {
-        studentsToPrint = DB.students.filter(s => s.id == targetId);
+        studentsToPrint = blankStudents.filter(s => s.id == targetId);
     } else {
-        studentsToPrint = [...DB.students];
+        studentsToPrint = [...blankStudents];
     }
 
     studentsToPrint.sort((a, b) => {
@@ -449,13 +456,14 @@ window.exportRelevesNotes = function (sortMode, targetId) {
 
 // 5. POCHETTES DE CLASSE POUR RELEVÉS DE NOTES (A3 paysage)
 window.exportFolderCoversNotes = function () {
-    if (!DB.students || DB.students.length === 0) return showToast("Veuillez d'abord charger la liste des élèves.", "error");
+    const blankStudents = getBlankGradeStudents();
+    if (blankStudents.length === 0) return showToast("Veuillez d'abord charger les élèves et leurs notes de DNB blanc.", "error");
 
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('l', 'mm', 'a3');
-    const examTitle = typeof getExamTitle === 'function' ? getExamTitle() : "DNB Blanc";
+    const examTitle = "DNB blanc";
 
-    const classes = [...new Set(DB.students.map(s => s.classe))].sort();
+    const classes = [...new Set(blankStudents.map(s => s.classe))].sort();
     const year = DB.config.year || "";
     const schoolName = DB.config.schoolName || "Établissement";
 
@@ -485,7 +493,7 @@ window.exportFolderCoversNotes = function () {
         doc.text(className, covCenterX, 178, { align: 'center' });
 
         // Effectif de la classe
-        const effectif = DB.students.filter(s => s.classe === className).length;
+        const effectif = blankStudents.filter(s => s.classe === className).length;
         doc.setFontSize(14); doc.setTextColor(100); doc.setFont("helvetica", "normal");
         doc.text(`${effectif} élèves`, covCenterX, 200, { align: 'center' });
 
@@ -496,4 +504,3 @@ window.exportFolderCoversNotes = function () {
 
     doc.save(`Pochettes_Releves_Notes_${year}.pdf`);
 };
-

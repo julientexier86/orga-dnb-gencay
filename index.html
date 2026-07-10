@@ -5,14 +5,16 @@
     <meta http-equiv="content-type" content="text/html; charset=UTF-8">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Organisation DNB Blanc</title>
+    <title>Organisation d'examens</title>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Librairies vendorisées en local : fonctionnement 100% hors-ligne -->
+    <script src="js/vendor/jspdf.umd.min.js"></script>
+    <script src="js/vendor/jspdf.plugin.autotable.min.js"></script>
+    <script src="js/vendor/xlsx.full.min.js"></script>
+    <script src="js/vendor/chart.umd.min.js"></script>
+    <script src="js/vendor/pptxgen.bundle.js"></script>
+    <link rel="stylesheet" href="js/vendor/fonts/opensans.css">
+    <link rel="stylesheet" href="js/vendor/fontawesome/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -22,7 +24,7 @@
         <div class="sidebar">
             <div class="sidebar-header">
                 <img id="appLogoImg" class="app-logo" src="" alt="Logo" style="display: none;">
-                <h2><i class="fas fa-graduation-cap text-primary"></i> Orga DNB Blanc</h2>
+                <h2><i class="fas fa-graduation-cap text-primary"></i> Orga Exam</h2>
                 <small style="opacity: 0.8;">Gençay</small>
             </div>
             <button class="menu-item active" id="btnDashboard" onclick="nav('dashboard', this)"><i class="fas fa-gauge-high"></i>
@@ -101,6 +103,12 @@
             <button class="menu-item" id="btnRes" onclick="toggleSubmenu('resMenu', this)"><i
                     class="fas fa-chart-line"></i> Résultats</button>
             <div id="resMenu" class="submenu">
+                <button class="submenu-item" onclick="DB.config.resultsWorkspace='blank'; DB.config.datavisSource='blank'; nav('res-datavis', this)"><i class="fas fa-file-alt"></i>
+                    DNB blanc</button>
+                <button class="submenu-item" onclick="DB.config.resultsWorkspace='official'; DB.config.datavisSource='official'; nav('res-datavis', this)"><i class="fas fa-landmark"></i>
+                    DNB officiel & comparaison</button>
+                <button class="submenu-item" onclick="DB.config.resultsWorkspace='annual'; nav('res-datavis', this)"><i class="fas fa-history"></i>
+                    Comparaison des années</button>
                 <button class="submenu-item" onclick="nav('res-import', this)"><i class="fas fa-file-import"></i> Import
                     Notes</button>
                 <button class="submenu-item" onclick="nav('res-analyse', this); renderAnalyseCorrections();"><i class="fas fa-chart-bar"></i> Analyse Corrections</button>
@@ -139,6 +147,11 @@
                 <div id="dashboardKpis" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap:15px; margin-bottom:20px;"></div>
 
                 <div class="card">
+                    <h3>Assistant de préparation</h3>
+                    <div id="dashboardWorkflow"></div>
+                </div>
+
+                <div class="card">
                     <h3>Contrôle qualité</h3>
                     <div id="dashboardReadiness"></div>
                     <div id="dashboardIssues" style="margin-top:15px;"></div>
@@ -148,6 +161,91 @@
                     <h3>Recherche rapide</h3>
                     <input type="text" id="dashboardSearchInput" placeholder="Rechercher un élève, professeur, salle, classe..." oninput="dashboardSearch(this.value)" style="width:100%; padding:12px; border:1px solid #dcdfe6; border-radius:6px; font-size:1rem;">
                     <div id="dashboardSearchResults" style="margin-top:15px;"></div>
+                </div>
+
+                <div class="card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+                        <div>
+                            <h3 style="margin-bottom:5px;">Journal jour J</h3>
+                            <p style="margin:0; color:#7f8c8d;">Absences, incidents, remplacements et décisions pendant les épreuves.</p>
+                        </div>
+                        <button class="btn btn-dark" onclick="exportExamDayLogPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
+                    </div>
+                    <div style="display:grid; grid-template-columns:minmax(150px, 0.7fr) minmax(180px, 1fr) minmax(260px, 2fr) auto; gap:10px; align-items:end; margin-top:14px;">
+                        <div>
+                            <label style="font-weight:bold; font-size:0.85rem;">Type</label>
+                            <select id="examDayLogType" style="width:100%; padding:9px; border:1px solid #ccc; border-radius:6px;">
+                                <option value="Absence élève">Absence élève</option>
+                                <option value="Retard">Retard</option>
+                                <option value="Incident">Incident</option>
+                                <option value="Remplacement">Remplacement</option>
+                                <option value="Décision">Décision</option>
+                                <option value="Information">Information</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-weight:bold; font-size:0.85rem;">Personne / salle</label>
+                            <input type="text" id="examDayLogSubject" placeholder="Nom, salle, épreuve..." style="width:100%; padding:9px; border:1px solid #ccc; border-radius:6px;">
+                        </div>
+                        <div>
+                            <label style="font-weight:bold; font-size:0.85rem;">Note</label>
+                            <input type="text" id="examDayLogNote" placeholder="Détail bref de l'événement..." style="width:100%; padding:9px; border:1px solid #ccc; border-radius:6px;">
+                        </div>
+                        <button class="btn btn-primary" onclick="addExamDayLogEntry()" style="padding:10px 14px;">Ajouter</button>
+                    </div>
+                    <div id="examDayLogList" style="margin-top:14px;"></div>
+                    <div style="margin-top:18px; padding-top:14px; border-top:1px solid #ecf0f1;">
+                        <div style="display:flex; justify-content:space-between; gap:10px; align-items:center; flex-wrap:wrap;">
+                            <div>
+                                <h4 style="margin:0; color:#2c3e50;">Absences / retards par épreuve</h4>
+                                <p style="margin:4px 0 0; color:#7f8c8d; font-size:0.9rem;">Associez rapidement un élève à une épreuve et à son statut.</p>
+                            </div>
+                            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                                <button class="btn btn-dark" onclick="exportExamAttendancePDF()" style="padding:6px 10px; font-size:0.8rem;">PDF absences</button>
+                                <button class="btn btn-success" onclick="exportExamAttendanceXLSX()" style="padding:6px 10px; font-size:0.8rem;">Excel absences</button>
+                                <button class="btn btn-primary" onclick="exportExamAttendanceSummaryPDF()" style="padding:6px 10px; font-size:0.8rem;">Synthèse épreuve</button>
+                            </div>
+                        </div>
+                        <div style="display:flex; gap:10px; align-items:end; flex-wrap:wrap; margin-top:10px;">
+                            <div style="min-width:260px;">
+                                <label style="font-weight:bold; font-size:0.85rem;">Filtrer la liste</label>
+                                <select id="attendanceFilterExamSelect" onchange="renderExamAttendance()" style="width:100%; padding:9px; border:1px solid #ccc; border-radius:6px;"></select>
+                            </div>
+                            <div id="attendanceSummaryLine" style="color:#566573; font-size:0.9rem; padding-bottom:9px;"></div>
+                        </div>
+                        <div style="display:grid; grid-template-columns:minmax(190px, 1fr) minmax(220px, 1.2fr) minmax(130px, 0.7fr) minmax(220px, 1.3fr) auto; gap:10px; align-items:end; margin-top:12px;">
+                            <div>
+                                <label style="font-weight:bold; font-size:0.85rem;">Épreuve</label>
+                                <select id="attendanceExamSelect" style="width:100%; padding:9px; border:1px solid #ccc; border-radius:6px;"></select>
+                            </div>
+                            <div>
+                                <label style="font-weight:bold; font-size:0.85rem;">Élève</label>
+                                <select id="attendanceStudentSelect" style="width:100%; padding:9px; border:1px solid #ccc; border-radius:6px;"></select>
+                            </div>
+                            <div>
+                                <label style="font-weight:bold; font-size:0.85rem;">Statut</label>
+                                <select id="attendanceStatusSelect" style="width:100%; padding:9px; border:1px solid #ccc; border-radius:6px;">
+                                    <option value="Absent">Absent</option>
+                                    <option value="Retard">Retard</option>
+                                    <option value="Sortie anticipée">Sortie anticipée</option>
+                                    <option value="Présent signalé">Présent signalé</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-weight:bold; font-size:0.85rem;">Note</label>
+                                <input type="text" id="attendanceNoteInput" placeholder="Motif, heure d’arrivée, observation..." style="width:100%; padding:9px; border:1px solid #ccc; border-radius:6px;">
+                            </div>
+                            <button class="btn btn-primary" onclick="addExamAttendanceEntry()" style="padding:10px 14px;">Ajouter</button>
+                        </div>
+                        <div id="examAttendanceList" style="margin-top:12px;"></div>
+                    </div>
+                    <div style="margin-top:18px; padding-top:14px; border-top:1px solid #ecf0f1;">
+                        <div style="display:flex; justify-content:space-between; gap:10px; align-items:center; flex-wrap:wrap;">
+                            <h4 style="margin:0; color:#2c3e50;">Checklist jour J</h4>
+                            <button class="btn btn-secondary" onclick="resetExamDayChecklist()" style="padding:6px 10px; font-size:0.8rem;">Réinitialiser</button>
+                        </div>
+                        <div id="examDayChecklist" style="margin-top:10px;"></div>
+                    </div>
                 </div>
             </div>
 
@@ -160,7 +258,7 @@
                         <div class="col"><label>Ville d'exercice</label><input type="text" id="schoolCity"
                                 onchange="DB.config.city=this.value"></div>
                         <div class="col" style="flex:0.5"><label>Session</label><input type="text" id="sessionYear"
-                                value="2026" onchange="DB.config.year=this.value"></div>
+                                value="2026" onchange="handleSessionYearChange(this.value)"></div>
                         <div class="col" style="flex:1">
                             <label for="examTypeSelect" style="font-weight:bold; color:#34495e;">Type d'évaluation</label>
                             <select id="examTypeSelect" aria-label="Choisir le type d'examen" onchange="handleExamTypeChange(this.value)" style="width:100%; padding:8px; margin-top:5px; border:1px solid #ccc; border-radius:4px;">
@@ -171,7 +269,7 @@
                             </select>
                             <div id="customExamContainer" style="display:none; margin-top:10px;" aria-hidden="true">
                                 <label for="customExamInput" style="font-size:0.85rem; color:#7f8c8d;">Saisissez votre intitulé :</label>
-                                <input type="text" id="customExamInput" placeholder="Ex: Brevet Blanc Avril" onkeyup="DB.config.customExamName=this.value" onchange="DB.config.customExamName=this.value" style="width:100%; padding:8px; border:1px dashed #3498db; border-radius:4px; background:#f0f8ff;">
+                                <input type="text" id="customExamInput" placeholder="Ex: Brevet Blanc Avril" oninput="handleCustomExamNameChange(this.value)" style="width:100%; padding:8px; border:1px dashed #3498db; border-radius:4px; background:#f0f8ff;">
                             </div>
                         </div>
                     </div>
@@ -267,6 +365,12 @@
                 </div>
                 <div class="card">
                     <h3>Horaires et Durées</h3>
+                    <div style="display:flex; justify-content:space-between; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:12px; padding:10px; background:#f8f9fa; border:1px solid #e5e7eb; border-radius:8px;">
+                        <div id="examProfileInfo" style="color:#34495e; font-size:0.92rem;"></div>
+                        <button class="btn btn-secondary" onclick="resetSelectedExamProfileToDefault()" style="padding:7px 10px; font-size:0.82rem;">
+                            Réinitialiser le modèle
+                        </button>
+                    </div>
                     <table>
                         <thead>
                             <tr>
@@ -364,6 +468,25 @@
                             min)</button>
                     </div>
                 </div>
+                <div class="card" style="border-left:5px solid #2980b9;">
+                    <h3><i class="fas fa-book"></i> Modèles de consignes</h3>
+                    <p style="font-size:0.9rem; color:#666;">
+                        Centralisez les textes réutilisés dans les convocations, pochettes et documents d'examen.
+                    </p>
+                    <div id="instructionTemplatesContainer" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:12px; margin-top:15px;"></div>
+                </div>
+                <div class="card" style="border-left:5px solid #8e44ad;">
+                    <h3><i class="fas fa-save"></i> Sauvegardes nommées</h3>
+                    <p style="font-size:0.9rem; color:#666;">
+                        Créez un point de restauration explicite avant une grosse opération ou une impression finale.
+                    </p>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:12px;">
+                        <input type="text" id="namedBackupLabel" placeholder="Ex: Avant planning automatique"
+                            style="flex:1; min-width:260px; padding:10px; border:1px solid #ccc; border-radius:6px;">
+                        <button class="btn btn-primary" onclick="createManualNamedBackup()"><i class="fas fa-plus"></i> Créer une sauvegarde</button>
+                    </div>
+                    <div id="namedBackupsList" style="margin-top:12px;"></div>
+                </div>
             </div>
 
             <div id="data-eleves" class="section">
@@ -402,7 +525,7 @@
                     <div class="action-bar" id="actions-students"
                         style="margin-top:15px; display:flex; justify-content:space-between;"><button
                             class="btn btn-success" onclick="openStudentModal()">➕ Ajouter élève</button><button
-                            class="btn btn-danger" onclick="DB.students=[];renderStudents()">Vider</button></div>
+                            class="btn btn-danger" onclick="clearStudentsWithBackup()">Vider</button></div>
                     <div style="height:400px;overflow:auto;margin-top:10px;border:1px solid #eee">
                         <table id="tableStudents">
                             <thead>
@@ -443,7 +566,7 @@
                     <div class="action-bar" id="actions-rooms"
                         style="margin-top:20px; display:flex; justify-content:space-between;">
                         <button class="btn btn-success" onclick="openRoomModal()">➕ Ajouter salle</button>
-                        <button class="btn btn-danger" onclick="DB.rooms=[];renderRooms()">Vider</button>
+                        <button class="btn btn-danger" onclick="clearRoomsWithBackup()">Vider</button>
                     </div>
                     <table id="tableRooms">
                         <thead>
@@ -481,7 +604,7 @@
                     <div class="action-bar" id="actions-teachers"
                         style="margin-top:20px; display:flex; justify-content:space-between;">
                         <button class="btn btn-success" onclick="openTeacherModal()">➕ Ajouter prof</button>
-                        <button class="btn btn-danger" onclick="DB.teachers=[];renderTeachers()">Vider</button>
+                        <button class="btn btn-danger" onclick="clearTeachersWithBackup()">Vider</button>
                     </div>
 
                     <div id="teachers-list"
@@ -769,6 +892,10 @@ Aucune sortie anticipée n'est autorisée. Vous devez rester assis et silencieux
                         ⚡ Planning Automatique
                     </button>
 
+                    <button class="btn btn-secondary" onclick="simulateAutoFillPlanning()" title="Prévisualiser sans modifier le planning actuel" style="padding:12px 20px; font-size:0.95rem; font-weight:bold;">
+                        <i class="fas fa-eye"></i> Simuler
+                    </button>
+
                     <button class="btn btn-magic" onclick="optimizePlanningMoves()" title="Réduire les déplacements">
                         <i class="fas fa-sparkles"></i> Optimiser Salles
                     </button>
@@ -840,8 +967,8 @@ Aucune sortie anticipée n'est autorisée. Vous devez rester assis et silencieux
                         <label style="font-weight:bold; display:block; margin-bottom:5px;">Consignes sur la convocation
                             (Recto & Verso) :</label>
 
-                        <textarea id="txtConvocInfo" rows="15" onchange="DB.config.convocText = this.value; if(typeof autoSave === 'function') autoSave();"
-                            style="width:100%; height:300px; padding:10px; border:1px solid #ccc; border-radius:5px; font-family:sans-serif; font-size:0.9rem; line-height:1.4;">- Attention : Les aménagements accordés pour ce DNB Blanc ne préjugent pas de la décision finale qui sera rendue par les services du Rectorat pour l'examen officiel.
+                        <textarea id="txtConvocInfo" rows="15" oninput="if(typeof setInstructionTemplate==='function') setInstructionTemplate('candidates', this.value); else { DB.config.convocText = this.value; if(typeof autoSave === 'function') autoSave(); }"
+                            style="width:100%; height:300px; padding:10px; border:1px solid #ccc; border-radius:5px; font-family:sans-serif; font-size:0.9rem; line-height:1.4;">- Attention : Les aménagements accordés pour cet examen ne préjugent pas de la décision finale qui sera rendue par les services du Rectorat pour l'examen officiel.
 - Présence obligatoire 15 minutes avant le début des épreuves.
 - Pièce d'identité ou carnet de correspondance obligatoire.
 - Sacs et téléphones portables éteints à déposer à l'entrée.
@@ -869,7 +996,7 @@ Aucune sortie anticipée n'est autorisée. Vous devez rester assis et silencieux
                         <textarea id="txtConvocProfInstructions" rows="6"
                             style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px; font-family:sans-serif; font-size:0.95rem; line-height:1.4;"
                             placeholder="Ex. Merci de vous présenter 15 minutes avant le début de votre créneau, de récupérer les documents au secrétariat d’examen, etc."
-                            oninput="saveTeacherConvocInstructions()"></textarea>
+                            oninput="if(typeof setInstructionTemplate==='function') setInstructionTemplate('teachers', this.value); else saveTeacherConvocInstructions();"></textarea>
                     </div>
                     <div
                         style="padding:20px; background:#f8f9fa; border:1px solid #ddd; border-radius:8px; text-align:center; display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
@@ -896,6 +1023,11 @@ Aucune sortie anticipée n'est autorisée. Vous devez rester assis et silencieux
                             <div class="import-box" style="flex: 2; border: 2px dashed #27ae60; background: #f0fff4; margin-bottom: 0; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center;">
                                 <span class="import-title" style="color: #27ae60; margin-bottom: 10px; display: block; font-weight: bold;">📗 Sélectionner Fichier Notes (Import Direct)</span>
                                 <input type="file" id="fileGrades" accept=".csv,.xlsx" style="width:100%; cursor:pointer;" onchange="handleFileSelect('grades')">
+                            </div>
+                            <div class="import-box" style="flex: 2; border: 2px dashed #2980b9; background: #f0f7ff; margin-bottom: 0; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center;">
+                                <span class="import-title" style="color: #2980b9; margin-bottom: 10px; display: block; font-weight: bold;">🏛️ Résultats officiels DNB (Cyclades)</span>
+                                <input type="file" id="fileOfficialResults" accept=".csv" style="width:100%; cursor:pointer;" onchange="handleOfficialResultsFile(this)">
+                                <small id="officialResultsImportStatus" style="margin-top:8px; color:#566573;">Import séparé : n’écrase pas les notes du DNB blanc.</small>
                             </div>
                             <!-- Colonne 2 : Bordereaux anonymés -->
                             <div style="flex: 2; display: flex; flex-direction: column; justify-content: space-around; padding: 20px; background: #e8f8f5; border: 1px solid #1abc9c; border-radius: 8px; box-sizing: border-box;">
@@ -962,7 +1094,7 @@ Aucune sortie anticipée n'est autorisée. Vous devez rester assis et silencieux
             <div id="res-releves" class="section">
                 <div class="card">
                     <h3>Relevés de Notes</h3>
-                    <p>Générez les relevés de notes individuels (Mise en page officielle) avec notes d'oral et simulation du contrôle continu.</p>
+                    <p>Générez les relevés de notes du <strong>DNB blanc uniquement</strong>, avec notes d'oral et simulation du contrôle continu. Les résultats officiels Cyclades ne sont jamais utilisés dans ces documents.</p>
                     <div style="padding:20px; background:#f8f9fa; border:1px solid #ddd; border-radius:8px; text-align:center; display:flex; gap:15px; justify-content:center; flex-wrap:wrap;">
                         <button class="btn btn-primary" style="font-size:1.1rem; padding:10px 20px;"
                             onclick="exportFolderCoversNotes()"><i class="fas fa-folder"></i> Imprimer les Pochettes de classe</button>
@@ -1148,7 +1280,7 @@ Aucune sortie anticipée n'est autorisée. Vous devez rester assis et silencieux
                         <fieldset style="border: 1px solid #ccc; padding: 20px; border-radius: 8px;">
                             <legend style="font-weight: bold; padding: 0 10px; font-size: 1.1rem;">Consignes</legend>
                             <label for="txtAeshInstructions" style="font-weight:bold; display:block; margin-bottom:8px;">Texte ajouté à chaque convocation</label>
-                            <textarea id="txtAeshInstructions" rows="12" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px; font-family:sans-serif; font-size:0.9rem; line-height:1.4;">Merci de vous présenter au secrétariat d'examen 15 minutes avant le début de la première épreuve accompagnée.
+                            <textarea id="txtAeshInstructions" rows="12" oninput="if(typeof setInstructionTemplate==='function') setInstructionTemplate('aesh', this.value);" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px; font-family:sans-serif; font-size:0.9rem; line-height:1.4;">Merci de vous présenter au secrétariat d'examen 15 minutes avant le début de la première épreuve accompagnée.
 Vous êtes affecté(e) à l'épreuve et à la salle mentionnées sur cette convocation.
 En cas de difficulté, prévenir immédiatement le secrétariat d'examen.</textarea>
                         </fieldset>
@@ -2870,6 +3002,7 @@ En cas de retard ou de problème, signalez-vous immédiatement à la vie scolair
     <script src="js/students_rooms.js"></script>
     <script src="js/export_pdf_excel.js"></script>
     <script src="js/datavis.js"></script>
+    <script src="js/datavis_reports.js"></script>
     <script src="js/teachers_amenagements.js"></script>
     <script src="js/planning_distribution.js"></script>
     <script src="js/stage_orals.js"></script>
@@ -2878,6 +3011,7 @@ En cas de retard ou de problème, signalez-vous immédiatement à la vie scolair
     <script src="js/ui_extra.js"></script>
     <script src="js/labels_engine.js"></script>
     <script src="js/v12_features.js"></script>
+    <script src="js/exam_foundations.js"></script>
     <script src="js/dashboard.js"></script>
 
 <!-- ===== MODALS ORAL DNB V2 ===== -->

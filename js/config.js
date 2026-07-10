@@ -21,9 +21,13 @@ window.onload = function () {
 
     if (DB.config.city && document.getElementById('schoolCity')) document.getElementById('schoolCity').value = DB.config.city;
     if (DB.config.schoolName && document.getElementById('schoolName')) document.getElementById('schoolName').value = DB.config.schoolName;
+    if (DB.config.year && document.getElementById('sessionYear')) document.getElementById('sessionYear').value = DB.config.year;
+    if(typeof syncExamTypeUI === 'function') syncExamTypeUI();
 
     if (document.getElementById('txtConvocInfo')) {
-        if (DB.config.convocText) {
+        if (typeof getInstructionTemplate === 'function') {
+            document.getElementById('txtConvocInfo').value = getInstructionTemplate('candidates');
+        } else if (DB.config.convocText) {
             document.getElementById('txtConvocInfo').value = DB.config.convocText;
         } else {
             DB.config.convocText = document.getElementById('txtConvocInfo').value;
@@ -106,4 +110,7 @@ function updateExam(idx, field, value) {
         DB.exams[idx].timeTT = value;
         if(typeof renderExamTable === 'function') renderExamTable();
     }
+    if (typeof saveActiveExamProfile === 'function') saveActiveExamProfile();
+    if (typeof renderDashboard === 'function') renderDashboard();
+    if (typeof autoSave === 'function') autoSave();
 }
