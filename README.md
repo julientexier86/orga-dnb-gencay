@@ -6,6 +6,8 @@
 
 Application locale de préparation et de gestion des examens en collège : **DNB blanc, DNB officiel** et sessions personnalisées. Élèves, aménagements, salles, surveillances, convocations, oraux, secrétariat d'examen, résultats et statistiques — dans un seul fichier HTML à ouvrir dans le navigateur.
 
+https://julientexier86.github.io/orga-dnb-gencay/
+
 ---
 
 ## ⚡ Démarrage en 30 secondes
