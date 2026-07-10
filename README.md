@@ -2,7 +2,7 @@
 
 > **Le poste de pilotage du DNB** — du premier import d'élèves en septembre jusqu'au rapport de résultats en juillet, tout se passe ici.
 
-![100% local](https://img.shields.io/badge/données-100%25%20locales-2ecc71) ![Hors ligne](https://img.shields.io/badge/fonctionne-hors%20ligne-3498db) ![Vanilla JS](https://img.shields.io/badge/vanilla-JS-f7df1e) ![Zéro serveur](https://img.shields.io/badge/serveur-aucun-9b59b6)
+![100% local](https://img.shields.io/badge/données-100%25%20locales-2ecc71) ![Hors ligne](https://img.shields.io/badge/fonctionne-hors%20ligne-3498db) ![Vanilla JS](https://img.shields.io/badge/vanilla-JS-f7df1e) ![Zéro serveur](https://img.shields.io/badge/serveur-aucun-9b59b6) ![Deploy](https://img.shields.io/badge/Deploy-GitHub%20Pages-222?logo=githubpages&logoColor=white)
 
 Application locale de préparation et de gestion des examens en collège : **DNB blanc, DNB officiel** et sessions personnalisées. Élèves, aménagements, salles, surveillances, convocations, oraux, secrétariat d'examen, résultats et statistiques — dans un seul fichier HTML à ouvrir dans le navigateur.
 
