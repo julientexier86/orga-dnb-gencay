@@ -93,7 +93,7 @@ function renderTeachers() {
     container.innerHTML = '';
 
     if (DB.teachers.length === 0) {
-        container.innerHTML = `<p style="text-align:center; color:#7f8c8d; font-style:italic;">Aucun professeur enregistré.</p>`;
+        container.innerHTML = `<p style="text-align:center; color:#656d70; font-style:italic;">Aucun professeur enregistré.</p>`;
         return;
     }
 
@@ -101,16 +101,16 @@ function renderTeachers() {
     const disabledAttr = isLocked ? 'disabled' : '';
 
     let html = `<table class="table table-striped table-hover" style="width:100%; border-collapse:collapse; background:white;">
-        <thead style="background:#f8f9fa; position:sticky; top:0; z-index:10; border-bottom:2px solid #dee2e6;">
+        <thead style="background:#faf9f6; position:sticky; top:0; z-index:10; border-bottom:2px solid #e3dfd3;">
             <tr>
-                <th style="padding:10px; text-align:left; font-weight:bold; color:#2c3e50;">Civilité</th>
-                <th style="padding:10px; text-align:left; font-weight:bold; color:#2c3e50;">Nom</th>
-                <th style="padding:10px; text-align:left; font-weight:bold; color:#2c3e50;">Prénom</th>
-                <th style="padding:10px; text-align:left; font-weight:bold; color:#2c3e50;">Matière principale</th>
-                <th style="padding:10px; text-align:center; font-weight:bold; color:#e74c3c;" title="Cocher si le professeur refuse les heures supplémentaires (il ne sera convoqué que sur ses heures de cours).">
+                <th style="padding:10px; text-align:left; font-weight:bold; color:#1f3a5c;">Civilité</th>
+                <th style="padding:10px; text-align:left; font-weight:bold; color:#1f3a5c;">Nom</th>
+                <th style="padding:10px; text-align:left; font-weight:bold; color:#1f3a5c;">Prénom</th>
+                <th style="padding:10px; text-align:left; font-weight:bold; color:#1f3a5c;">Matière principale</th>
+                <th style="padding:10px; text-align:center; font-weight:bold; color:#9a4a2e;" title="Cocher si le professeur refuse les heures supplémentaires (il ne sera convoqué que sur ses heures de cours).">
                     <i class="fas fa-ban"></i> Refus HSE
                 </th>
-                <th style="padding:10px; text-align:center; font-weight:bold; color:#2c3e50;">Action</th>
+                <th style="padding:10px; text-align:center; font-weight:bold; color:#1f3a5c;">Action</th>
             </tr>
         </thead>
         <tbody>`;
@@ -122,7 +122,7 @@ function renderTeachers() {
 
         // Sélecteur de civilité :
         const selCiv = `
-            <select style="width:100%; padding:5px; border-radius:4px; border:1px solid #ccc; font-size:0.9rem;" 
+            <select style="width:100%; padding:5px; border-radius:4px; border:1px solid #d8d4c8; font-size:0.9rem;" 
                     onchange="DB.teachers[${idx}].civ=this.value" ${disabledAttr}>
                 <option value="M." ${civ === "M." ? "selected" : ""}>M.</option>
                 <option value="Mme" ${civ === "Mme" ? "selected" : ""}>Mme</option>
@@ -133,7 +133,7 @@ function renderTeachers() {
         let selMatOptions = subjects.map(s => `<option value="${s}" ${t.matiere === s ? "selected" : ""}>${s}</option>`).join('');
 
         const selMat = `
-            <select style="width:100%; padding:5px; border-radius:4px; border:1px solid #ccc; font-size:0.9rem;" 
+            <select style="width:100%; padding:5px; border-radius:4px; border:1px solid #d8d4c8; font-size:0.9rem;" 
                     onchange="DB.teachers[${idx}].matiere=this.value" ${disabledAttr}>
                 ${selMatOptions}
             </select>`;
@@ -143,14 +143,14 @@ function renderTeachers() {
             : `<button class="btn btn-danger btn-sm" onclick="DB.teachers.splice(${idx}, 1); renderTeachers();"><i class="fas fa-trash-alt"></i></button>`;
 
         html += `
-            <tr style="border-bottom:1px solid #eee;">
+            <tr style="border-bottom:1px solid #ece9e0;">
                 <td style="padding:8px;">${selCiv}</td>
                 <td style="padding:8px;">
-                    <input type="text" value="${t.nom}" style="width:100%; padding:5px; font-weight:bold; text-transform:uppercase; border:1px solid #ccc; border-radius:4px;" 
+                    <input type="text" value="${t.nom}" style="width:100%; padding:5px; font-weight:bold; text-transform:uppercase; border:1px solid #d8d4c8; border-radius:4px;" 
                            onchange="DB.teachers[${idx}].nom=this.value.toUpperCase()" ${disabledAttr}>
                 </td>
                 <td style="padding:8px;">
-                    <input type="text" value="${t.prenom || ''}" style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;" 
+                    <input type="text" value="${t.prenom || ''}" style="width:100%; padding:5px; border:1px solid #d8d4c8; border-radius:4px;" 
                            onchange="DB.teachers[${idx}].prenom=this.value" ${disabledAttr}>
                 </td>
                 <td style="padding:8px;">${selMat}</td>

@@ -119,10 +119,10 @@ function renderLabels() {
     let html = '';
     DB.config.labels.forEach(l => {
         html += `
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; background:#f8f9fa; padding:5px; border-radius:4px; border-left: 5px solid ${escapeHTML(l.color)}">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; background:#faf9f6; padding:5px; border-radius:4px; border-left: 5px solid ${escapeHTML(l.color)}">
             <div style="flex:1">
                 <strong>${escapeHTML(l.code)}</strong>
-                <span style="font-size:0.8em; color:#666; margin-left:10px;">${escapeHTML(l.name || '')}</span>
+                <span style="font-size:0.8em; color:#656d70; margin-left:10px;">${escapeHTML(l.name || '')}</span>
             </div>
             <div>
                 <button class="btn btn-sm btn-warning" onclick="editLabel(${jsArg(l.code)})" style="font-size:0.7rem; padding:2px 6px;">✏️</button>
@@ -158,7 +158,7 @@ function toggleStudentLabel(studentId, code, btnElement) {
     // On modifie directement le style de l'élément cliqué (btnElement)
     if (btnElement) {
         btnElement.style.opacity = isActive ? "1" : "0.2";
-        btnElement.style.border = isActive ? `2px solid ${labelConfig.color}` : "1px solid #ccc";
+        btnElement.style.border = isActive ? `2px solid ${labelConfig.color}` : "1px solid #d8d4c8";
         btnElement.style.fontWeight = isActive ? "bold" : "normal";
 
         // Petit effet de "scale" pour sentir le clic
@@ -179,7 +179,7 @@ function updateMefCheckboxes() {
     const allMefs = [...new Set(DB.students.map(s => s.mef).filter(m => m && m.trim() !== ""))].sort();
 
     if (allMefs.length === 0) {
-        container.innerHTML = '<div style="padding:10px; color:#999; font-style:italic; text-align:left;">Aucun MEF détecté.</div>';
+        container.innerHTML = '<div style="padding:10px; color:#9aa0a2; font-style:italic; text-align:left;">Aucun MEF détecté.</div>';
         return;
     }
 
@@ -250,7 +250,7 @@ window.renderAmenagements = function () {
             const isActive = (s.labels || []).includes(l.code);
             const style = isActive
                 ? `background:${escapeHTML(l.color)}; color:white; border:1px solid ${escapeHTML(l.color)};`
-                : `background:white; color:#ccc; border:1px solid #ddd;`;
+                : `background:white; color:#d8d4c8; border:1px solid #ded9cc;`;
 
             badges += `<span onclick="toggleStudentLabel(${jsArg(normalizeStudentId(s.id))}, ${jsArg(l.code)}, this)"
 	                       style="cursor:pointer; padding:2px 6px; border-radius:10px; font-size:0.7rem; margin-right:4px; user-select:none; ${style}">
@@ -261,7 +261,7 @@ window.renderAmenagements = function () {
         <tr>
             <td style="font-weight:600;">${escapeHTML(s.nom)} <span style="font-weight:normal; font-size:0.9em">${escapeHTML(s.prenom)}</span></td>
             <td style="text-align:center; font-size:0.85rem;">${escapeHTML(s.classe)}</td>
-            <td style="text-align:center; font-size:0.8rem; color:#2980b9;">${escapeHTML(s.mef || '-')}</td>
+            <td style="text-align:center; font-size:0.8rem; color:#1f3a5c;">${escapeHTML(s.mef || '-')}</td>
             <td>${badges}</td>
         </tr>`;
     });
@@ -289,7 +289,7 @@ function openAmenagOptions() {
         maxWidth: '600px', width: '90%', fontFamily: 'Helvetica, sans-serif'
     });
 
-    modal.innerHTML = `<h3 style="color:#2c3e50; margin-top:0;">♿ Liste des Aménagements</h3>`;
+    modal.innerHTML = `<h3 style="color:#1f3a5c; margin-top:0;">♿ Liste des Aménagements</h3>`;
 
     const btnContainer = document.createElement('div');
     Object.assign(btnContainer.style, {
@@ -300,18 +300,18 @@ function openAmenagOptions() {
     function createCard(emoji, title, desc, color, action) {
         const card = document.createElement('div');
         Object.assign(card.style, {
-            flex: '1', padding: '20px', border: '2px solid #eee', borderRadius: '10px',
-            cursor: 'pointer', transition: 'all 0.2s', backgroundColor: '#f8f9fa'
+            flex: '1', padding: '20px', border: '2px solid #ece9e0', borderRadius: '10px',
+            cursor: 'pointer', transition: 'all 0.2s', backgroundColor: '#faf9f6'
         });
 
         card.innerHTML = `
             <div style="font-size:40px; margin-bottom:10px;">${emoji}</div>
             <div style="font-weight:bold; color:${color}; font-size:16px;">${title}</div>
-            <div style="font-size:12px; color:#7f8c8d; margin-top:5px;">${desc}</div>
+            <div style="font-size:12px; color:#656d70; margin-top:5px;">${desc}</div>
         `;
 
         card.onmouseenter = () => { card.style.borderColor = color; card.style.backgroundColor = 'white'; card.style.transform = 'translateY(-3px)'; };
-        card.onmouseleave = () => { card.style.borderColor = '#eee'; card.style.backgroundColor = '#f8f9fa'; card.style.transform = 'translateY(0)'; };
+        card.onmouseleave = () => { card.style.borderColor = '#ece9e0'; card.style.backgroundColor = '#faf9f6'; card.style.transform = 'translateY(0)'; };
 
         card.onclick = () => {
             document.body.removeChild(overlay);
@@ -325,7 +325,7 @@ function openAmenagOptions() {
         "🔤",
         "Alphabétique",
         "Liste complète triée de A à Z (Avec salle)",
-        "#3498db",
+        "#1f3a5c",
         () => exportAmenagPDF('alpha')
     );
 
@@ -334,7 +334,7 @@ function openAmenagOptions() {
         "🏫",
         "Par Salle",
         hasDistrib ? "Groupé par salle d'examen" : "⚠️ Répartition requise !",
-        hasDistrib ? "#e67e22" : "#95a5a6",
+        hasDistrib ? "#9a7a2e" : "#9aa0a2",
         () => {
             if (!hasDistrib) showToast("⚠️ Veuillez d'abord effectuer la répartition dans l'onglet Répartition.", 'warning');
             else exportAmenagPDF('room');
@@ -348,7 +348,7 @@ function openAmenagOptions() {
     // Bouton Annuler
     const btnCancel = document.createElement('div');
     btnCancel.innerText = "Annuler";
-    Object.assign(btnCancel.style, { marginTop: "20px", color: "#999", cursor: "pointer", fontSize: "14px", textDecoration: "underline" });
+    Object.assign(btnCancel.style, { marginTop: "20px", color: "#9aa0a2", cursor: "pointer", fontSize: "14px", textDecoration: "underline" });
     btnCancel.onclick = () => document.body.removeChild(overlay);
     modal.appendChild(btnCancel);
 

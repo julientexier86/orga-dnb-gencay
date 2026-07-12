@@ -46,7 +46,7 @@ function renderGrades() {
     displayList.sort((a, b) => { let valA, valB; if (k === 'nom') { valA = a.nom; valB = b.nom; } else if (k === 'moyDNB') { valA = a.moyDNBVal || -1; valB = b.moyDNBVal || -1; } else { valA = a.grades[k] || -1; valB = b.grades[k] || -1; } if (valA < valB) return -1 * o; if (valA > valB) return 1 * o; return 0; });
     const totalCount = displayList.length;
     if (!searchTerm && displayList.length > 30) { displayList = displayList.slice(0, 30); document.getElementById('gradeCountLabel').innerText = `Affichage: 30 / ${totalCount} élèves (Utilisez la recherche pour tout voir)`; } else { document.getElementById('gradeCountLabel').innerText = `${totalCount} élèves affichés`; }
-    displayList.forEach(s => { const ms = s.moySciVal !== null ? s.moySciVal.toFixed(2) : "-"; const md = s.moyDNBVal !== null ? s.moyDNBVal.toFixed(2) : "-"; tbody.innerHTML += `<tr><td>${s.nom} ${s.prenom}</td><td>${s.classe || ""}</td><td style="background:#e8f8f5; font-weight:bold; color:#145a32;">${md}</td><td>${s.grades.fr || "-"}</td><td>${s.grades.math || "-"}</td><td>${s.grades.hg || "-"}</td><td>${s.grades.svt || "-"}</td><td>${s.grades.pc || "-"}</td><td>${s.grades.tech || "-"}</td><td style="background:#eaf2f8; font-weight:bold;">${ms}</td></tr>`; });
+    displayList.forEach(s => { const ms = s.moySciVal !== null ? s.moySciVal.toFixed(2) : "-"; const md = s.moyDNBVal !== null ? s.moyDNBVal.toFixed(2) : "-"; tbody.innerHTML += `<tr><td>${s.nom} ${s.prenom}</td><td>${s.classe || ""}</td><td style="background:#eef3f0; font-weight:bold; color:#145a32;">${md}</td><td>${s.grades.fr || "-"}</td><td>${s.grades.math || "-"}</td><td>${s.grades.hg || "-"}</td><td>${s.grades.svt || "-"}</td><td>${s.grades.pc || "-"}</td><td>${s.grades.tech || "-"}</td><td style="background:#eef2f0; font-weight:bold;">${ms}</td></tr>`; });
 }
 function sortGrades(key) { if (gradeSortState.key === key) { gradeSortState.order = gradeSortState.order === 'asc' ? 'desc' : 'asc'; } else { gradeSortState.key = key; gradeSortState.order = 'desc'; } renderGrades(); }
 
@@ -124,21 +124,21 @@ function renderSimulation() {
     });
 
     list.forEach(s => {
-        let color = "#e74c3c";
-        if (s.finalAvg >= 10) color = "#27ae60";
-        if (s.finalAvg >= 12) color = "#f39c12";
-        if (s.finalAvg >= 14) color = "#3498db";
-        if (s.finalAvg >= 16) color = "#8e44ad";
-        if (s.finalAvg >= 18) color = "#d35400";
+        let color = "#9a4a2e";
+        if (s.finalAvg >= 10) color = "#2f6f5e";
+        if (s.finalAvg >= 12) color = "#9a7a2e";
+        if (s.finalAvg >= 14) color = "#1f3a5c";
+        if (s.finalAvg >= 16) color = "#6b4a72";
+        if (s.finalAvg >= 18) color = "#7a5f22";
 
         tbody.innerHTML += `<tr>
                 <td>${s.nom} ${s.prenom}</td>
                 <td>${s.classe || ""}</td>
                 <td style="text-align:center">${s.moyEcritsVal.toFixed(2)}</td>
                 <td style="text-align:center">${s.grades.oral !== undefined && s.grades.oral !== null ? s.grades.oral : "-"}</td>
-                <td style="text-align:center; font-weight:bold; color:#555;">${s.moyEpreuves.toFixed(2)}</td>
+                <td style="text-align:center; font-weight:bold; color:#4b5254;">${s.moyEpreuves.toFixed(2)}</td>
                 <td style="text-align:center">${s.grades.genAvg !== undefined && s.grades.genAvg !== null ? s.grades.genAvg : "-"}</td>
-                <td style="background:#eaf2f8; text-align:center; font-weight:bold; font-size:1.1em;">${s.finalAvg.toFixed(2)} / 20</td>
+                <td style="background:#eef2f0; text-align:center; font-weight:bold; font-size:1.1em;">${s.finalAvg.toFixed(2)} / 20</td>
                 <td style="text-align:center; font-weight:bold; color:${color}">${s.mention}</td>
             </tr>`;
     });
@@ -171,7 +171,7 @@ function openReleveOptions() {
     });
 
     // Titre
-    modal.innerHTML = `<h3 style="color:#2c3e50; margin-top:0;">📊 Imprimer les Relevés de Notes</h3>`;
+    modal.innerHTML = `<h3 style="color:#1f3a5c; margin-top:0;">📊 Imprimer les Relevés de Notes</h3>`;
 
     // Conteneur des Boutons
     const btnContainer = document.createElement('div');
@@ -183,14 +183,14 @@ function openReleveOptions() {
     function createCard(emoji, title, desc, color, sortMode) {
         const card = document.createElement('div');
         Object.assign(card.style, {
-            flex: '1', padding: '20px', border: '2px solid #eee', borderRadius: '10px',
-            cursor: 'pointer', transition: 'all 0.2s', backgroundColor: '#f8f9fa'
+            flex: '1', padding: '20px', border: '2px solid #ece9e0', borderRadius: '10px',
+            cursor: 'pointer', transition: 'all 0.2s', backgroundColor: '#faf9f6'
         });
 
         card.innerHTML = `
                 <div style="font-size:40px; margin-bottom:10px;">${emoji}</div>
                 <div style="font-weight:bold; color:${color}; font-size:16px;">${title}</div>
-                <div style="font-size:12px; color:#7f8c8d; margin-top:5px;">${desc}</div>
+                <div style="font-size:12px; color:#656d70; margin-top:5px;">${desc}</div>
             `;
 
         // Effet de survol
@@ -201,8 +201,8 @@ function openReleveOptions() {
             card.style.boxShadow = '0 5px 15px rgba(0,0,0,0.1)';
         };
         card.onmouseleave = () => {
-            card.style.borderColor = '#eee';
-            card.style.backgroundColor = '#f8f9fa';
+            card.style.borderColor = '#ece9e0';
+            card.style.backgroundColor = '#faf9f6';
             card.style.transform = 'translateY(0)';
             card.style.boxShadow = 'none';
         };
@@ -223,7 +223,7 @@ function openReleveOptions() {
         "🏫",
         "Par Classe",
         "Trié par classe, puis par nom (Sauts de page inclus)",
-        "#27ae60",
+        "#2f6f5e",
         "class"
     );
 
@@ -232,7 +232,7 @@ function openReleveOptions() {
         "🌍",
         "Alphabétique",
         "Trié de A à Z (Tout le collège mélangé)",
-        "#2980b9",
+        "#1f3a5c",
         "alpha"
     );
 
@@ -245,7 +245,7 @@ function openReleveOptions() {
     const btnCancel = document.createElement('div');
     btnCancel.innerText = "Annuler";
     Object.assign(btnCancel.style, {
-        marginTop: "25px", color: "#999", cursor: "pointer",
+        marginTop: "25px", color: "#9aa0a2", cursor: "pointer",
         fontSize: "14px", textDecoration: "underline"
     });
     btnCancel.onclick = () => document.body.removeChild(overlay);

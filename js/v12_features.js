@@ -139,7 +139,7 @@ window.renderExamProfileInfo = function() {
     const attendanceCount = (DB.examAttendance || []).length;
     box.innerHTML = `
         <strong>Profil actif :</strong> ${escapeHTML(label)}
-        <span style="color:#7f8c8d;">- ${examCount} épreuve(s), du ${escapeHTML(firstDate)} au ${escapeHTML(lastDate)}, ${attendanceCount} signalement(s) Jour J</span>
+        <span style="color:#656d70;">- ${examCount} épreuve(s), du ${escapeHTML(firstDate)} au ${escapeHTML(lastDate)}, ${attendanceCount} signalement(s) Jour J</span>
     `;
 };
 
@@ -289,20 +289,20 @@ window.openTableLabelConfig = function() {
 
     overlay.innerHTML = `
         <div style="background:white; border-radius:12px; width:400px; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow:hidden; box-shadow:0 15px 40px rgba(0,0,0,0.3);">
-            <div style="background:#2c3e50; padding:15px; text-align:center;">
+            <div style="background:#1f3a5c; padding:15px; text-align:center;">
                 <h3 style="margin:0; font-size:1.2rem; color: white !important;">${title}</h3>
             </div>
             <div style="padding:20px;">
-                <p style="font-size:0.9rem; color:#666; margin-bottom:15px;">Configurez le nombre d'étiquettes par page A4 :</p>
+                <p style="font-size:0.9rem; color:#656d70; margin-bottom:15px;">Configurez le nombre d'étiquettes par page A4 :</p>
 
                 <div style="display:flex; gap:20px; margin-bottom:20px;">
                     <div style="flex:1;">
-                        <label style="display:block; font-size:0.8rem; font-weight:bold; color: #333;">Colonnes</label>
-                        <input type="number" id="tblColsTable" value="${defCols}" min="1" max="5" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; margin-top:5px;">
+                        <label style="display:block; font-size:0.8rem; font-weight:bold; color: #23282a;">Colonnes</label>
+                        <input type="number" id="tblColsTable" value="${defCols}" min="1" max="5" style="width:100%; padding:8px; border:1px solid #d8d4c8; border-radius:4px; margin-top:5px;">
                     </div>
                     <div style="flex:1;">
-                        <label style="display:block; font-size:0.8rem; font-weight:bold; color: #333;">Lignes</label>
-                        <input type="number" id="tblRowsTable" value="${defRows}" min="1" max="20" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; margin-top:5px;">
+                        <label style="display:block; font-size:0.8rem; font-weight:bold; color: #23282a;">Lignes</label>
+                        <input type="number" id="tblRowsTable" value="${defRows}" min="1" max="20" style="width:100%; padding:8px; border:1px solid #d8d4c8; border-radius:4px; margin-top:5px;">
                     </div>
                 </div>
 
@@ -686,7 +686,7 @@ window.renderCorrectionsConfig = function() {
     const validTeachers = config.teachers.filter(tc => tc.id !== null);
 
     if (validTeachers.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#999; padding: 20px;">Aucun correcteur. Cliquez sur "Ajouter".</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#9aa0a2; padding: 20px;">Aucun correcteur. Cliquez sur "Ajouter".</td></tr>`;
     }
 
     validTeachers.forEach((tc, idx) => {
@@ -888,7 +888,7 @@ window.renderManualClassTable = function(subj, config) {
     const classes = [...new Set(DB.students.map(s => s.classe).filter(c => c && c !== "Non Classé"))].sort();
 
     if (classes.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:#e67e22;">⚠️ Aucun élève avec une classe n\'a été trouvé.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:#9a7a2e;">⚠️ Aucun élève avec une classe n\'a été trouvé.</td></tr>';
         return;
     }
 
@@ -931,15 +931,15 @@ window.renderLotsResult = function(subj) {
     if(!lots || lots.length === 0) return;
 
     const headerHtml = `
-    <div style="grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; background: #e8f8f5; padding: 15px; border-radius: 8px; border: 1px solid #1abc9c; margin-bottom: 10px;">
-        <h4 style="margin: 0; color: #16a085;">✅ Répartition terminée (${lots.length} lots)</h4>
+    <div style="grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; background: #eef3f0; padding: 15px; border-radius: 8px; border: 1px solid #2f6f5e; margin-bottom: 10px;">
+        <h4 style="margin: 0; color: #2f6f5e;">✅ Répartition terminée (${lots.length} lots)</h4>
         <div style="display: flex; gap: 15px;">
             <button class="btn btn-dark" onclick="exportPochettesCorrecteursPDF('${subj}')" style="font-size: 1rem; padding: 10px 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);">
     📁 Pochettes Correcteurs (A3)
 </button><button class="btn btn-success" onclick="exportCorrectionsPDF('${subj}')" style="font-size: 1rem; padding: 10px 20px; box-shadow: 0 4px 6px rgba(46, 204, 113, 0.3);">
                 📄 Bordereaux (PDF)
             </button>
-            <button class="btn btn-primary" onclick="exportCorrectionsExcel('${subj}')" style="font-size: 1rem; padding: 10px 20px; background-color: #27ae60; border-color: #2ecc71; box-shadow: 0 4px 6px rgba(39, 174, 96, 0.3);">
+            <button class="btn btn-primary" onclick="exportCorrectionsExcel('${subj}')" style="font-size: 1rem; padding: 10px 20px; background-color: #2f6f5e; border-color: #2f6f5e; box-shadow: 0 4px 6px rgba(39, 174, 96, 0.3);">
                 📊 Fichier Excel de Saisie
             </button>
         </div>
@@ -951,20 +951,20 @@ window.renderLotsResult = function(subj) {
         prof.copies.sort((a,b) => (a.anonymat || "").localeCompare(b.anonymat || ""));
 
         let listHtml = prof.copies.map(c => {
-            const warning = c.forced ? `<span style="color:#e74c3c; font-size:0.7rem;" title="Attribution forcée (Contrainte ignorée)">⚠️</span>` : '';
-            return `<div style="padding:4px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; font-family:monospace; font-size:1rem;">
+            const warning = c.forced ? `<span style="color:#9a4a2e; font-size:0.7rem;" title="Attribution forcée (Contrainte ignorée)">⚠️</span>` : '';
+            return `<div style="padding:4px; border-bottom:1px solid #ece9e0; display:flex; justify-content:space-between; font-family:monospace; font-size:1rem;">
                 <span>${c.anonymat}</span> ${warning}
             </div>`;
         }).join('');
 
         area.innerHTML += `
-            <div style="border:1px solid #ddd; border-radius:8px; overflow:hidden; box-shadow: 0 3px 6px rgba(0,0,0,0.1);">
-                <div style="background:#34495e; color:white; padding:10px 15px; display:flex; justify-content:space-between; align-items:center;">
+            <div style="border:1px solid #ded9cc; border-radius:8px; overflow:hidden; box-shadow: 0 3px 6px rgba(0,0,0,0.1);">
+                <div style="background:#23282a; color:white; padding:10px 15px; display:flex; justify-content:space-between; align-items:center;">
                     <strong>👨‍🏫 ${prof.name}</strong>
-                    <span class="badge" style="background:#2ecc71; font-size:1rem; padding:5px 10px;">${prof.copies.length} copies</span>
+                    <span class="badge" style="background:#2f6f5e; font-size:1rem; padding:5px 10px;">${prof.copies.length} copies</span>
                 </div>
                 <div style="max-height:250px; overflow-y:auto; padding:5px 10px;">
-                    ${listHtml || '<p style="text-align:center; color:#ccc;">Aucune copie</p>'}
+                    ${listHtml || '<p style="text-align:center; color:#d8d4c8;">Aucune copie</p>'}
                 </div>
             </div>
         `;
@@ -1002,7 +1002,7 @@ window.renderAnalyseCorrections = function() {
         if (totalCount > 0) {
             const globalAvg = (totalSum / totalCount).toFixed(2);
 
-            let classAvgsHtml = `<div style="display:flex; flex-wrap:wrap; gap:10px; margin: 20px 0; background: #f8f9fa; padding: 15px; border-radius: 8px;">`;
+            let classAvgsHtml = `<div style="display:flex; flex-wrap:wrap; gap:10px; margin: 20px 0; background: #faf9f6; padding: 15px; border-radius: 8px;">`;
             classAvgsHtml += `<div style="flex:100%; font-weight:bold; margin-bottom:5px;">📍 Moyennes DNB par classe :</div>`;
             Object.keys(classData).sort().forEach(c => {
                 const avg = (classData[c].sum / classData[c].count).toFixed(2);
@@ -1011,8 +1011,8 @@ window.renderAnalyseCorrections = function() {
             classAvgsHtml += `</div>`;
 
             let tableHtml = `<table class="table table-bordered" style="background:white; text-align:center;">
-                <thead style="background:#34495e; color:white;">
-                    <tr><th>👨‍🏫 Correcteur</th><th>Avancement</th><th style="background-color: #f4f6f9; color: #2c3e50;">🎯 Moyenne du Lot</th><th>Écart /Niveau</th></tr>
+                <thead style="background:#23282a; color:white;">
+                    <tr><th>👨‍🏫 Correcteur</th><th>Avancement</th><th style="background-color: #f3f1ea; color: #1f3a5c;">🎯 Moyenne du Lot</th><th>Écart /Niveau</th></tr>
                 </thead><tbody>`;
 
             lots.forEach(prof => {
@@ -1027,17 +1027,17 @@ window.renderAnalyseCorrections = function() {
                 let ecartHtml = '-';
                 if (profAvg !== '-' && globalAvg !== '-') {
                     const ecart = (profAvg - globalAvg).toFixed(2);
-                    const color = ecart > 0 ? '#27ae60' : (ecart < 0 ? '#e74c3c' : '#7f8c8d');
+                    const color = ecart > 0 ? '#2f6f5e' : (ecart < 0 ? '#9a4a2e' : '#656d70');
                     ecartHtml = `<span style="color:${color}; font-weight:bold;">${ecart > 0 ? '+' : ''}${ecart}</span>`;
                 }
-                tableHtml += `<tr><td>${prof.name}</td><td>${profCount}/${prof.copies.length}</td><td style="font-weight:bold; color:#2980b9;">${profAvg}</td><td>${ecartHtml}</td></tr>`;
+                tableHtml += `<tr><td>${prof.name}</td><td>${profCount}/${prof.copies.length}</td><td style="font-weight:bold; color:#1f3a5c;">${profAvg}</td><td>${ecartHtml}</td></tr>`;
             });
             tableHtml += `</tbody></table>`;
 
             area.innerHTML = `
-                <div style="display:flex; justify-content:space-between; align-items:center; background:#ecf0f1; padding:20px; border-radius:8px; border-left:6px solid #2980b9;">
+                <div style="display:flex; justify-content:space-between; align-items:center; background:#f0eee8; padding:20px; border-radius:8px; border-left:6px solid #1f3a5c;">
                     <h4>Moyenne Globale ${subj.toUpperCase()}</h4>
-                    <div style="font-size:2.5rem; font-weight:bold; color:#2980b9;">${globalAvg}</div>
+                    <div style="font-size:2.5rem; font-weight:bold; color:#1f3a5c;">${globalAvg}</div>
                 </div>
                 ${classAvgsHtml}
                 ${tableHtml}`;
@@ -1055,14 +1055,14 @@ window.renderAnalyseCorrections = function() {
 
         const compDiv = document.createElement('div');
         compDiv.className = "card";
-        compDiv.style.borderTop = "4px solid #27ae60";
+        compDiv.style.borderTop = "4px solid #2f6f5e";
 
         compDiv.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 15px 0 15px; margin-bottom: 15px;">
 
                 <div>
-                    <h4 style="color:#27ae60; margin: 0 0 5px 0;">📊 Comparaison Bilan : ${getExamTitle()} vs Moyennes Annuelles</h4>
-                    <p style="font-size:0.9rem; color:#666; margin: 0;">Vue d'ensemble de toutes les matières importées via le fichier global.</p>
+                    <h4 style="color:#2f6f5e; margin: 0 0 5px 0;">📊 Comparaison Bilan : ${getExamTitle()} vs Moyennes Annuelles</h4>
+                    <p style="font-size:0.9rem; color:#656d70; margin: 0;">Vue d'ensemble de toutes les matières importées via le fichier global.</p>
                 </div>
 
                 <div role="group" aria-label="Options d'exportation" style="display: flex; gap: 10px;">
@@ -1313,13 +1313,13 @@ window.openCouponsConfigModal = function() {
     let tableRows = '';
     defaultAmens.forEach(a => {
         tableRows += `
-            <tr style="border-bottom: 1px solid #eee;">
+            <tr style="border-bottom: 1px solid #ece9e0;">
                 <td style="padding:10px; text-align:center;">
                     <input type="checkbox" id="chk-${a.id}" checked style="transform: scale(1.3); cursor: pointer;">
                 </td>
-                <td style="padding:10px; font-size:0.9rem; color:#2c3e50;">${a.text}</td>
+                <td style="padding:10px; font-size:0.9rem; color:#1f3a5c;">${a.text}</td>
                 <td style="padding:10px;">
-                    <input type="text" id="map-${a.id}" value="${a.code}" style="width:100%; padding:6px; border:1px solid #ccc; border-radius:4px; font-family:monospace; font-size:1rem; text-align:center;">
+                    <input type="text" id="map-${a.id}" value="${a.code}" style="width:100%; padding:6px; border:1px solid #d8d4c8; border-radius:4px; font-family:monospace; font-size:1rem; text-align:center;">
                 </td>
             </tr>
         `;
@@ -1328,7 +1328,7 @@ window.openCouponsConfigModal = function() {
     let autresHtml = `<div style="display:flex; flex-wrap:wrap; gap:10px; margin-top: 10px;">`;
     if (hasTiersTemps) {
         autresHtml += `
-            <label style="background:#fff; padding:8px 12px; border:1px solid #bdc3c7; border-radius:6px; cursor:pointer; font-size:0.9rem; display:flex; align-items:center; gap:8px;">
+            <label style="background:#fff; padding:8px 12px; border:1px solid #c9c4b6; border-radius:6px; cursor:pointer; font-size:0.9rem; display:flex; align-items:center; gap:8px;">
                 <input type="checkbox" id="chk-other-tt" value="Tiers-Temps" checked style="transform: scale(1.2);">
                 <b>Tiers-Temps</b>
             </label>
@@ -1337,7 +1337,7 @@ window.openCouponsConfigModal = function() {
     uniqueLabelsArray.forEach(lbl => {
         const safeValue = lbl.replace(/"/g, '&quot;');
         autresHtml += `
-            <label style="background:#fff; padding:8px 12px; border:1px solid #bdc3c7; border-radius:6px; cursor:pointer; font-size:0.9rem; display:flex; align-items:center; gap:8px;">
+            <label style="background:#fff; padding:8px 12px; border:1px solid #c9c4b6; border-radius:6px; cursor:pointer; font-size:0.9rem; display:flex; align-items:center; gap:8px;">
                 <input type="checkbox" class="chk-other-label" value="${safeValue}" checked style="transform: scale(1.2);">
                 ${lbl}
             </label>
@@ -1345,19 +1345,19 @@ window.openCouponsConfigModal = function() {
     });
     autresHtml += `</div>`;
 
-    if (!hasTiersTemps && uniqueLabelsArray.length === 0) autresHtml = `<p style="color:#7f8c8d; font-style:italic;">Aucun aménagement supplémentaire détecté.</p>`;
+    if (!hasTiersTemps && uniqueLabelsArray.length === 0) autresHtml = `<p style="color:#656d70; font-style:italic;">Aucun aménagement supplémentaire détecté.</p>`;
 
     modal.innerHTML = `
-        <div style="background:#8e44ad; color:white; padding:15px; text-align:center;">
+        <div style="background:#6b4a72; color:white; padding:15px; text-align:center;">
             <h2 style="margin:0;">⚙️ Configuration des Coupons d'Aménagement</h2>
         </div>
         <div style="padding:20px 25px; overflow-y:auto; font-size: 0.95rem; flex: 1;">
 
-            <h3 style="color:#2c3e50; border-bottom: 2px solid #8e44ad; padding-bottom: 5px; margin-top:0;">1. Aménagements avec cases dédiées</h3>
-            <p style="color:#7f8c8d; margin-top:5px; font-size: 0.9rem;">Cochez les aménagements à imprimer. <br><b style="color:#e67e22;">✨ NOUVEAU :</b> Le système est intelligent. La <b>Dictée</b> n'apparaîtra que sur le coupon de Français, la <b>Cartographie</b> sur celui d'Histoire, et l'<b>Algorithmique</b> sur les Mathématiques.</p>
+            <h3 style="color:#1f3a5c; border-bottom: 2px solid #6b4a72; padding-bottom: 5px; margin-top:0;">1. Aménagements avec cases dédiées</h3>
+            <p style="color:#656d70; margin-top:5px; font-size: 0.9rem;">Cochez les aménagements à imprimer. <br><b style="color:#9a7a2e;">✨ NOUVEAU :</b> Le système est intelligent. La <b>Dictée</b> n'apparaîtra que sur le coupon de Français, la <b>Cartographie</b> sur celui d'Histoire, et l'<b>Algorithmique</b> sur les Mathématiques.</p>
 
-            <table style="width:100%; border-collapse: collapse; margin-top: 15px; background: #fafafa; border-radius: 8px; box-shadow: 0 0 0 1px #eee;">
-                <tr style="background:#f1f2f6; border-bottom: 2px solid #ddd;">
+            <table style="width:100%; border-collapse: collapse; margin-top: 15px; background: #faf9f6; border-radius: 8px; box-shadow: 0 0 0 1px #ece9e0;">
+                <tr style="background:#f3f1ea; border-bottom: 2px solid #ded9cc;">
                     <th style="padding:10px; text-align:center; width: 10%;">Imprimer</th>
                     <th style="padding:10px; text-align:left; width: 65%;">Description imprimée sur le Coupon</th>
                     <th style="padding:10px; text-align:center; width: 25%;">Mot-clé à détecter</th>
@@ -1365,17 +1365,17 @@ window.openCouponsConfigModal = function() {
                 ${tableRows}
             </table>
 
-            <h3 style="color:#2c3e50; border-bottom: 2px solid #8e44ad; padding-bottom: 5px; margin-top:30px;">2. Aménagements autorisés pour la ligne "Autre(s)"</h3>
-            <p style="color:#7f8c8d; margin-top:5px; font-size: 0.9rem;">Sélectionnez ci-dessous les labels qui ont le droit d'apparaître sur la ligne <b>Autre(s) : ...</b></p>
+            <h3 style="color:#1f3a5c; border-bottom: 2px solid #6b4a72; padding-bottom: 5px; margin-top:30px;">2. Aménagements autorisés pour la ligne "Autre(s)"</h3>
+            <p style="color:#656d70; margin-top:5px; font-size: 0.9rem;">Sélectionnez ci-dessous les labels qui ont le droit d'apparaître sur la ligne <b>Autre(s) : ...</b></p>
 
-            <div style="background:#e8f8f5; padding: 15px; border-radius: 8px; border: 1px solid #1abc9c;">
+            <div style="background:#eef3f0; padding: 15px; border-radius: 8px; border: 1px solid #2f6f5e;">
                 ${autresHtml}
             </div>
 
         </div>
-        <div style="padding:15px; background:#f1f2f6; text-align:right; border-top:1px solid #ddd;">
-            <button onclick="document.body.removeChild(document.getElementById('coupons-modal-overlay'))" style="padding:10px 20px; border:none; border-radius:6px; background:#95a5a6; color:white; font-weight:bold; cursor:pointer; margin-right: 10px;">Annuler</button>
-            <button onclick="generateCouponsPDF()" style="padding:10px 20px; border:none; border-radius:6px; background:#8e44ad; color:white; font-weight:bold; cursor:pointer;">Lancer la génération PDF 🖨️</button>
+        <div style="padding:15px; background:#f3f1ea; text-align:right; border-top:1px solid #ded9cc;">
+            <button onclick="document.body.removeChild(document.getElementById('coupons-modal-overlay'))" style="padding:10px 20px; border:none; border-radius:6px; background:#9aa0a2; color:white; font-weight:bold; cursor:pointer; margin-right: 10px;">Annuler</button>
+            <button onclick="generateCouponsPDF()" style="padding:10px 20px; border:none; border-radius:6px; background:#6b4a72; color:white; font-weight:bold; cursor:pointer;">Lancer la génération PDF 🖨️</button>
         </div>
     `;
 
@@ -1639,20 +1639,20 @@ function getGlobalComparisonHtml() {
     const classes = Object.keys(DB.classStats).sort();
     const subjs = { fr: 'Français', math: 'Maths', hg: 'HG/EMC', svt: 'SVT', pc: 'PC', tech: 'Techno' };
 
-    let html = `<table id="tableComparatifNiveau" class='table table-bordered' style="border: 1px solid #ddd; background-color: #ffffff;">
+    let html = `<table id="tableComparatifNiveau" class='table table-bordered' style="border: 1px solid #ded9cc; background-color: #ffffff;">
         <thead>
             <tr>
-                <th style="background-color: #f4f6f9; vertical-align: middle; border-bottom: 2px solid #ddd;">Classe</th>`;
+                <th style="background-color: #f3f1ea; vertical-align: middle; border-bottom: 2px solid #ded9cc;">Classe</th>`;
 
     for(const name of Object.values(subjs)) {
-        html += `<th colspan="2" style="text-align:center; border-left: 2px solid #ddd; border-bottom: 2px solid #ddd; background-color: #f4f6f9;">${name}</th>`;
+        html += `<th colspan="2" style="text-align:center; border-left: 2px solid #ded9cc; border-bottom: 2px solid #ded9cc; background-color: #f3f1ea;">${name}</th>`;
     }
 
-    html += `</tr><tr style="font-size:0.75rem; background-color: #f4f6f9;">
-                <th style="border-bottom: 2px solid #ddd;"></th>`;
+    html += `</tr><tr style="font-size:0.75rem; background-color: #f3f1ea;">
+                <th style="border-bottom: 2px solid #ded9cc;"></th>`;
     for(let i=0; i<6; i++) {
-        html += `<th style="border-left: 2px solid #ddd; border-bottom: 2px solid #ddd;">${getExamTitle()}</th>
-                 <th style="border-bottom: 2px solid #ddd;">Année</th>`;
+        html += `<th style="border-left: 2px solid #ded9cc; border-bottom: 2px solid #ded9cc;">${getExamTitle()}</th>
+                 <th style="border-bottom: 2px solid #ded9cc;">Année</th>`;
     }
     html += `</tr></thead><tbody>`;
 
@@ -1662,7 +1662,7 @@ function getGlobalComparisonHtml() {
     }
 
     classes.forEach(cls => {
-        html += `<tr><td style="border-right: 2px solid #ddd; vertical-align: middle;"><b>${cls}</b></td>`;
+        html += `<tr><td style="border-right: 2px solid #ded9cc; vertical-align: middle;"><b>${cls}</b></td>`;
 
         for(const [subId, label] of Object.entries(subjs)) {
             const students = DB.students.filter(s => s.classe === cls && s.grades && s.grades[subId] != null);
@@ -1687,11 +1687,11 @@ function getGlobalComparisonHtml() {
             if(avgDNB !== "-" && avgAnnuel !== "-") {
                 const diff = parseFloat(avgDNB) - avgAnnuel;
                 if (diff <= -0.5) {
-                    bgColor = "background-color: #f8d7da;";
-                    textColor = "color: #721c24; font-weight: bold;";
+                    bgColor = "background-color: #f3ddd3;";
+                    textColor = "color: #5c2e1c; font-weight: bold;";
                 } else if (diff >= 0.5) {
-                    bgColor = "background-color: #d4edda;";
-                    textColor = "color: #155724; font-weight: bold;";
+                    bgColor = "background-color: #dcebe4;";
+                    textColor = "color: #1f4a3a; font-weight: bold;";
                 }
             }
 
@@ -1705,17 +1705,17 @@ function getGlobalComparisonHtml() {
                         if (teacher) {
                             const civ = teacher.civ || "";
                             const nom = teacher.nom || "";
-                            correctorHtml = `<br><span style="font-size: 0.65rem; color: #7f8c8d; font-weight: normal;">${civ} ${nom}</span>`;
+                            correctorHtml = `<br><span style="font-size: 0.65rem; color: #656d70; font-weight: normal;">${civ} ${nom}</span>`;
                         }
                     }
                 }
             }
 
-            html += `<td style="border-left: 2px solid #ddd; text-align: center; vertical-align: middle; ${bgColor} ${textColor}">
+            html += `<td style="border-left: 2px solid #ded9cc; text-align: center; vertical-align: middle; ${bgColor} ${textColor}">
                         ${avgDNB}
                         ${correctorHtml}
                      </td>
-                     <td style="color:#666; text-align: center; vertical-align: middle;">
+                     <td style="color:#656d70; text-align: center; vertical-align: middle;">
                         ${avgAnnuel !== "-" ? avgAnnuel.toFixed(1) : "-"}
                      </td>`;
         }
@@ -1723,9 +1723,9 @@ function getGlobalComparisonHtml() {
     });
 
     html += `</tbody>
-             <tfoot style="background-color: #f8f9fa; border-top: 2px solid #ddd;">
+             <tfoot style="background-color: #faf9f6; border-top: 2px solid #ded9cc;">
                 <tr>
-                    <td style="font-weight: bold; font-size: 0.95rem; border-right: 2px solid #ddd; vertical-align: middle;">Cohorte</td>`;
+                    <td style="font-weight: bold; font-size: 0.95rem; border-right: 2px solid #ded9cc; vertical-align: middle;">Cohorte</td>`;
 
     for(const subId of Object.keys(subjs)) {
         const stats = globalStats[subId];
@@ -1737,16 +1737,16 @@ function getGlobalComparisonHtml() {
         if (gDnb !== "-" && gAnnuel !== "-") {
             const diff = parseFloat(gDnb) - parseFloat(gAnnuel);
             if (diff <= -0.5) {
-                bgColor = "background-color: #f8d7da;";
-                textColor = "color: #721c24; font-weight: bold;";
+                bgColor = "background-color: #f3ddd3;";
+                textColor = "color: #5c2e1c; font-weight: bold;";
             } else if (diff >= 0.5) {
-                bgColor = "background-color: #d4edda;";
-                textColor = "color: #155724; font-weight: bold;";
+                bgColor = "background-color: #dcebe4;";
+                textColor = "color: #1f4a3a; font-weight: bold;";
             }
         }
 
-        html += `<td style="border-left: 2px solid #ddd; font-weight:bold; text-align: center; vertical-align: middle; ${bgColor} ${textColor}">${gDnb}</td>
-                 <td style="font-weight:bold; color:#2c3e50; text-align: center; vertical-align: middle;">${gAnnuel}</td>`;
+        html += `<td style="border-left: 2px solid #ded9cc; font-weight:bold; text-align: center; vertical-align: middle; ${bgColor} ${textColor}">${gDnb}</td>
+                 <td style="font-weight:bold; color:#1f3a5c; text-align: center; vertical-align: middle;">${gAnnuel}</td>`;
     }
 
     html += `</tr></tfoot></table>`;
@@ -1799,7 +1799,7 @@ window.exportTableToExcel = function(tableId, filename = null) {
               xmlns="http://www.w3.org/TR/REC-html40">
         <head>
             <meta charset="UTF-8">
-            <style> table, td, th { border: 1px solid #dddddd; } </style>
+            <style> table, td, th { border: 1px solid #ded9ccddd; } </style>
         </head>
         <body>${htmlCode}</body>
         </html>
@@ -1965,21 +1965,21 @@ function renderAssistedReservoir() {
     }
 
     if (unassigned.length === 0) {
-        reservoir.innerHTML = '<div style="padding:15px; color:#7f8c8d; text-align:center; font-style:italic;">Aucune copie restante pour ces critères.</div>';
+        reservoir.innerHTML = '<div style="padding:15px; color:#656d70; text-align:center; font-style:italic;">Aucune copie restante pour ces critères.</div>';
         return;
     }
 
     unassigned.forEach(s => {
         const item = document.createElement('div');
         item.draggable = true;
-        item.style.cssText = "background: white; border: 1px solid #ddd; border-left: 4px solid #2980b9; padding: 8px 10px; margin-bottom: 8px; border-radius: 4px; cursor: grab; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: 0.2s;";
+        item.style.cssText = "background: white; border: 1px solid #ded9cc; border-left: 4px solid #1f3a5c; padding: 8px 10px; margin-bottom: 8px; border-radius: 4px; cursor: grab; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: 0.2s;";
 
-        let badges = (s.labels || []).map(lbl => `<span style="background:#e67e22; color:white; padding:2px 5px; border-radius:10px; font-size:0.65rem; margin-left:3px;">${lbl}</span>`).join('');
+        let badges = (s.labels || []).map(lbl => `<span style="background:#9a7a2e; color:white; padding:2px 5px; border-radius:10px; font-size:0.65rem; margin-left:3px;">${lbl}</span>`).join('');
 
         item.innerHTML = `
             <div style="font-size:0.9rem;">
                 <strong>${s.nom}</strong> ${s.prenom}
-                <div style="font-size:0.75rem; color:#7f8c8d;">Ano: ${s.anonymat} | Cl: ${s.classe}</div>
+                <div style="font-size:0.75rem; color:#656d70;">Ano: ${s.anonymat} | Cl: ${s.classe}</div>
             </div>
             <div>${badges}</div>
         `;
@@ -2006,18 +2006,18 @@ function renderAssistedDropzones(subjectKey) {
 
     lots.forEach((lot, index) => {
         const card = document.createElement('div');
-        card.style.cssText = "background: white; border: 2px dashed #bdc3c7; border-radius: 8px; display: flex; flex-direction: column; height: 350px; transition: background 0.2s;";
+        card.style.cssText = "background: white; border: 2px dashed #c9c4b6; border-radius: 8px; display: flex; flex-direction: column; height: 350px; transition: background 0.2s;";
 
         card.innerHTML = `
-            <div style="background: #34495e; color: white; padding: 10px; border-radius: 6px 6px 0 0; display: flex; justify-content: space-between;">
+            <div style="background: #23282a; color: white; padding: 10px; border-radius: 6px 6px 0 0; display: flex; justify-content: space-between;">
                 <strong>👨‍🏫 ${lot.name}</strong>
-                <span class="badge" style="background:#2ecc71;">${lot.copies.length}</span>
+                <span class="badge" style="background:#2f6f5e;">${lot.copies.length}</span>
             </div>
-            <div class="dropzone-body" style="flex: 1; padding: 10px; overflow-y: auto; background: #fafafa;">
+            <div class="dropzone-body" style="flex: 1; padding: 10px; overflow-y: auto; background: #faf9f6;">
                 ${lot.copies.map(c => `
-                    <div style="background: #fff; border: 1px solid #eee; padding: 5px 8px; margin-bottom: 5px; font-size: 0.8rem; display: flex; justify-content: space-between; border-left: 3px solid #2ecc71; border-radius: 3px;">
+                    <div style="background: #fff; border: 1px solid #ece9e0; padding: 5px 8px; margin-bottom: 5px; font-size: 0.8rem; display: flex; justify-content: space-between; border-left: 3px solid #2f6f5e; border-radius: 3px;">
                         <span>${c.nom} ${c.prenom} (${c.anonymat})</span>
-                        <button onclick="removeCopyFromLot('${subjectKey}', ${index}, ${c.id})" style="background:none; border:none; color:#e74c3c; cursor:pointer;" title="Retirer">✖</button>
+                        <button onclick="removeCopyFromLot('${subjectKey}', ${index}, ${c.id})" style="background:none; border:none; color:#9a4a2e; cursor:pointer;" title="Retirer">✖</button>
                     </div>
                 `).join('')}
             </div>
@@ -2027,18 +2027,18 @@ function renderAssistedDropzones(subjectKey) {
 
         dropzoneBody.addEventListener('dragover', (e) => {
             e.preventDefault();
-            card.style.borderColor = '#27ae60';
-            card.style.backgroundColor = '#e8f8f5';
+            card.style.borderColor = '#2f6f5e';
+            card.style.backgroundColor = '#eef3f0';
         });
 
         dropzoneBody.addEventListener('dragleave', () => {
-            card.style.borderColor = '#bdc3c7';
+            card.style.borderColor = '#c9c4b6';
             card.style.backgroundColor = 'transparent';
         });
 
         dropzoneBody.addEventListener('drop', (e) => {
             e.preventDefault();
-            card.style.borderColor = '#bdc3c7';
+            card.style.borderColor = '#c9c4b6';
             card.style.backgroundColor = 'transparent';
             if (draggedAssistStudentId) {
                 assignStudentToLot(subjectKey, draggedAssistStudentId, lot.id);
@@ -2962,7 +2962,7 @@ window.processImportBordereaux = async function(event) {
 
     const subj = document.getElementById('importBordereauSubject').value;
     const feedback = document.getElementById('importBordereauxFeedback');
-    feedback.innerHTML = '<span style="color: #2980b9;">⏳ Lecture et analyse des fichiers en cours...</span>';
+    feedback.innerHTML = '<span style="color: #1f3a5c;">⏳ Lecture et analyse des fichiers en cours...</span>';
 
     if (typeof XLSX === 'undefined') {
         feedback.innerHTML = '<span style="color: red;">❌ Erreur : SheetJS non chargé.</span>';
@@ -3103,10 +3103,10 @@ window.finishImportBordereaux = function(errors = []) {
     if (typeof renderGrades === 'function') renderGrades();
 
     const feedback = document.getElementById('importBordereauxFeedback');
-    let msg = `<span style="color: #27ae60;">✅ Import réussi : ${window.directImportsCount} notes ajoutées/mises à jour.</span>`;
+    let msg = `<span style="color: #2f6f5e;">✅ Import réussi : ${window.directImportsCount} notes ajoutées/mises à jour.</span>`;
 
     if (errors.length > 0) {
-        msg += `<br><span style="color: #e67e22;">⚠️ Erreur de lecture sur : ${errors.join(', ')}</span>`;
+        msg += `<br><span style="color: #9a7a2e;">⚠️ Erreur de lecture sur : ${errors.join(', ')}</span>`;
     }
 
     feedback.innerHTML = msg;
@@ -3853,11 +3853,11 @@ function renderAeshExamAssignments() {
                     <b>${escapeHTML(exam.name || "")}</b>
                     <div style="font-size:0.82rem; color:#6c757d;">${escapeHTML(formatAeshDate(exam.date || ""))}</div>
                 </td>
-                <td style="white-space:nowrap; color:#8e44ad; font-weight:bold;">
+                <td style="white-space:nowrap; color:#6b4a72; font-weight:bold;">
                     ${escapeHTML(slot.start || "")} - ${escapeHTML(slot.end || "")}
                 </td>
                 <td>
-                    <select style="width:100%; padding:7px; border:1px solid #ccc; border-radius:5px;"
+                    <select style="width:100%; padding:7px; border:1px solid #d8d4c8; border-radius:5px;"
                         onchange="updateAeshExamAssignment(${keyArgument}, 'roomName', this.value)">
                         <option value="">-- Choisir une salle TT --</option>
                         ${roomOptions}
@@ -3866,7 +3866,7 @@ function renderAeshExamAssignments() {
                 <td>
                     <input type="text" value="${escapeHTML(assignment.aeshNames || "")}"
                         placeholder="Nom de l'AESH"
-                        style="width:100%; padding:7px; border:1px solid #ccc; border-radius:5px;"
+                        style="width:100%; padding:7px; border:1px solid #d8d4c8; border-radius:5px;"
                         onchange="updateAeshExamAssignment(${keyArgument}, 'aeshNames', this.value)">
                 </td>
             </tr>
@@ -3874,7 +3874,7 @@ function renderAeshExamAssignments() {
     }).join("");
 
     const roomWarning = rooms.length === 0
-        ? `<div style="margin-bottom:12px; padding:10px; color:#842029; background:#f8d7da; border:1px solid #f5c2c7; border-radius:6px;">
+        ? `<div style="margin-bottom:12px; padding:10px; color:#842029; background:#f3ddd3; border:1px solid #f5c2c7; border-radius:6px;">
             Aucune salle n'est marquée « Tiers-Temps » dans les données Salles.
         </div>`
         : "";
@@ -3895,7 +3895,7 @@ function renderAeshExamAssignments() {
                 <tbody>${rows}</tbody>
             </table>
         </div>
-        <small style="display:block; margin-top:10px; color:#666;">
+        <small style="display:block; margin-top:10px; color:#656d70;">
             Pour plusieurs AESH sur une même épreuve, séparez les noms par une virgule.
         </small>
     `;
@@ -3953,7 +3953,7 @@ function renderAeshConvocPreview() {
     const people = groupAeshAssignmentsByPerson(selected);
     preview.innerHTML = `
         <b>${people.length} convocation(s) individuelle(s) prévue(s)</b>
-        <div style="font-size:0.88rem; color:#666; margin-top:4px;">${selected.length} épreuve(s) tiers-temps sélectionnée(s)</div>
+        <div style="font-size:0.88rem; color:#656d70; margin-top:4px;">${selected.length} épreuve(s) tiers-temps sélectionnée(s)</div>
         <ul style="margin:8px 0 0; padding-left:20px;">
             ${people.length > 0
                 ? people.map(person => `<li><b>${escapeHTML(person.name)}</b> : ${person.duties.length} épreuve(s)</li>`).join("")

@@ -10,26 +10,26 @@ window.openLabelConfig = function() {
         style.innerHTML = `
             .lbl-modal-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999; display:flex; justify-content:center; align-items:center; backdrop-filter:blur(3px); }
             .lbl-modal { background:white; border-radius:12px; width:900px; max-height:95vh; display:flex; flex-direction:column; font-family:'Segoe UI', sans-serif; box-shadow:0 20px 50px rgba(0,0,0,0.3); overflow:hidden; }
-            .lbl-header { background:#2c3e50; color:white; padding:15px; text-align:center; }
+            .lbl-header { background:#1f3a5c; color:white; padding:15px; text-align:center; }
             .lbl-body { display:flex; flex:1; overflow:hidden; }
-            .lbl-sidebar { width:280px; background:#f8f9fa; border-right:1px solid #ddd; padding:15px; display:flex; flex-direction:column; gap:10px; overflow-y:auto; }
+            .lbl-sidebar { width:280px; background:#faf9f6; border-right:1px solid #ded9cc; padding:15px; display:flex; flex-direction:column; gap:10px; overflow-y:auto; }
             .lbl-content { flex:1; padding:20px; overflow-y:auto; background:white; }
-            .mode-tile { padding:10px; border:2px solid #ddd; border-radius:8px; cursor:pointer; text-align:center; transition:all 0.2s; background:white; margin-bottom:5px; }
-            .mode-tile:hover { border-color:#bdc3c7; background:#fdfdfd; }
-            .mode-tile.active { border-color:#3498db; background:#ebf5fb; box-shadow:0 0 0 2px rgba(52,152,219,0.2); }
-            .mode-tile h4 { margin:0 0 2px 0; color:#2c3e50; font-size:0.95rem; }
-            .mode-tile p { margin:0; font-size:0.75rem; color:#7f8c8d; }
-            .sort-opt { display:flex; align-items:center; gap:10px; padding:8px; border:1px solid #eee; border-radius:6px; cursor:pointer; margin-bottom:5px; font-size:0.9rem; }
-            .sort-opt:hover { background:#f9f9f9; }
-            .sort-opt.selected { background:#e8f6f3; border-color:#27ae60; color:#27ae60; font-weight:bold; }
+            .mode-tile { padding:10px; border:2px solid #ded9cc; border-radius:8px; cursor:pointer; text-align:center; transition:all 0.2s; background:white; margin-bottom:5px; }
+            .mode-tile:hover { border-color:#c9c4b6; background:#faf9f6; }
+            .mode-tile.active { border-color:#1f3a5c; background:#eef2f0; box-shadow:0 0 0 2px rgba(52,152,219,0.2); }
+            .mode-tile h4 { margin:0 0 2px 0; color:#1f3a5c; font-size:0.95rem; }
+            .mode-tile p { margin:0; font-size:0.75rem; color:#656d70; }
+            .sort-opt { display:flex; align-items:center; gap:10px; padding:8px; border:1px solid #ece9e0; border-radius:6px; cursor:pointer; margin-bottom:5px; font-size:0.9rem; }
+            .sort-opt:hover { background:#faf9f6; }
+            .sort-opt.selected { background:#eef3f0; border-color:#2f6f5e; color:#2f6f5e; font-weight:bold; }
             .zone-config { border:1px dashed #bbb; padding:15px; border-radius:8px; margin-bottom:15px; position:relative; }
-            .zone-title { position:absolute; top:-10px; left:15px; background:white; padding:0 5px; font-weight:bold; color:#7f8c8d; font-size:0.8rem; }
+            .zone-title { position:absolute; top:-10px; left:15px; background:white; padding:0 5px; font-weight:bold; color:#656d70; font-size:0.8rem; }
             .field-grid { display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-top:5px; }
             .field-check { display:flex; align-items:center; gap:5px; font-size:0.9rem; cursor:pointer; }
             .btn-action { padding:12px 25px; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-size:1rem; transition:background 0.2s; }
-            .btn-cancel { background:#95a5a6; color:white; }
-            .btn-print { background:#2ecc71; color:white; }
-            .btn-print:hover { background:#27ae60; }
+            .btn-cancel { background:#9aa0a2; color:white; }
+            .btn-print { background:#2f6f5e; color:white; }
+            .btn-print:hover { background:#2f6f5e; }
         `;
         document.head.appendChild(style);
     }
@@ -47,20 +47,20 @@ window.openLabelConfig = function() {
         <div class="lbl-header"><h2 style="margin:0">🖨️ Impression Étiquettes</h2></div>
         <div class="lbl-body">
             <div class="lbl-sidebar">
-                <label style="font-weight:bold; color:#34495e; font-size:0.9rem;">1. Format</label>
+                <label style="font-weight:bold; color:#23282a; font-size:0.9rem;">1. Format</label>
                 <div class="mode-tile active" id="tile-dnb" onclick="uiSetMode('DNB')">
                     <div style="font-size:1.2rem">🇫🇷</div><h4>Officiel DNB</h4><p>Gauche: Anonymat / Droite: Identité</p>
                 </div>
                 <div class="mode-tile" id="tile-custom" onclick="uiSetMode('CUSTOM')">
                     <div style="font-size:1.2rem">🎨</div><h4>Personnalisé</h4><p>Mise en page libre</p>
                 </div>
-                <hr style="width:100%; border:0; border-top:1px solid #ddd; margin:10px 0;">
-                <label style="font-weight:bold; color:#34495e; font-size:0.9rem;">2. Ordre de tri</label>
+                <hr style="width:100%; border:0; border-top:1px solid #ded9cc; margin:10px 0;">
+                <label style="font-weight:bold; color:#23282a; font-size:0.9rem;">2. Ordre de tri</label>
                 <div class="sort-opt selected" id="sort-room" onclick="uiSetSort('room')"><span>🏫</span> Par Salle</div>
                 <div class="sort-opt" id="sort-class" onclick="uiSetSort('class')"><span>🎓</span> Par Classe</div>
                 <div class="sort-opt" id="sort-alpha" onclick="uiSetSort('alpha')"><span>🔤</span> Alphabétique</div>
-                <hr style="width:100%; border:0; border-top:1px solid #ddd; margin:10px 0;">
-                <label style="font-weight:bold; color:#34495e; font-size:0.9rem;">3. Regroupement</label>
+                <hr style="width:100%; border:0; border-top:1px solid #ded9cc; margin:10px 0;">
+                <label style="font-weight:bold; color:#23282a; font-size:0.9rem;">3. Regroupement</label>
                 <div class="mode-tile active" id="grp-student" onclick="uiSetGroup('student')">
                     <h4>👤 Par Élève</h4><p>Toutes les matières de l'élève à la suite.</p>
                 </div>
@@ -70,7 +70,7 @@ window.openLabelConfig = function() {
             </div>
             <div class="lbl-content" id="config-panel"></div>
         </div>
-        <div style="padding:15px; background:#f1f2f6; text-align:right; border-top:1px solid #ddd; display:flex; justify-content:flex-end; gap:10px;">
+        <div style="padding:15px; background:#f3f1ea; text-align:right; border-top:1px solid #ded9cc; display:flex; justify-content:flex-end; gap:10px;">
             <button class="btn-action btn-cancel" id="btn-close">Annuler</button>
             <button class="btn-action btn-print" id="btn-generate">Lancer l'impression PDF 🖨️</button>
         </div>`;
@@ -114,20 +114,20 @@ window.openLabelConfig = function() {
     function renderLabelConfigPanel() {
         const p = document.getElementById('config-panel');
         if (state.mode === 'DNB') {
-            p.innerHTML = `<div style="text-align:center; color:#7f8c8d; margin-top:50px;">
+            p.innerHTML = `<div style="text-align:center; color:#656d70; margin-top:50px;">
                 <h3>Configuration DNB</h3><p>Standardisé : Anonymat + Salle (Gauche) / Identité (Droite)</p>
-                <div style="margin-top:20px; font-size:0.9rem; background:#eee; padding:10px; border-radius:5px; display:inline-block;">Trait de coupe vertical inclus</div>
+                <div style="margin-top:20px; font-size:0.9rem; background:#ece9e0; padding:10px; border-radius:5px; display:inline-block;">Trait de coupe vertical inclus</div>
             </div>`;
         } else {
             p.innerHTML = `<h3 style="margin-top:0;">⚙️ Personnalisation</h3>
                 <div style="display:flex; gap:20px; margin-bottom:20px;">
                     <div><label>Colonnes</label><br><input type="number" value="${state.custom.cols}" min="1" max="5" style="width:60px;" onchange="state.custom.cols=this.value"></div>
                     <div><label>Lignes</label><br><input type="number" value="${state.custom.rows}" min="1" max="20" style="width:60px;" onchange="state.custom.rows=this.value"></div>
-                    <div style="flex:1; display:flex; align-items:end;"><label style="cursor:pointer; font-weight:bold; color:#e74c3c;">
+                    <div style="flex:1; display:flex; align-items:end;"><label style="cursor:pointer; font-weight:bold; color:#9a4a2e;">
                         <input type="checkbox" id="chk-cut" ${state.custom.hasCutLine ? 'checked' : ''}> ✂️ Trait de coupe vertical</label></div>
                 </div>
                 <div class="zone-config" style="background:#fff3e0;"><span class="zone-title">ZONE 1 (Gauche)</span>${window.uiRenderFields('zone1')}</div>
-                <div class="zone-config" style="background:#e8f6f3;"><span class="zone-title">ZONE 2 (Droite)</span>${window.uiRenderFields('zone2')}</div>`;
+                <div class="zone-config" style="background:#eef3f0;"><span class="zone-title">ZONE 2 (Droite)</span>${window.uiRenderFields('zone2')}</div>`;
         }
     }
 
@@ -305,14 +305,14 @@ window.renderExamTable = function() {
 
     DB.exams.forEach((e, i) => {
         const hasSlots = e.slots && (e.slots.std.length > 1 || e.slots.tt.length > 1);
-        const btnStyle = hasSlots ? "background:#27ae60; color:white;" : "background:#95a5a6; color:white;";
+        const btnStyle = hasSlots ? "background:#2f6f5e; color:white;" : "background:#9aa0a2; color:white;";
         const btnText = hasSlots ? "✅ Découpé" : "✂️ Découper";
         const row = document.createElement('tr');
         row.innerHTML = `
         <td>
             <div style="display:flex; gap:5px; margin-bottom:4px;">
                 <input type="text" value="${e.name}"
-                       style="font-weight:bold; width:100%; border:1px solid #ccc; padding:4px;"
+                       style="font-weight:bold; width:100%; border:1px solid #d8d4c8; padding:4px;"
                        onchange="updateExam(${i},'name',this.value)">
                 <button class="btn btn-danger btn-sm" onclick="removeExam(${i})"
                         style="padding:2px 8px; font-size:1rem;" title="Supprimer">🗑️</button>
@@ -322,14 +322,14 @@ window.renderExamTable = function() {
         </td>
         <td style="vertical-align:top"><input type="date" value="${e.date}" onchange="updateExam(${i},'date',this.value)"></td>
         <td style="vertical-align:top"><input type="time" value="${e.time}" onchange="updateExam(${i},'time',this.value)"></td>
-        <td style="vertical-align:top"><input type="time" value="${e.timeTT || e.time}" style="background-color:#fef9e7;" onchange="updateExam(${i},'timeTT',this.value)"></td>
+        <td style="vertical-align:top"><input type="time" value="${e.timeTT || e.time}" style="background-color:#fbf6ef;" onchange="updateExam(${i},'timeTT',this.value)"></td>
         <td style="vertical-align:top"><input type="number" value="${e.durStd}" style="width:70px; text-align:center" onchange="updateExam(${i},'durStd',this.value)"></td>
         <td style="vertical-align:top; color:var(--tt-color)"><input type="number" value="${e.durTT}" style="width:70px; text-align:center" onchange="updateExam(${i},'durTT',this.value)"></td>`;
         tbody.appendChild(row);
     });
 
     const addRow = document.createElement('tr');
-    addRow.innerHTML = `<td colspan="6" style="text-align:center; background-color:#f8f9fa; padding:10px;">
+    addRow.innerHTML = `<td colspan="6" style="text-align:center; background-color:#faf9f6; padding:10px;">
         <button class="btn btn-success" onclick="addExam()" style="border-style:dashed;">➕ Ajouter une épreuve</button>
     </td>`;
     tbody.appendChild(addRow);

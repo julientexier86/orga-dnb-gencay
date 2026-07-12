@@ -18,17 +18,17 @@ function normalizeStudentId(id) {
 }
 
 const DEFAULT_LABELS = [
-    { code: "TTEMPS", color: "#8e44ad", name: "Tiers-Temps (Auto)" },
+    { code: "TTEMPS", color: "#6b4a72", name: "Tiers-Temps (Auto)" },
     { code: "DNBPRO", color: "#88f10f", name: "DNB Pro" },
     { code: "SEGPA", color: "#0f31f1", name: "SEGPA" },
     { code: "ULIS", color: "#e6f10f", name: "ULIS" },
-    { code: "ORDI", color: "#e67e22", name: "Ordinateur" },
-    { code: "LECT", color: "#27ae60", name: "Assistant Lecteur" },
-    { code: "AESH", color: "#c0392b", name: "Présence AESH" },
-    { code: "DICT", color: "#f1c40f", name: "Dictée Aménagée" },
-    { code: "SCRIPT", color: "#16a085", name: "Scripteur" },
-    { code: "SORT", color: "#95a5a6", name: "Sortie 1ère Heure" },
-    { code: "TPSDECOMP", color: "#2c3e50", name: "Temps Décompté" }
+    { code: "ORDI", color: "#9a7a2e", name: "Ordinateur" },
+    { code: "LECT", color: "#2f6f5e", name: "Assistant Lecteur" },
+    { code: "AESH", color: "#9a4a2e", name: "Présence AESH" },
+    { code: "DICT", color: "#9a7a2e", name: "Dictée Aménagée" },
+    { code: "SCRIPT", color: "#2f6f5e", name: "Scripteur" },
+    { code: "SORT", color: "#9aa0a2", name: "Sortie 1ère Heure" },
+    { code: "TPSDECOMP", color: "#1f3a5c", name: "Temps Décompté" }
 ];
 
 var DB = {
@@ -64,8 +64,8 @@ function setDirectorCiv(val) {
     DB.config.director.civ = val;
 
     // 2. Définition des styles (Actif / Inactif)
-    const sActive = "padding:12px; border:2px solid #3498db; background:#ebf5fb; border-radius:8px; cursor:pointer; text-align:center; transition:0.2s; font-weight:bold; color:#2c3e50; transform:translateY(-2px); box-shadow:0 3px 5px rgba(0,0,0,0.1);";
-    const sInactive = "padding:12px; border:2px solid #eee; background:#fff; border-radius:8px; cursor:pointer; text-align:center; transition:0.2s; color:#7f8c8d;";
+    const sActive = "padding:12px; border:2px solid #1f3a5c; background:#eef2f0; border-radius:8px; cursor:pointer; text-align:center; transition:0.2s; font-weight:bold; color:#1f3a5c; transform:translateY(-2px); box-shadow:0 3px 5px rgba(0,0,0,0.1);";
+    const sInactive = "padding:12px; border:2px solid #ece9e0; background:#fff; border-radius:8px; cursor:pointer; text-align:center; transition:0.2s; color:#656d70;";
 
     // 3. Mise à jour visuelle des blocs
     const choices = {
@@ -171,11 +171,11 @@ function showConfirm(message, onConfirm, onCancel) {
     const title = lines[0];
     const body = lines.slice(1).join('<br>');
     box.innerHTML = `
-        <div style="font-size:1.05rem;font-weight:bold;color:#2c3e50;margin-bottom:${body ? '12px' : '22px'};">${title}</div>
-        ${body ? `<div style="font-size:0.88rem;color:#555;line-height:1.6;margin-bottom:22px;">${body}</div>` : ''}
+        <div style="font-size:1.05rem;font-weight:bold;color:#1f3a5c;margin-bottom:${body ? '12px' : '22px'};">${title}</div>
+        ${body ? `<div style="font-size:0.88rem;color:#4b5254;line-height:1.6;margin-bottom:22px;">${body}</div>` : ''}
         <div style="display:flex;gap:10px;justify-content:flex-end;">
-            <button id="sc-cancel" style="padding:8px 20px;border:1px solid #ddd;border-radius:6px;background:#f8f9fa;cursor:pointer;font-size:0.9rem;color:#555;">Annuler</button>
-            <button id="sc-ok" style="padding:8px 22px;border:none;border-radius:6px;background:#e74c3c;color:white;cursor:pointer;font-size:0.9rem;font-weight:bold;">Confirmer</button>
+            <button id="sc-cancel" style="padding:8px 20px;border:1px solid #ded9cc;border-radius:6px;background:#faf9f6;cursor:pointer;font-size:0.9rem;color:#4b5254;">Annuler</button>
+            <button id="sc-ok" style="padding:8px 22px;border:none;border-radius:6px;background:#9a4a2e;color:white;cursor:pointer;font-size:0.9rem;font-weight:bold;">Confirmer</button>
         </div>`;
     overlay.appendChild(box);
     document.body.appendChild(overlay);
@@ -187,7 +187,7 @@ function showConfirm(message, onConfirm, onCancel) {
 
 // --- MODALE D'ALERTE PERSONNALISÉE (remplace alert() pour messages longs/importants) ---
 function showAlertModal(message, type = 'info') {
-    const colors = { error:'#e74c3c', success:'#27ae60', warning:'#f39c12', info:'#3498db' };
+    const colors = { error:'#9a4a2e', success:'#2f6f5e', warning:'#9a7a2e', info:'#1f3a5c' };
     const color = colors[type] || colors.info;
     const overlay = document.createElement('div');
     overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.55);z-index:99999;display:flex;align-items:center;justify-content:center;';
@@ -198,7 +198,7 @@ function showAlertModal(message, type = 'info') {
     const body = lines.slice(1).join('<br>');
     box.innerHTML = `
         <div style="color:${color};font-size:1.05rem;font-weight:bold;margin-bottom:${body ? '12px' : '22px'};">${title}</div>
-        ${body ? `<div style="font-size:0.88rem;color:#444;line-height:1.6;margin-bottom:22px;">${body}</div>` : ''}
+        ${body ? `<div style="font-size:0.88rem;color:#23282a;line-height:1.6;margin-bottom:22px;">${body}</div>` : ''}
         <div style="text-align:right;">
             <button style="padding:8px 28px;border:none;border-radius:6px;background:${color};color:white;cursor:pointer;font-weight:bold;">OK</button>
         </div>`;

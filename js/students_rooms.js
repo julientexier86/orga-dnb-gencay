@@ -20,7 +20,7 @@ window.renderStudents = function () {
                 <th style="width:50px; text-align:center">TT</th> 
                 <th style="width:50px">Act.</th> 
             </tr>
-            <tr style="background:#e9ecef;">
+            <tr style="background:#ece9e0;">
                 <th><input type="text" class="filter-input" placeholder="Filtrer..." onkeyup="filterStudentsTable(0)"></th>
                 <th><input type="text" class="filter-input" placeholder="Filtrer..." onkeyup="filterStudentsTable(1)"></th>
                 <th></th>
@@ -36,13 +36,13 @@ window.renderStudents = function () {
     let tbodyHtml = '<tbody>';
 
     DB.students.forEach((s, i) => {
-        const codeDisplay = s.anonymat ? `<span style="font-family:courier; font-weight:bold; color:#d35400">${escapeHTML(s.anonymat)}</span>` : '<span style="color:#ccc; font-size:0.8rem">--</span>';
+        const codeDisplay = s.anonymat ? `<span style="font-family:courier; font-weight:bold; color:#7a5f22">${escapeHTML(s.anonymat)}</span>` : '<span style="color:#d8d4c8; font-size:0.8rem">--</span>';
 
         let labelsHtml = "";
         if (s.labels && s.labels.length > 0) {
             s.labels.forEach(labCode => {
                 const def = DB.config.labels.find(d => d.code === labCode);
-                const col = def ? def.color : '#999';
+                const col = def ? def.color : '#9aa0a2';
                 labelsHtml += `<span class="badge" style="background-color:${escapeHTML(col)}; margin-right:3px;">${escapeHTML(labCode)}</span>`;
             });
         }
@@ -53,7 +53,7 @@ window.renderStudents = function () {
             <td>${escapeHTML(s.prenom)}</td>
             <td>${escapeHTML(s.sexe)}</td>
             <td><span class="badge bg-secondary" style="background:#6c757d; color:white;">${escapeHTML(s.classe)}</span></td>
-            <td style="color:#2980b9; font-size:0.9rem;">${escapeHTML(s.mef || "-")}</td> <td>${codeDisplay}</td>
+            <td style="color:#1f3a5c; font-size:0.9rem;">${escapeHTML(s.mef || "-")}</td> <td>${codeDisplay}</td>
             <td>${labelsHtml}</td> 
             <td style="text-align:center">
                 <input type="checkbox" ${s.tt ? 'checked' : ''} ${l ? 'disabled' : ''} onchange="toggleStudentTT(${i}, this.checked)">
@@ -155,10 +155,10 @@ window.renderTeachers = function () {
         // Sécurisation des valeurs
         const noHSE = t.noHSE ? 'checked' : '';
         // Si refus HSE, on grise légèrement la ligne, sinon blanc
-        const rowStyle = t.noHSE ? 'background-color: #f2f2f2; color: #888;' : '';
+        const rowStyle = t.noHSE ? 'background-color: #ece9e0; color: #9aa0a2;' : '';
 
         // Style de la matière : Fond Sombre + Texte Blanc pour le contraste
-        const matStyle = "background-color: #2c3e50; color: white; padding: 5px 8px; border-radius: 4px; font-weight: normal;";
+        const matStyle = "background-color: #1f3a5c; color: white; padding: 5px 8px; border-radius: 4px; font-weight: normal;";
 
         html += `
         <tr style="${rowStyle}">
@@ -184,7 +184,7 @@ window.renderTeachers = function () {
     html += `</tbody></table>`;
 
     // Ajout d'un compteur
-    html += `<div style="margin-top:10px; text-align:right; color:#666;">
+    html += `<div style="margin-top:10px; text-align:right; color:#656d70;">
                 Total : <b>${DB.teachers.length}</b> professeurs 
                 (dont <b>${DB.teachers.filter(t => t.noHSE).length}</b> sans HSE)
              </div>`;
@@ -307,13 +307,13 @@ function createRoomCard(name, list, roomData, isBuffer) {
     card.className = 'dd-room-card';
     card.setAttribute('data-room', name); // Ajout utile pour le debug
 
-    if (isBuffer) { card.style.border = "2px dashed #f39c12"; card.style.backgroundColor = "#fef9e7"; }
+    if (isBuffer) { card.style.border = "2px dashed #9a7a2e"; card.style.backgroundColor = "#fbf6ef"; }
 
     let badges = "";
     if (roomData.isTT) badges += '<span class="badge badge-tt">TT</span>';
     if (roomData.isAmen) badges += '<span class="badge badge-amen">Amén.</span>';
 
-    const headerColor = isBuffer ? "background:#f39c12; color:white;" : "";
+    const headerColor = isBuffer ? "background:#9a7a2e; color:white;" : "";
     card.innerHTML = `<div class="dd-room-header" style="${headerColor}"><span>${name} ${badges}</span> <span>${list.length}/${isBuffer ? '∞' : roomData.capacite}</span></div>`;
 
     let body = document.createElement('div'); body.className = 'dd-room-body';
@@ -337,7 +337,7 @@ function createRoomCard(name, list, roomData, isBuffer) {
             student.labels.forEach(l => {
                 if (l === 'TTEMPS') return;
                 const def = DB.config.labels.find(d => d.code === l);
-                const col = def ? def.color : "#666";
+                const col = def ? def.color : "#656d70";
                 stBadges += `<span class="badge" style="background:${col}; font-size:0.6rem; padding:1px 3px;">${l}</span>`;
             });
         }
@@ -424,7 +424,7 @@ function openDistribWizard() { document.getElementById('distribModal').style.dis
 function closeDistribWizard() { document.getElementById('distribModal').style.display = 'none'; }
 function toggleWizTTList(show) { document.getElementById('wizTTListContainer').style.display = show ? 'block' : 'none'; }
 function wizGoToStep(n) { document.querySelectorAll('.wizard-step').forEach(s => s.classList.remove('active')); document.getElementById('wiz-step-' + n).classList.add('active'); }
-function wizGoToStep2() { const mode = document.querySelector('input[name="wizTTMode"]:checked').value; wizData.selectedTTIds = []; if (mode === 'auto') wizData.selectedTTIds = DB.students.filter(s => s.tt).map(s => normalizeStudentId(s.id)); else document.querySelectorAll('#wizTTListContainer input:checked').forEach(cb => wizData.selectedTTIds.push(normalizeStudentId(cb.value))); const ttCount = wizData.selectedTTIds.length; const ttRooms = DB.rooms.filter(r => r.isTT); const ttCap = ttRooms.reduce((acc, r) => acc + (parseInt(r.capacite) || 0), 0); const totalStudents = DB.students.length; const stdCount = totalStudents - ttCount; const stdRooms = DB.rooms.filter(r => !r.isTT); const stdCap = stdRooms.reduce((acc, r) => acc + (parseInt(r.capacite) || 0), 0); const msgDiv = document.getElementById('wizCapCheckMsg'); const btnNext = document.getElementById('btnWizStep2Next'); let html = ""; let error = false; if (ttCount > ttCap) { html += `<div style="color:#c0392b;margin-bottom:10px;"><strong>⛔ TT Insuffisant !</strong> Besoin:${ttCount} / Dispo:${ttCap}</div>`; error = true; } else html += `<div style="color:#27ae60;margin-bottom:10px;"><strong>✅ TT OK</strong> (${ttCount}/${ttCap})</div>`; if (stdCount > stdCap) { html += `<div style="color:#c0392b;"><strong>⛔ Standard Insuffisant !</strong> Besoin:${stdCount} / Dispo:${stdCap}</div>`; error = true; } else html += `<div style="color:#27ae60;"><strong>✅ Standard OK</strong> (${stdCount}/${stdCap})</div>`; msgDiv.innerHTML = html; if (error) { msgDiv.style.background = "#fdedec"; btnNext.style.display = 'none'; } else { msgDiv.style.background = "#e8f6f3"; btnNext.style.display = 'inline-block'; } wizGoToStep(2); }
+function wizGoToStep2() { const mode = document.querySelector('input[name="wizTTMode"]:checked').value; wizData.selectedTTIds = []; if (mode === 'auto') wizData.selectedTTIds = DB.students.filter(s => s.tt).map(s => normalizeStudentId(s.id)); else document.querySelectorAll('#wizTTListContainer input:checked').forEach(cb => wizData.selectedTTIds.push(normalizeStudentId(cb.value))); const ttCount = wizData.selectedTTIds.length; const ttRooms = DB.rooms.filter(r => r.isTT); const ttCap = ttRooms.reduce((acc, r) => acc + (parseInt(r.capacite) || 0), 0); const totalStudents = DB.students.length; const stdCount = totalStudents - ttCount; const stdRooms = DB.rooms.filter(r => !r.isTT); const stdCap = stdRooms.reduce((acc, r) => acc + (parseInt(r.capacite) || 0), 0); const msgDiv = document.getElementById('wizCapCheckMsg'); const btnNext = document.getElementById('btnWizStep2Next'); let html = ""; let error = false; if (ttCount > ttCap) { html += `<div style="color:#9a4a2e;margin-bottom:10px;"><strong>⛔ TT Insuffisant !</strong> Besoin:${ttCount} / Dispo:${ttCap}</div>`; error = true; } else html += `<div style="color:#2f6f5e;margin-bottom:10px;"><strong>✅ TT OK</strong> (${ttCount}/${ttCap})</div>`; if (stdCount > stdCap) { html += `<div style="color:#9a4a2e;"><strong>⛔ Standard Insuffisant !</strong> Besoin:${stdCount} / Dispo:${stdCap}</div>`; error = true; } else html += `<div style="color:#2f6f5e;"><strong>✅ Standard OK</strong> (${stdCount}/${stdCap})</div>`; msgDiv.innerHTML = html; if (error) { msgDiv.style.background = "#fbf3ef"; btnNext.style.display = 'none'; } else { msgDiv.style.background = "#eef3f0"; btnNext.style.display = 'inline-block'; } wizGoToStep(2); }
 function wizGoToStep3() { wizGoToStep(3); }
 function executeDistribution() {
     if (typeof createActionBackup === 'function') createActionBackup('Avant assistant répartition élèves');

@@ -116,9 +116,9 @@ function renderInstructionTemplates() {
     ];
 
     container.innerHTML = labels.map(([key, label]) => `
-        <div style="border:1px solid #e5e7eb; border-radius:8px; padding:12px; background:#fff;">
-            <label for="instr-${key}" style="display:block; font-weight:bold; color:#2c3e50; margin-bottom:6px;">${escapeHTML(label)}</label>
-            <textarea id="instr-${key}" rows="5" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:6px; font-family:sans-serif; font-size:0.9rem; line-height:1.4;" oninput="setInstructionTemplate('${key}', this.value)">${escapeHTML(getInstructionTemplate(key))}</textarea>
+        <div style="border:1px solid #e3dfd3; border-radius:8px; padding:12px; background:#fff;">
+            <label for="instr-${key}" style="display:block; font-weight:bold; color:#1f3a5c; margin-bottom:6px;">${escapeHTML(label)}</label>
+            <textarea id="instr-${key}" rows="5" style="width:100%; padding:8px; border:1px solid #d8d4c8; border-radius:6px; font-family:sans-serif; font-size:0.9rem; line-height:1.4;" oninput="setInstructionTemplate('${key}', this.value)">${escapeHTML(getInstructionTemplate(key))}</textarea>
         </div>
     `).join('');
 }
@@ -184,7 +184,7 @@ function renderNamedBackups() {
     if (!list) return;
     const backups = getNamedBackups();
     if (backups.length === 0) {
-        list.innerHTML = '<div style="color:#7f8c8d; padding:10px;">Aucune sauvegarde nommée pour le moment.</div>';
+        list.innerHTML = '<div style="color:#656d70; padding:10px;">Aucune sauvegarde nommée pour le moment.</div>';
         return;
     }
 
@@ -192,10 +192,10 @@ function renderNamedBackups() {
         const date = new Date(backup.createdAt).toLocaleString('fr-FR');
         const summary = backup.summary || {};
         return `
-            <div style="display:grid; grid-template-columns:1fr auto; gap:10px; align-items:center; padding:10px 0; border-bottom:1px solid #ecf0f1;">
+            <div style="display:grid; grid-template-columns:1fr auto; gap:10px; align-items:center; padding:10px 0; border-bottom:1px solid #f0eee8;">
                 <div>
-                    <div style="font-weight:bold; color:#2c3e50;">${escapeHTML(backup.label)}</div>
-                    <div style="font-size:0.84rem; color:#7f8c8d;">${escapeHTML(date)} - ${summary.students || 0} élève(s), ${summary.rooms || 0} salle(s), ${summary.teachers || 0} professeur(s)</div>
+                    <div style="font-weight:bold; color:#1f3a5c;">${escapeHTML(backup.label)}</div>
+                    <div style="font-size:0.84rem; color:#656d70;">${escapeHTML(date)} - ${summary.students || 0} élève(s), ${summary.rooms || 0} salle(s), ${summary.teachers || 0} professeur(s)</div>
                 </div>
                 <div style="display:flex; gap:6px; flex-wrap:wrap;">
                     <button class="btn btn-secondary" style="padding:6px 10px;" onclick="restoreNamedBackup('${backup.id}')">Restaurer</button>

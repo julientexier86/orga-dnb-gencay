@@ -70,14 +70,14 @@ function setImportMode(mode, element) {
     if(input) input.value = mode;
     const tiles = document.querySelectorAll('.import-tile');
     tiles.forEach(t => {
-        t.style.border = '1px solid #ddd';
+        t.style.border = '1px solid #ded9cc';
         t.classList.remove('active');
     });
     if (element) {
-        element.style.border = '2px solid #3498db';
+        element.style.border = '2px solid #1f3a5c';
         element.classList.add('active');
     } else {
-        if(tiles.length > 0) tiles[0].style.border = '2px solid #3498db';
+        if(tiles.length > 0) tiles[0].style.border = '2px solid #1f3a5c';
     }
 }
 
@@ -100,27 +100,27 @@ function openMappingModal(headers, mapping, fields, data) {
     }
 
     let html = `<table style="width:100%; border-collapse: collapse;">
-        <thead><tr style="border-bottom:2px solid #eee; text-align:left;">
-            <th style="padding:8px; font-size:0.9em; color:#888;">Champ Logiciel</th>
-            <th style="padding:8px; font-size:0.9em; color:#888;">Colonne Excel</th>
+        <thead><tr style="border-bottom:2px solid #ece9e0; text-align:left;">
+            <th style="padding:8px; font-size:0.9em; color:#9aa0a2;">Champ Logiciel</th>
+            <th style="padding:8px; font-size:0.9em; color:#9aa0a2;">Colonne Excel</th>
         </tr></thead><tbody>`;
 
     fields.forEach(f => {
-        let options = `<option value="" style="color:#ccc;">(Ignorer)</option>`;
+        let options = `<option value="" style="color:#d8d4c8;">(Ignorer)</option>`;
         headers.forEach(h => {
             const selected = (mapping[f.key] === h) ? 'selected' : '';
-            const style = selected ? 'font-weight:bold; color:#2980b9;' : '';
+            const style = selected ? 'font-weight:bold; color:#1f3a5c;' : '';
             options += `<option value="${escapeHTML(h)}" ${selected} style="${style}">${escapeHTML(h)}</option>`;
         });
         html += `<tr style="border-bottom:1px solid #f5f5f5;">
             <td style="padding:10px 5px; font-weight:500;">${escapeHTML(f.label)}</td>
-            <td style="padding:5px;"><select id="map_sel_${f.key}" style="width:100%; padding:6px; border:1px solid #ddd; border-radius:4px;">${options}</select></td>
+            <td style="padding:5px;"><select id="map_sel_${f.key}" style="width:100%; padding:6px; border:1px solid #ded9cc; border-radius:4px;">${options}</select></td>
         </tr>`;
     });
     html += `</tbody></table>`;
-    html += `<div style="margin-top:20px; padding-top:10px; border-top:1px dashed #ddd;">
-        <div style="font-size:0.8em; font-weight:bold; color:#666; margin-bottom:5px;">Aperçu (Ligne 1) :</div>
-        <div style="overflow-x:auto; font-size:0.75em; background:#f9f9f9; padding:5px; border-radius:4px;">
+    html += `<div style="margin-top:20px; padding-top:10px; border-top:1px dashed #ded9cc;">
+        <div style="font-size:0.8em; font-weight:bold; color:#656d70; margin-bottom:5px;">Aperçu (Ligne 1) :</div>
+        <div style="overflow-x:auto; font-size:0.75em; background:#faf9f6; padding:5px; border-radius:4px;">
             <code>${escapeHTML(Object.values(data[0]).join(' | ').substring(0, 100))}...</code>
         </div></div>`;
 

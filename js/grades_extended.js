@@ -62,7 +62,7 @@ function openSimuGradeModal(studentId) {
     });
     overlay.innerHTML = `
         <div style="background:white; border-radius:8px; width:450px; max-width:95%; box-shadow:0 10px 30px rgba(0,0,0,0.3);">
-            <div style="background:#2c3e50; color:white; padding:15px; border-radius:8px 8px 0 0; display:flex; justify-content:space-between; align-items:center;">
+            <div style="background:#1f3a5c; color:white; padding:15px; border-radius:8px 8px 0 0; display:flex; justify-content:space-between; align-items:center;">
                 <h5 style="margin:0;">Édition : ${student.nom} ${student.prenom}</h5>
                 <span style="cursor:pointer; font-size:1.5rem;" onclick="closeSimuGradeModal()">×</span>
             </div>
@@ -70,12 +70,12 @@ function openSimuGradeModal(studentId) {
                 <p style="background:#dbeafe; padding:10px; border-radius:5px; font-size:0.9rem;">Saisissez les notes. Laissez vide pour effacer.</p>
                 <div style="margin-bottom:15px;">
                     <label style="font-weight:bold; display:block; margin-bottom:5px;">Note d'Oral (sur 20)</label>
-                    <input type="number" id="modal-edit-oral" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;"
+                    <input type="number" id="modal-edit-oral" style="width:100%; padding:8px; border:1px solid #d8d4c8; border-radius:4px;"
                            value="${g.oral !== undefined ? g.oral : ''}" min="0" max="20" step="0.01">
                 </div>
                 <div style="margin-bottom:20px;">
                     <label style="font-weight:bold; display:block; margin-bottom:5px;">Moyenne Générale (sur 20)</label>
-                    <input type="number" id="modal-edit-gen" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;"
+                    <input type="number" id="modal-edit-gen" style="width:100%; padding:8px; border:1px solid #d8d4c8; border-radius:4px;"
                            value="${g.genAvg !== undefined ? g.genAvg : ''}" min="0" max="400" step="0.01">
                 </div>
                 <div style="text-align:right; display:flex; gap:10px; justify-content:flex-end;">

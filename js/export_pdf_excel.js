@@ -233,23 +233,23 @@ window.exportConvocationStudents = function (targetId = null) {
     Object.assign(overlay.style, { position: 'fixed', top: '0', left: '0', width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', zIndex: '9999', display: 'flex', justifyContent: 'center', alignItems: 'center' });
     const modal = document.createElement('div');
     Object.assign(modal.style, { backgroundColor: 'white', padding: '30px', borderRadius: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)', textAlign: 'center', maxWidth: '600px', width: '90%', fontFamily: 'Helvetica, sans-serif' });
-    modal.innerHTML = `<h3 style="color:#2c3e50; margin-top:0;">🖨️ Imprimer les Convocations</h3>`;
+    modal.innerHTML = `<h3 style="color:#1f3a5c; margin-top:0;">🖨️ Imprimer les Convocations</h3>`;
     const btnContainer = document.createElement('div');
     Object.assign(btnContainer.style, { display: 'flex', gap: '20px', marginTop: '25px', justifyContent: 'center' });
 
     function createCard(emoji, title, desc, color, action) {
         const card = document.createElement('div');
-        Object.assign(card.style, { flex: '1', padding: '20px', border: '2px solid #eee', borderRadius: '10px', cursor: 'pointer', transition: 'all 0.2s', backgroundColor: '#f8f9fa' });
-        card.innerHTML = `<div style="font-size:40px; margin-bottom:10px;">${emoji}</div><div style="font-weight:bold; color:${color}; font-size:16px;">${title}</div><div style="font-size:12px; color:#7f8c8d; margin-top:5px;">${desc}</div>`;
+        Object.assign(card.style, { flex: '1', padding: '20px', border: '2px solid #ece9e0', borderRadius: '10px', cursor: 'pointer', transition: 'all 0.2s', backgroundColor: '#faf9f6' });
+        card.innerHTML = `<div style="font-size:40px; margin-bottom:10px;">${emoji}</div><div style="font-weight:bold; color:${color}; font-size:16px;">${title}</div><div style="font-size:12px; color:#656d70; margin-top:5px;">${desc}</div>`;
         card.onclick = () => { document.body.removeChild(overlay); action(); };
         return card;
     }
-    const btnClass = createCard("🏫", "Par Classe", "Trié par classe puis par nom", "#27ae60", () => generatePDF('class'));
-    const btnAlpha = createCard("🌍", "Alphabétique", "Trié de A à Z", "#2980b9", () => generatePDF('alpha'));
+    const btnClass = createCard("🏫", "Par Classe", "Trié par classe puis par nom", "#2f6f5e", () => generatePDF('class'));
+    const btnAlpha = createCard("🌍", "Alphabétique", "Trié de A à Z", "#1f3a5c", () => generatePDF('alpha'));
     btnContainer.append(btnClass, btnAlpha); modal.appendChild(btnContainer);
 
     const btnCancel = document.createElement('div');
-    btnCancel.innerText = "Annuler"; Object.assign(btnCancel.style, { marginTop: "20px", color: "#999", cursor: "pointer", fontSize: "14px", textDecoration: "underline" });
+    btnCancel.innerText = "Annuler"; Object.assign(btnCancel.style, { marginTop: "20px", color: "#9aa0a2", cursor: "pointer", fontSize: "14px", textDecoration: "underline" });
     btnCancel.onclick = () => document.body.removeChild(overlay); modal.appendChild(btnCancel);
     overlay.appendChild(modal); document.body.appendChild(overlay);
 
@@ -427,7 +427,7 @@ function exportAnonymityList() {
     // 3. Titre
     const title = document.createElement('h3');
     title.innerText = "📄 Choisir le format de la liste";
-    title.style.color = '#2c3e50';
+    title.style.color = '#1f3a5c';
     title.style.marginTop = '0';
     modal.appendChild(title);
 
@@ -436,21 +436,21 @@ function exportAnonymityList() {
         const card = document.createElement('div');
         card.style.flex = '1';
         card.style.padding = '20px';
-        card.style.border = '2px solid #eee';
+        card.style.border = '2px solid #ece9e0';
         card.style.borderRadius = '10px';
         card.style.cursor = 'pointer';
         card.style.transition = 'all 0.2s';
-        card.style.backgroundColor = '#f8f9fa';
+        card.style.backgroundColor = '#faf9f6';
 
         card.innerHTML = `
                 <div style="font-size:40px; margin-bottom:10px;">${emoji}</div>
                 <div style="font-weight:bold; color:${color}; font-size:16px;">${titleText}</div>
-                <div style="font-size:12px; color:#7f8c8d; margin-top:5px;">${subText}</div>
+                <div style="font-size:12px; color:#656d70; margin-top:5px;">${subText}</div>
             `;
 
         // Effet Hover
         card.onmouseenter = () => { card.style.borderColor = color; card.style.backgroundColor = 'white'; card.style.transform = 'translateY(-3px)'; card.style.boxShadow = '0 5px 15px rgba(0,0,0,0.1)'; };
-        card.onmouseleave = () => { card.style.borderColor = '#eee'; card.style.backgroundColor = '#f8f9fa'; card.style.transform = 'translateY(0)'; card.style.boxShadow = 'none'; };
+        card.onmouseleave = () => { card.style.borderColor = '#ece9e0'; card.style.backgroundColor = '#faf9f6'; card.style.transform = 'translateY(0)'; card.style.boxShadow = 'none'; };
 
         card.onclick = () => {
             document.body.removeChild(overlay); // Fermer la pop-up
@@ -548,11 +548,11 @@ function exportAnonymityList() {
     btnContainer2.style.marginTop = '15px';
     btnContainer2.style.justifyContent = 'center';
 
-    const btnGlobal = createOptionCard("🌍", "Alpha (PDF)", "Toute l'école de A à Z", "#2980b9", actionGlobal);
-    const btnClass = createOptionCard("📚", "Par Classe (PDF)", "Trié par classe (1 page/classe)", "#27ae60", actionClass);
+    const btnGlobal = createOptionCard("🌍", "Alpha (PDF)", "Toute l'école de A à Z", "#1f3a5c", actionGlobal);
+    const btnClass = createOptionCard("📚", "Par Classe (PDF)", "Trié par classe (1 page/classe)", "#2f6f5e", actionClass);
 
-    const btnGlobalXLSX = createOptionCard("🌍", "Alpha (Excel)", "Toute l'école de A à Z", "#8e44ad", actionGlobalXLSX);
-    const btnClassXLSX = createOptionCard("📚", "Par Classe (Excel)", "Trié par classe", "#e67e22", actionClassXLSX);
+    const btnGlobalXLSX = createOptionCard("🌍", "Alpha (Excel)", "Toute l'école de A à Z", "#6b4a72", actionGlobalXLSX);
+    const btnClassXLSX = createOptionCard("📚", "Par Classe (Excel)", "Trié par classe", "#9a7a2e", actionClassXLSX);
 
     btnContainer1.appendChild(btnGlobal);
     btnContainer1.appendChild(btnClass);
@@ -567,7 +567,7 @@ function exportAnonymityList() {
     const btnCancel = document.createElement('div');
     btnCancel.innerText = "Annuler";
     btnCancel.style.marginTop = "20px";
-    btnCancel.style.color = "#999";
+    btnCancel.style.color = "#9aa0a2";
     btnCancel.style.cursor = "pointer";
     btnCancel.style.fontSize = "14px";
     btnCancel.style.textDecoration = "underline";
@@ -609,9 +609,9 @@ function openLabelConfig(type) {
 
     // --- STYLES CSS POUR LES BRIQUES ---
     // Style inactif (gris)
-    const sBrick = "flex:1; padding:15px 10px; border:2px solid #e0e0e0; background:#f9f9f9; border-radius:8px; cursor:pointer; text-align:center; transition:all 0.2s ease; color:#7f8c8d;";
+    const sBrick = "flex:1; padding:15px 10px; border:2px solid #e3dfd3; background:#faf9f6; border-radius:8px; cursor:pointer; text-align:center; transition:all 0.2s ease; color:#656d70;";
     // Style actif (bleu, en relief)
-    const sBrickActive = "flex:1; padding:15px 10px; border:2px solid #3498db; background:#ebf5fb; border-radius:8px; cursor:pointer; text-align:center; transition:all 0.2s ease; color:#2c3e50; font-weight:bold; box-shadow:0 4px 8px rgba(52, 152, 219, 0.2); transform:translateY(-2px);";
+    const sBrickActive = "flex:1; padding:15px 10px; border:2px solid #1f3a5c; background:#eef2f0; border-radius:8px; cursor:pointer; text-align:center; transition:all 0.2s ease; color:#1f3a5c; font-weight:bold; box-shadow:0 4px 8px rgba(52, 152, 219, 0.2); transform:translateY(-2px);";
 
     // --- CONSTRUCTION DU HTML DE LA MODALE ---
     const overlay = document.createElement('div');
@@ -622,17 +622,17 @@ function openLabelConfig(type) {
     modal.style.cssText = "background:white; border-radius:12px; width:420px; font-family:'Segoe UI', sans-serif; box-shadow:0 15px 40px rgba(0,0,0,0.3); overflow:hidden; display:flex; flex-direction:column; max-height:95vh;";
 
     let contentHtml = `
-        <div style="background:#2c3e50; color:white; padding:15px; text-align:center;">
+        <div style="background:#1f3a5c; color:white; padding:15px; text-align:center;">
             <h3 style="margin:0; font-size:1.2rem;">${title}</h3>
         </div>
-        <div style="padding:20px; overflow-y:auto; background:#f4f6f7;">
+        <div style="padding:20px; overflow-y:auto; background:#f3f1ea;">
     `;
 
     if (!isTable) {
         // --- SECTION 1 : QUANTITÉ (Anonymat uniquement) ---
         contentHtml += `
             <div style="margin-bottom:20px;">
-                <label style="font-weight:bold; color:#34495e; display:block; margin-bottom:10px;">1. Quantité d'étiquettes :</label>
+                <label style="font-weight:bold; color:#23282a; display:block; margin-bottom:10px;">1. Quantité d'étiquettes :</label>
                 <div style="display:flex; gap:10px;">
                     <div id="brick-qty-single" style="${sBrickActive}">
                         <div style="font-size:1.4rem;">👤</div>
@@ -645,8 +645,8 @@ function openLabelConfig(type) {
                 </div>
             </div>
 
-            <div id="section-group" style="margin-bottom:20px; display:none; padding-left:15px; border-left:3px solid #3498db; animation:fadeIn 0.3s;">
-                <label style="font-weight:bold; color:#2980b9; display:block; margin-bottom:10px;">↳ Option de Regroupement :</label>
+            <div id="section-group" style="margin-bottom:20px; display:none; padding-left:15px; border-left:3px solid #1f3a5c; animation:fadeIn 0.3s;">
+                <label style="font-weight:bold; color:#1f3a5c; display:block; margin-bottom:10px;">↳ Option de Regroupement :</label>
                 <div style="display:flex; gap:10px;">
                     <div id="brick-group-student" style="${sBrickActive}">
                         <div style="font-size:1.2rem;">👨‍🎓</div>
@@ -664,7 +664,7 @@ function openLabelConfig(type) {
     // --- SECTION 2 : TRI ---
     contentHtml += `
         <div style="margin-bottom:20px;">
-            <label style="font-weight:bold; color:#34495e; display:block; margin-bottom:10px;">${isTable ? '1.' : '2.'} Organisation du tri :</label>
+            <label style="font-weight:bold; color:#23282a; display:block; margin-bottom:10px;">${isTable ? '1.' : '2.'} Organisation du tri :</label>
             <div style="display:flex; gap:10px;">
                 <div id="brick-sort-alpha" style="${uiState.sort === 'alpha' ? sBrickActive : sBrick}">
                     <div style="font-size:1.4rem;">🇦.🇿</div>
@@ -680,14 +680,14 @@ function openLabelConfig(type) {
 
     // --- SECTION GRILLE ---
     contentHtml += `
-        <div style="background:white; padding:15px; border-radius:8px; border:1px solid #e0e0e0; display:flex; justify-content:space-between; align-items:center;">
-            <div><span style="font-weight:bold; color:#555;">📏 Grille (A4)</span></div>
+        <div style="background:white; padding:15px; border-radius:8px; border:1px solid #e3dfd3; display:flex; justify-content:space-between; align-items:center;">
+            <div><span style="font-weight:bold; color:#4b5254;">📏 Grille (A4)</span></div>
             <div style="display:flex; gap:10px;">
-                <div style="text-align:center;"><small>Colonnes</small><br><input type="number" id="lblCols" value="${defCols}" min="1" max="5" style="width:45px; text-align:center; padding:5px; border:1px solid #ccc; border-radius:4px;"></div>
-                <div style="text-align:center;"><small>Lignes</small><br><input type="number" id="lblRows" value="${defRows}" min="1" max="20" style="width:45px; text-align:center; padding:5px; border:1px solid #ccc; border-radius:4px;"></div>
+                <div style="text-align:center;"><small>Colonnes</small><br><input type="number" id="lblCols" value="${defCols}" min="1" max="5" style="width:45px; text-align:center; padding:5px; border:1px solid #d8d4c8; border-radius:4px;"></div>
+                <div style="text-align:center;"><small>Lignes</small><br><input type="number" id="lblRows" value="${defRows}" min="1" max="20" style="width:45px; text-align:center; padding:5px; border:1px solid #d8d4c8; border-radius:4px;"></div>
             </div>
         </div>
-        </div> <div style="padding:15px; background:white; border-top:1px solid #eee; display:flex; gap:10px;">
+        </div> <div style="padding:15px; background:white; border-top:1px solid #ece9e0; display:flex; gap:10px;">
             <button id="btnCan" class="btn btn-secondary" style="flex:1; padding:10px;">Annuler</button>
             <button id="btnGen" class="btn btn-success" style="flex:2; padding:10px; font-size:1.1rem; font-weight:bold;">🖨️ Générer PDF</button>
         </div>

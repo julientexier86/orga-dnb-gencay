@@ -74,12 +74,12 @@ function renderOffscreenChart(config, width, height) {
 }
 
 function mentionColorForBucket(bucket) {
-    if (bucket >= 18) return '#2c3e50';
-    if (bucket >= 16) return '#8e44ad';
-    if (bucket >= 14) return '#3498db';
-    if (bucket >= 12) return '#f39c12';
-    if (bucket >= 10) return '#27ae60';
-    return '#e74c3c';
+    if (bucket >= 18) return '#1f3a5c';
+    if (bucket >= 16) return '#6b4a72';
+    if (bucket >= 14) return '#1f3a5c';
+    if (bucket >= 12) return '#9a7a2e';
+    if (bucket >= 10) return '#2f6f5e';
+    return '#9a4a2e';
 }
 
 // Histogramme de la moyenne finale /20, barres colorées par bande de mention.

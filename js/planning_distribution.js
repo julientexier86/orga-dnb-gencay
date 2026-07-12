@@ -38,7 +38,7 @@ function renderSlotRows(type, data) {
         const div = document.createElement('div');
         div.className = 'slot-item';
         div.innerHTML = `
-            <span style="font-weight:bold; color:#777;">${idx + 1}.</span>
+            <span style="font-weight:bold; color:#656d70;">${idx + 1}.</span>
             <input type="time" value="${slot.start}" onchange="updateSlotData('${type}', ${idx}, 'start', this.value)">
             <span>à</span>
             <input type="time" value="${slot.end}" onchange="updateSlotData('${type}', ${idx}, 'end', this.value)">
@@ -83,11 +83,11 @@ function checkSlotValidity() {
         });
         const div = document.getElementById(divId);
         if (total === targetDur) {
-            div.innerHTML = `<span style="color:#27ae60">✅ Total: ${total} min (Parfait)</span>`;
+            div.innerHTML = `<span style="color:#2f6f5e">✅ Total: ${total} min (Parfait)</span>`;
             return true;
         } else {
             const diff = targetDur - total;
-            div.innerHTML = `<span style="color:#e74c3c">⚠️ Total: ${total} min (Écart: ${diff} min)</span>`;
+            div.innerHTML = `<span style="color:#9a4a2e">⚠️ Total: ${total} min (Écart: ${diff} min)</span>`;
             return false;
         }
     };
@@ -114,7 +114,7 @@ window.renderExamTable = function () {
     DB.exams.forEach((e, i) => {
         // Vérifie si "découpé"
         const hasSlots = e.slots && (e.slots.std.length > 1 || e.slots.tt.length > 1);
-        const btnStyle = hasSlots ? "background:#27ae60; color:white;" : "background:#95a5a6; color:white;";
+        const btnStyle = hasSlots ? "background:#2f6f5e; color:white;" : "background:#9aa0a2; color:white;";
         const btnText = hasSlots ? "✅ Découpé" : "✂️ Découper";
 
         b.innerHTML += `
@@ -124,7 +124,7 @@ window.renderExamTable = function () {
             </td>
             <td><input type="date" value="${e.date}" onchange="updateExam(${i},'date',this.value)"></td>
             <td><input type="time" value="${e.time}" onchange="updateExam(${i},'time',this.value)"></td>
-            <td><input type="time" value="${e.timeTT || e.time}" style="background-color:#fef9e7;" onchange="updateExam(${i},'timeTT',this.value)"></td>
+            <td><input type="time" value="${e.timeTT || e.time}" style="background-color:#fbf6ef;" onchange="updateExam(${i},'timeTT',this.value)"></td>
 
             <td><input type="number" value="${e.durStd}" style="width:90px; text-align:center" onchange="updateExam(${i},'durStd',this.value)"></td>
             <td style="color:var(--tt-color)"><input type="number" value="${e.durTT}" style="width:90px; text-align:center" onchange="updateExam(${i},'durTT',this.value)"></td>
@@ -953,7 +953,7 @@ window.renderPlanning = function () {
     const globalNbSurv = DB.config.nbSurv || 1;
 
     if (DB.exams.length === 0 || DB.rooms.length === 0) {
-        container.innerHTML = '<div style="text-align:center; padding:40px; color:#7f8c8d;">Veuillez configurer les Examens et les Salles.</div>';
+        container.innerHTML = '<div style="text-align:center; padding:40px; color:#656d70;">Veuillez configurer les Examens et les Salles.</div>';
         return;
     }
 
@@ -962,7 +962,7 @@ window.renderPlanning = function () {
     DB.exams.forEach((exam, examIdx) => {
         const wrapper = document.createElement('div');
         wrapper.style.marginBottom = "30px";
-        wrapper.innerHTML = `<h3 style="border-left:5px solid var(--secondary); padding-left:10px; margin:20px 0 10px 0;">${exam.name} <span style="font-size:0.8rem; color:#666">(${exam.date})</span></h3>`;
+        wrapper.innerHTML = `<h3 style="border-left:5px solid var(--secondary); padding-left:10px; margin:20px 0 10px 0;">${exam.name} <span style="font-size:0.8rem; color:#656d70">(${exam.date})</span></h3>`;
 
         // Calcul des créneaux
         const slotsStd = window.getComputedSlots(exam, 'std');
@@ -978,7 +978,7 @@ window.renderPlanning = function () {
         const dictationSlot = getDictationSlot(exam);
         if (dictationSlot) {
             const note = document.createElement('div');
-            note.style.cssText = 'margin:0 0 10px 0; padding:8px 12px; border-left:5px solid #8e44ad; background:#f5eef8; color:#4a235a; border-radius:4px; font-weight:bold;';
+            note.style.cssText = 'margin:0 0 10px 0; padding:8px 12px; border-left:5px solid #6b4a72; background:#f1ebf0; color:#4a2f47; border-radius:4px; font-weight:bold;';
             note.innerHTML = `<i class="fas fa-pen-nib"></i> Dictée : les 20 dernières minutes de cette épreuve nécessitent un renfort par salle, avec priorité aux enseignants de français.`;
             wrapper.appendChild(note);
         }
@@ -1016,16 +1016,16 @@ window.renderPlanning = function () {
             // --- NOUVEAU CONTROLEUR PLUS / MOINS ---
             const safeRoomName = room.nom.replace(/'/g, "\\'"); // Protection apostrophe
             const survControlHtml = `
-                <div style="margin-top:5px; display:flex; align-items:center; gap:3px; background:#f0f0f0; padding:2px 4px; border-radius:12px; border:1px solid #ccc; width:fit-content; margin-left:auto; margin-right:auto;">
+                <div style="margin-top:5px; display:flex; align-items:center; gap:3px; background:#f0f0f0; padding:2px 4px; border-radius:12px; border:1px solid #d8d4c8; width:fit-content; margin-left:auto; margin-right:auto;">
                     <button onclick="changeRoomSurvCount('${safeRoomName}', -1)"
                             title="Moins de surveillants"
-                            style="cursor:pointer; border:none; background:#e74c3c; color:white; width:18px; height:18px; border-radius:50%; font-weight:bold; display:flex; align-items:center; justify-content:center; padding:0; font-size:12px;">-</button>
+                            style="cursor:pointer; border:none; background:#9a4a2e; color:white; width:18px; height:18px; border-radius:50%; font-weight:bold; display:flex; align-items:center; justify-content:center; padding:0; font-size:12px;">-</button>
 
-                    <span style="font-weight:bold; font-size:0.8rem; color:#333; min-width:15px; text-align:center;">${room.nbSurv}</span>
+                    <span style="font-weight:bold; font-size:0.8rem; color:#23282a; min-width:15px; text-align:center;">${room.nbSurv}</span>
 
                     <button onclick="changeRoomSurvCount('${safeRoomName}', 1)"
                             title="Plus de surveillants"
-                            style="cursor:pointer; border:none; background:#27ae60; color:white; width:18px; height:18px; border-radius:50%; font-weight:bold; display:flex; align-items:center; justify-content:center; padding:0; font-size:12px;">+</button>
+                            style="cursor:pointer; border:none; background:#2f6f5e; color:white; width:18px; height:18px; border-radius:50%; font-weight:bold; display:flex; align-items:center; justify-content:center; padding:0; font-size:12px;">+</button>
                 </div>`;
 
             let badgesHtml = '';
@@ -1057,7 +1057,7 @@ window.renderPlanning = function () {
                     }
                     if (span > 1) { tdSlot.setAttribute('colspan', span); skipCols = span - 1; }
 
-                    tdSlot.innerHTML = `<span class="surv-time-label" style="background:#e8f8f5; color:#16a085;">⏱️ ${activeSlot.start} - ${activeSlot.end}</span>`;
+                    tdSlot.innerHTML = `<span class="surv-time-label" style="background:#eef3f0; color:#2f6f5e;">⏱️ ${activeSlot.start} - ${activeSlot.end}</span>`;
 
                     const slotIdx = activeSlot.originalIdx !== undefined ? activeSlot.originalIdx : 0;
 
@@ -1094,12 +1094,12 @@ window.renderPlanning = function () {
 
                             if (conflictRoom) {
                                 if (fullName === currentVal) {
-                                    opt.text = `⚠️ ${fullName}`; opt.selected = true; select.style.border = "2px solid #e74c3c"; optsDue.unshift(opt);
+                                    opt.text = `⚠️ ${fullName}`; opt.selected = true; select.style.border = "2px solid #9a4a2e"; optsDue.unshift(opt);
                                 } else {
-                                    opt.text = `${fullName} (Surv. ${conflictRoom})`; opt.disabled = true; opt.style.color = "#ccc"; optsBusy.push(opt);
+                                    opt.text = `${fullName} (Surv. ${conflictRoom})`; opt.disabled = true; opt.style.color = "#d8d4c8"; optsBusy.push(opt);
                                 }
                             } else if (edtStatus.code === 'BUSY_CLASS') {
-                                opt.text = `${fullName} ${edtStatus.label}`; opt.disabled = true; opt.style.color = "#ccc"; optsBusy.push(opt);
+                                opt.text = `${fullName} ${edtStatus.label}`; opt.disabled = true; opt.style.color = "#d8d4c8"; optsBusy.push(opt);
                             } else {
                                 if (edtStatus.code === 'DUE') { opt.text = `🟢 ${fullName} (Dû)`; opt.style.color = "#145a32"; opt.style.fontWeight = "bold"; optsDue.push(opt); }
                                 else { opt.text = `${fullName} ${edtStatus.label}`; optsFree.push(opt); }
@@ -1116,8 +1116,8 @@ window.renderPlanning = function () {
                         tdSlot.appendChild(select);
                     }
                 } else {
-                    tdSlot.style.backgroundColor = "#f9f9f9";
-                    tdSlot.innerHTML = `<div style="color:#eee; font-size:1.5rem; text-align:center;">/</div>`;
+                    tdSlot.style.backgroundColor = "#faf9f6";
+                    tdSlot.innerHTML = `<div style="color:#ece9e0; font-size:1.5rem; text-align:center;">/</div>`;
                 }
                 tr.appendChild(tdSlot);
             });
@@ -1134,8 +1134,8 @@ window.renderPlanning = function () {
 
 function renderDictationSelectorsForExam(exam, examIdx, activeRooms) {
     const box = document.createElement('div');
-    box.style.cssText = 'margin:8px 0 0 0; padding:10px 12px; background:#fbf7ff; border:1px solid #d7bde2; border-left:5px solid #8e44ad; border-radius:6px;';
-    box.innerHTML = `<div style="font-weight:bold; color:#4a235a; margin-bottom:8px;"><i class="fas fa-pen-nib"></i> Renfort Dictée - priorité Français</div>`;
+    box.style.cssText = 'margin:8px 0 0 0; padding:10px 12px; background:#f1ebf0; border:1px solid #ddc9d8; border-left:5px solid #6b4a72; border-radius:6px;';
+    box.innerHTML = `<div style="font-weight:bold; color:#4a2f47; margin-bottom:8px;"><i class="fas fa-pen-nib"></i> Renfort Dictée - priorité Français</div>`;
 
     const grid = document.createElement('div');
     grid.style.cssText = 'display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:8px;';
@@ -1148,7 +1148,7 @@ function renderDictationSelectorsForExam(exam, examIdx, activeRooms) {
         if (DB.planning[key] && DB.planning[key] !== currentVal) DB.planning[key] = currentVal;
 
         const item = document.createElement('label');
-        item.style.cssText = 'display:grid; grid-template-columns:90px 1fr; align-items:center; gap:8px; font-weight:bold; color:#2c3e50;';
+        item.style.cssText = 'display:grid; grid-template-columns:90px 1fr; align-items:center; gap:8px; font-weight:bold; color:#1f3a5c;';
         item.appendChild(document.createTextNode(`${room.nom} (${slot.start}-${slot.end})`));
 
         const select = document.createElement('select');
@@ -1197,8 +1197,8 @@ function renderReserveSelectorsForExam(exam, examIdx) {
     const reserves = ensurePlanningReserve();
     const slot = getExamReserveSlot(exam);
     const box = document.createElement('div');
-    box.style.cssText = 'margin:8px 0 0 0; padding:10px 12px; background:#f4f6f7; border:1px solid #dfe6e9; border-left:5px solid #8e44ad; border-radius:6px; display:grid; grid-template-columns:180px 1fr 1fr; gap:10px; align-items:center;';
-    box.innerHTML = `<div style="font-weight:bold; color:#2c3e50;"><i class="fas fa-user-shield"></i> ${getReserveDisplayLabel()}<br><small style="font-weight:normal; color:#7f8c8d;">${slot.start} - ${slot.end}</small></div>`;
+    box.style.cssText = 'margin:8px 0 0 0; padding:10px 12px; background:#f3f1ea; border:1px solid #dfe6e9; border-left:5px solid #6b4a72; border-radius:6px; display:grid; grid-template-columns:180px 1fr 1fr; gap:10px; align-items:center;';
+    box.innerHTML = `<div style="font-weight:bold; color:#1f3a5c;"><i class="fas fa-user-shield"></i> ${getReserveDisplayLabel()}<br><small style="font-weight:normal; color:#656d70;">${slot.start} - ${slot.end}</small></div>`;
 
     for (let i = 0; i < 2; i++) {
         const key = getReserveKey(examIdx, i);
@@ -1406,7 +1406,7 @@ window.exportTeacherHoursXLSX = function () {
 // --- SOUS-FONCTION 1 : TABLEAU DE SYNTHÈSE ---
 function renderProfSynthesis(container, cleanFn) {
     let html = `
-    <div style="padding:15px; background:#eaf2f8; border-bottom:1px solid #ddd; margin-bottom:15px;">
+    <div style="padding:15px; background:#eef2f0; border-bottom:1px solid #ded9cc; margin-bottom:15px;">
         <small><strong>Note :</strong> Les "Heures Libérées" proviennent du fichier Excel (Zone Verte) importé. Les "Heures Surv." proviennent de votre planning actuel.</small>
     </div>
 
@@ -1449,8 +1449,8 @@ function renderProfSynthesis(container, cleanFn) {
     rows.forEach(r => {
         html += `<tr>
             <td style="text-align:left; font-weight:bold;">${r.name}</td>
-            <td style="background:#ebf5fb;">${r.dueStr}</td>
-            <td style="background:#eafaf1;">${r.doneStr}</td>
+            <td style="background:#eef2f0;">${r.dueStr}</td>
+            <td style="background:#eef3f0;">${r.doneStr}</td>
 	            <td>${r.balHtml}</td>
 	            <td style="text-align:left; font-size:0.8rem;">${r.detailHtml}</td>
         </tr>`;
@@ -1538,7 +1538,7 @@ function renderProfPlanningMatrix(container) {
     <table class="table table-bordered table-sm text-center" style="font-size:0.85rem;">
         <thead class="table-dark">
             <tr>
-                <th style="min-width:150px; position:sticky; left:0; z-index:10; background:#2c3e50;">Professeur</th>
+                <th style="min-width:150px; position:sticky; left:0; z-index:10; background:#1f3a5c;">Professeur</th>
                 ${columns.map(c => `<th>${c.label}</th>`).join('')}
             </tr>
         </thead>
@@ -1548,7 +1548,7 @@ function renderProfPlanningMatrix(container) {
     DB.teachers.sort((a, b) => a.nom.localeCompare(b.nom)).forEach(t => {
         const tName = window.getTeacherPlanningName(t);
 
-        html += `<tr><td style="text-align:left; font-weight:bold; position:sticky; left:0; background:white; z-index:5; border-right:2px solid #ddd;">${tName}</td>`;
+        html += `<tr><td style="text-align:left; font-weight:bold; position:sticky; left:0; background:white; z-index:5; border-right:2px solid #ded9cc;">${tName}</td>`;
 
         columns.forEach(col => {
             // A. SURVEILLANCE (Priorité 1 : Bleu)
@@ -1574,9 +1574,9 @@ function renderProfPlanningMatrix(container) {
             });
 
             if (surveillanceLabel) {
-                html += `<td style="background-color:#3498db; color:white; border:1px solid white;">${surveillanceLabel}</td>`;
+                html += `<td style="background-color:#1f3a5c; color:white; border:1px solid white;">${surveillanceLabel}</td>`;
             } else if (reserveLabel) {
-                html += `<td style="background-color:#8e44ad; color:white; border:1px solid white;">${reserveLabel}</td>`;
+                html += `<td style="background-color:#6b4a72; color:white; border:1px solid white;">${reserveLabel}</td>`;
             } else {
                 // B. COURS MAINTENU (Priorité 2 : Gris Foncé)
                 // On vérifie dans la liste ROUGE importée
@@ -1594,7 +1594,7 @@ function renderProfPlanningMatrix(container) {
                 });
 
                 if (isBusy) {
-                    html += `<td style="background-color:#343a40; color:white; opacity:0.9;">Cours</td>`;
+                    html += `<td style="background-color:#23282a; color:white; opacity:0.9;">Cours</td>`;
                 }
                 else {
                     // C. COURS ANNULÉ (Priorité 3 : Vert)
@@ -1609,10 +1609,10 @@ function renderProfPlanningMatrix(container) {
                     });
 
                     if (isFree) {
-                        html += `<td style="background-color:#27ae60; color:white; cursor:pointer;" title="Cours annulé">Dispo</td>`;
+                        html += `<td style="background-color:#2f6f5e; color:white; cursor:pointer;" title="Cours annulé">Dispo</td>`;
                     } else {
                         // D. RIEN (Blanc)
-                        html += `<td style="background-color:#f8f9fa; color:#eee;">.</td>`;
+                        html += `<td style="background-color:#faf9f6; color:#ece9e0;">.</td>`;
                     }
                 }
             }
@@ -2022,7 +2022,7 @@ function switchPochetteTab(zoneId, element) {
     document.querySelectorAll('.pochette-zone').forEach(el => el.classList.remove('active'));
     // Reset styles par défaut
     document.querySelectorAll('.pochette-zone').forEach(el => {
-        el.style.border = "none"; el.style.background = "#fff"; el.style.color = "#555"; el.style.fontWeight = "normal";
+        el.style.border = "none"; el.style.background = "#fff"; el.style.color = "#4b5254"; el.style.fontWeight = "normal";
         if (el.innerText.includes('P1')) { el.style.background = "#fff"; }
     });
 
@@ -2752,15 +2752,15 @@ function showPlanningSimulationResult(simulation) {
     overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:99999; display:flex; align-items:center; justify-content:center; padding:20px;';
     overlay.innerHTML = `
         <div style="background:white; width:min(620px, 96vw); border-radius:10px; box-shadow:0 15px 40px rgba(0,0,0,0.25); padding:22px;">
-            <h3 style="margin:0 0 8px; color:#2c3e50;">Simulation du planning automatique</h3>
-            <p style="margin:0 0 14px; color:#566573;">Le planning actuel n'a pas été modifié.</p>
+            <h3 style="margin:0 0 8px; color:#1f3a5c;">Simulation du planning automatique</h3>
+            <p style="margin:0 0 14px; color:#656d70;">Le planning actuel n'a pas été modifié.</p>
             <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:10px; margin:14px 0;">
-                <div style="background:#f8f9fa; border-radius:8px; padding:12px;"><b>${stats.assignments}</b><br><span style="font-size:0.85rem; color:#666;">affectations</span></div>
-                <div style="background:#f8f9fa; border-radius:8px; padding:12px;"><b>${stats.teachers}</b><br><span style="font-size:0.85rem; color:#666;">enseignants mobilisés</span></div>
-                <div style="background:#f8f9fa; border-radius:8px; padding:12px;"><b>${stats.reserveCount}</b><br><span style="font-size:0.85rem; color:#666;">réserves</span></div>
-                <div style="background:#f8f9fa; border-radius:8px; padding:12px;"><b>${stats.dictCount}</b><br><span style="font-size:0.85rem; color:#666;">renforts dictée</span></div>
-                <div style="background:#f8f9fa; border-radius:8px; padding:12px;"><b>${stats.minLoad} à ${stats.maxLoad}</b><br><span style="font-size:0.85rem; color:#666;">charges par enseignant</span></div>
-                <div style="background:#f8f9fa; border-radius:8px; padding:12px;"><b>${stats.teacherDays}</b><br><span style="font-size:0.85rem; color:#666;">venues enseignant/jour</span></div>
+                <div style="background:#faf9f6; border-radius:8px; padding:12px;"><b>${stats.assignments}</b><br><span style="font-size:0.85rem; color:#656d70;">affectations</span></div>
+                <div style="background:#faf9f6; border-radius:8px; padding:12px;"><b>${stats.teachers}</b><br><span style="font-size:0.85rem; color:#656d70;">enseignants mobilisés</span></div>
+                <div style="background:#faf9f6; border-radius:8px; padding:12px;"><b>${stats.reserveCount}</b><br><span style="font-size:0.85rem; color:#656d70;">réserves</span></div>
+                <div style="background:#faf9f6; border-radius:8px; padding:12px;"><b>${stats.dictCount}</b><br><span style="font-size:0.85rem; color:#656d70;">renforts dictée</span></div>
+                <div style="background:#faf9f6; border-radius:8px; padding:12px;"><b>${stats.minLoad} à ${stats.maxLoad}</b><br><span style="font-size:0.85rem; color:#656d70;">charges par enseignant</span></div>
+                <div style="background:#faf9f6; border-radius:8px; padding:12px;"><b>${stats.teacherDays}</b><br><span style="font-size:0.85rem; color:#656d70;">venues enseignant/jour</span></div>
             </div>
             <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:18px; flex-wrap:wrap;">
                 <button class="btn btn-secondary" onclick="this.closest('.modal-overlay-custom').remove()">Ignorer</button>
@@ -3012,17 +3012,17 @@ function addSmartLogo(doc, x, y, size) {
 
 // 1. On définit la liste de secours ICI pour être sûr à 100% qu'elle est accessible
 const LABELS_SECOURS = [
-    { code: "TTEMPS", color: "#8e44ad", name: "Tiers-Temps (Auto)" },
+    { code: "TTEMPS", color: "#6b4a72", name: "Tiers-Temps (Auto)" },
     { code: "DNBPRO", color: "#88f10f", name: "DNB Pro" },
     { code: "SEGPA", color: "#0f31f1", name: "SEGPA" },
     { code: "ULIS", color: "#e6f10f", name: "ULIS" },
-    { code: "ORDI", color: "#e67e22", name: "Ordinateur" },
-    { code: "LECT", color: "#27ae60", name: "Assistant Lecteur" },
-    { code: "AESH", color: "#c0392b", name: "Présence AESH" },
-    { code: "DICT", color: "#f1c40f", name: "Dictée Aménagée" },
-    { code: "SCRIPT", color: "#16a085", name: "Scripteur" },
-    { code: "SORT", color: "#95a5a6", name: "Sortie 1ère Heure" },
-    { code: "TPSDECOMP", color: "#2c3e50", name: "Temps Décompté" }
+    { code: "ORDI", color: "#9a7a2e", name: "Ordinateur" },
+    { code: "LECT", color: "#2f6f5e", name: "Assistant Lecteur" },
+    { code: "AESH", color: "#9a4a2e", name: "Présence AESH" },
+    { code: "DICT", color: "#9a7a2e", name: "Dictée Aménagée" },
+    { code: "SCRIPT", color: "#2f6f5e", name: "Scripteur" },
+    { code: "SORT", color: "#9aa0a2", name: "Sortie 1ère Heure" },
+    { code: "TPSDECOMP", color: "#1f3a5c", name: "Temps Décompté" }
 ];
 
 // 2. On ÉCRASE la fonction d'affichage par une version qui se répare toute seule
@@ -3058,10 +3058,10 @@ window.renderLabels = function () {
     let html = '';
     DB.config.labels.forEach(l => {
         html += `
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; background:#f8f9fa; padding:5px; border-radius:4px; border-left: 5px solid ${l.color}">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; background:#faf9f6; padding:5px; border-radius:4px; border-left: 5px solid ${l.color}">
             <div style="flex:1">
                 <strong>${l.code}</strong>
-                <span style="font-size:0.8em; color:#666; margin-left:10px;">${l.name || ''}</span>
+                <span style="font-size:0.8em; color:#656d70; margin-left:10px;">${l.name || ''}</span>
             </div>
             <div>
                 <button class="btn btn-sm btn-warning" onclick="editLabel('${l.code}')" style="font-size:0.7rem; padding:2px 6px;">✏️</button>
@@ -3168,7 +3168,7 @@ window.renderAmenagements = function () {
             // Style Visuel (Actif / Inactif)
             const style = isActive
                 ? `background:${l.color}; color:white; border:1px solid ${l.color}; opacity:1; font-weight:bold;`
-                : `background:white; color:#ccc; border:1px solid #ddd; opacity:0.5;`;
+                : `background:white; color:#d8d4c8; border:1px solid #ded9cc; opacity:0.5;`;
 
             // --- LE CORRECTIF EST ICI ---
             // On a ajouté ", this" dans les parenthèses de toggleStudentLabel
@@ -3181,7 +3181,7 @@ window.renderAmenagements = function () {
         <tr>
             <td style="font-weight:600;">${s.nom} <span style="font-weight:normal; font-size:0.9em">${s.prenom}</span></td>
             <td style="text-align:center; font-size:0.85rem;">${s.classe}</td>
-            <td style="text-align:center; font-size:0.8rem; color:#2980b9;">${s.mef || '-'}</td>
+            <td style="text-align:center; font-size:0.8rem; color:#1f3a5c;">${s.mef || '-'}</td>
             <td>${badges}</td>
         </tr>`;
     });
@@ -3235,8 +3235,8 @@ window.toggleStudentLabel = function (studentId, code, btnElement) {
         } else {
             // Style INACTIF (Fond blanc, Texte gris)
             btnElement.style.background = "white";
-            btnElement.style.color = "#ccc";
-            btnElement.style.border = "1px solid #ddd";
+            btnElement.style.color = "#d8d4c8";
+            btnElement.style.border = "1px solid #ded9cc";
             btnElement.style.opacity = "0.5";
             btnElement.style.fontWeight = "normal";
         }
@@ -3314,7 +3314,7 @@ window.renderExamTable = function () {
     DB.exams.forEach((e, i) => {
         // Logique du bouton "Découpage" (conservée)
         const hasSlots = e.slots && (e.slots.std.length > 1 || e.slots.tt.length > 1);
-        const btnStyle = hasSlots ? "background:#27ae60; color:white;" : "background:#95a5a6; color:white;";
+        const btnStyle = hasSlots ? "background:#2f6f5e; color:white;" : "background:#9aa0a2; color:white;";
         const btnText = hasSlots ? "✅ Découpé" : "✂️ Découper";
 
         // Construction de la ligne
@@ -3323,7 +3323,7 @@ window.renderExamTable = function () {
         <td>
             <div style="display:flex; gap:5px; margin-bottom:4px;">
                 <input type="text" value="${e.name}"
-                       style="font-weight:bold; width:100%; border:1px solid #ccc; padding:4px;"
+                       style="font-weight:bold; width:100%; border:1px solid #d8d4c8; padding:4px;"
                        onchange="updateExam(${i},'name',this.value)">
 
                 <button class="btn btn-danger btn-sm" onclick="removeExam(${i})"
@@ -3334,7 +3334,7 @@ window.renderExamTable = function () {
         </td>
         <td style="vertical-align:top"><input type="date" value="${e.date}" onchange="updateExam(${i},'date',this.value)"></td>
         <td style="vertical-align:top"><input type="time" value="${e.time}" onchange="updateExam(${i},'time',this.value)"></td>
-        <td style="vertical-align:top"><input type="time" value="${e.timeTT || e.time}" style="background-color:#fef9e7;" onchange="updateExam(${i},'timeTT',this.value)"></td>
+        <td style="vertical-align:top"><input type="time" value="${e.timeTT || e.time}" style="background-color:#fbf6ef;" onchange="updateExam(${i},'timeTT',this.value)"></td>
 
         <td style="vertical-align:top"><input type="number" value="${e.durStd}" style="width:70px; text-align:center" onchange="updateExam(${i},'durStd',this.value)"></td>
         <td style="vertical-align:top; color:var(--tt-color)"><input type="number" value="${e.durTT}" style="width:70px; text-align:center" onchange="updateExam(${i},'durTT',this.value)"></td>
@@ -3345,7 +3345,7 @@ window.renderExamTable = function () {
     // Ajout de la ligne "Ajouter une épreuve"
     const addRow = document.createElement('tr');
     addRow.innerHTML = `
-        <td colspan="6" style="text-align:center; background-color:#f8f9fa; padding:10px;">
+        <td colspan="6" style="text-align:center; background-color:#faf9f6; padding:10px;">
             <button class="btn btn-success" onclick="addExam()" style="border-style:dashed;">➕ Ajouter une épreuve</button>
         </td>
     `;

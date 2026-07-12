@@ -30,7 +30,7 @@ window.openSpecialRoomModal = function() {
     document.getElementById('customSpecialRoomContainer').style.display = 'none';
     document.getElementById('customSpecialRoomInput').value = "";
     document.querySelectorAll('#specialRoomModal .tile').forEach(t => {
-        t.style.borderColor = '#edeff0'; t.style.backgroundColor = '#fdfdfd';
+        t.style.borderColor = '#e9e7e1'; t.style.backgroundColor = '#faf9f6';
         t.setAttribute('aria-checked', 'false');
     });
     document.getElementById('specialRoomModal').style.display = 'flex';
@@ -40,11 +40,11 @@ window.selectSpecialRoom = function(name, element) {
     currentSpecialRoomSelection = name;
     document.getElementById('customSpecialRoomContainer').style.display = 'none';
     document.querySelectorAll('#specialRoomModal .tile').forEach(t => {
-        t.style.borderColor = '#edeff0'; t.style.backgroundColor = '#fdfdfd';
+        t.style.borderColor = '#e9e7e1'; t.style.backgroundColor = '#faf9f6';
         t.setAttribute('aria-checked', 'false');
     });
     if(element) {
-        element.style.borderColor = '#3498db'; element.style.backgroundColor = '#f0f7ff';
+        element.style.borderColor = '#1f3a5c'; element.style.backgroundColor = '#eef2f0';
         element.setAttribute('aria-checked', 'true');
     }
 };
@@ -53,12 +53,12 @@ window.toggleCustomSpecialRoom = function() {
     currentSpecialRoomSelection = "CUSTOM";
     document.getElementById('customSpecialRoomContainer').style.display = 'block';
     document.querySelectorAll('#specialRoomModal .tile').forEach(t => {
-        t.style.borderColor = '#edeff0'; t.style.backgroundColor = '#fdfdfd';
+        t.style.borderColor = '#e9e7e1'; t.style.backgroundColor = '#faf9f6';
         t.setAttribute('aria-checked', 'false');
     });
     const customTile = document.getElementById('tileCustomRoom');
     if(customTile) {
-        customTile.style.borderColor = '#3498db'; customTile.style.backgroundColor = '#f0f7ff';
+        customTile.style.borderColor = '#1f3a5c'; customTile.style.backgroundColor = '#eef2f0';
         customTile.setAttribute('aria-checked', 'true');
     }
     document.getElementById('customSpecialRoomInput').focus();

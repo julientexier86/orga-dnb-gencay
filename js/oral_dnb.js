@@ -197,12 +197,12 @@ Object.entries(generalFields).forEach(([id, key]) => {
 
         Object.keys(window.oralConfig.themes).forEach(themeName => {
             const row = document.createElement('div');
-            row.style.cssText = 'display: grid; grid-template-columns: 250px 1fr; gap: 20px; padding: 15px 10px; border-bottom: 1px solid #eee; align-items: start; transition: background 0.2s;';
-            row.onmouseenter = () => row.style.backgroundColor = '#fcfcfc';
+            row.style.cssText = 'display: grid; grid-template-columns: 250px 1fr; gap: 20px; padding: 15px 10px; border-bottom: 1px solid #ece9e0; align-items: start; transition: background 0.2s;';
+            row.onmouseenter = () => row.style.backgroundColor = '#faf9f6';
             row.onmouseleave = () => row.style.backgroundColor = 'transparent';
 
             const colLeft = document.createElement('div');
-            colLeft.style.cssText = 'font-weight: 600; color: #2c3e50; font-size: 0.95em; display: flex; justify-content: space-between; align-items: center;';
+            colLeft.style.cssText = 'font-weight: 600; color: #1f3a5c; font-size: 0.95em; display: flex; justify-content: space-between; align-items: center;';
             colLeft.innerHTML = `<span>${themeName}</span>`;
 
             const officialThemes = ["Parcours Avenir", "Parcours Citoyen", "Parcours PEAC", "Parcours Santé", "Histoire des Arts", "EPI"];
@@ -223,8 +223,8 @@ Object.entries(generalFields).forEach(([id, key]) => {
             const colRight = document.createElement('div');
             colRight.innerHTML = `
                 <div style="display: flex; gap: 8px; margin-bottom: 10px;">
-                    <input type="text" placeholder="Ajouter un sujet/problématique..." style="flex:1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em; box-sizing: border-box;">
-                    <button class="btn-sub" style="background:#2ecc71; color:white; border:none; padding: 8px 15px; border-radius:4px; cursor:pointer; font-size: 0.9em; font-weight: bold;">+ Ajouter</button>
+                    <input type="text" placeholder="Ajouter un sujet/problématique..." style="flex:1; padding: 8px; border: 1px solid #ded9cc; border-radius: 4px; font-size: 0.9em; box-sizing: border-box;">
+                    <button class="btn-sub" style="background:#2f6f5e; color:white; border:none; padding: 8px 15px; border-radius:4px; cursor:pointer; font-size: 0.9em; font-weight: bold;">+ Ajouter</button>
                 </div>
                 <div class="list-sub" style="display: flex; flex-direction: column; gap: 5px;"></div>
             `;
@@ -264,8 +264,8 @@ Object.entries(generalFields).forEach(([id, key]) => {
     function createBadge(text, onDelete, isList = false) {
         const el = document.createElement('div');
         el.style.cssText = isList
-            ? 'display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;'
-            : 'display: inline-flex; align-items: center; background: #e0eaf1; color: #2c3e50; padding: 6px 12px; border-radius: 15px; font-size: 0.85em; font-weight: 500;';
+            ? 'display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 6px 10px; border: 1px solid #ded9cc; border-radius: 4px; font-size: 0.9em;'
+            : 'display: inline-flex; align-items: center; background: #e0eaf1; color: #1f3a5c; padding: 6px 12px; border-radius: 15px; font-size: 0.85em; font-weight: 500;';
 
         const textSpan = document.createElement('span');
         textSpan.textContent = text;
@@ -274,8 +274,8 @@ Object.entries(generalFields).forEach(([id, key]) => {
         delBtn.innerHTML = '×';
         delBtn.setAttribute('aria-label', `Supprimer`);
         delBtn.style.cssText = isList
-            ? 'background: none; border: none; color: #e74c3c; cursor: pointer; font-weight: bold; font-size: 1.5em; padding: 0 5px; line-height: 1;'
-            : 'background: none; border: none; margin-left: 8px; cursor: pointer; font-weight: bold; color: #7f8c8d; font-size: 1.2em; padding: 0; line-height: 1;';
+            ? 'background: none; border: none; color: #9a4a2e; cursor: pointer; font-weight: bold; font-size: 1.5em; padding: 0 5px; line-height: 1;'
+            : 'background: none; border: none; margin-left: 8px; cursor: pointer; font-weight: bold; color: #656d70; font-size: 1.2em; padding: 0; line-height: 1;';
 
         delBtn.addEventListener('click', onDelete);
         el.appendChild(textSpan); el.appendChild(delBtn);
@@ -673,10 +673,10 @@ function renderOralStudentsTable() {
     window.oralConfig.students.forEach(s => {
         if (s.nom.toLowerCase().includes(search) || s.classe.toLowerCase().includes(search)) {
             const tr = document.createElement('tr');
-            tr.style.borderBottom = "1px solid #eee";
+            tr.style.borderBottom = "1px solid #ece9e0";
             tr.style.cursor = "pointer";
 
-            tr.onmouseenter = () => tr.style.backgroundColor = "#f8f9fa";
+            tr.onmouseenter = () => tr.style.backgroundColor = "#faf9f6";
             tr.onmouseleave = () => tr.style.backgroundColor = "transparent";
 
             tr.onclick = (e) => {
@@ -686,15 +686,15 @@ function renderOralStudentsTable() {
             // J'ai ajouté la ligne <td> pour le sexe juste après la classe
             tr.innerHTML = `
                 <td style="padding: 12px;"><b>${s.nom.toUpperCase()}</b> ${s.prenom}</td>
-                <td style="padding: 12px;"><span style="background:#eee; padding:2px 6px; border-radius:4px; font-size:0.85em;">${s.classe}</span></td>
-                <td style="padding: 12px; font-weight: bold; color: #7f8c8d;">${s.sexe || '?'}</td>
+                <td style="padding: 12px;"><span style="background:#ece9e0; padding:2px 6px; border-radius:4px; font-size:0.85em;">${s.classe}</span></td>
+                <td style="padding: 12px; font-weight: bold; color: #656d70;">${s.sexe || '?'}</td>
 				<td style="padding: 12px; text-align:center; font-size: 1.2rem;"><span onclick="event.stopPropagation(); togglePriority('${s.id}')" style="cursor:pointer; filter: ${s.isPriority ? 'none' : 'grayscale(1) opacity(0.2)'};" title="${s.isPriority ? 'Prioritaire' : 'Cliquer pour rendre prioritaire'}">⭐</span></td>
                 <td style="padding: 12px;">${s.langue || '-'}</td>
                 <td style="padding: 12px;">${s.groupId ? '👥 <small>En groupe</small>' : '👤 <small>Individuel</small>'}</td>
                 <td style="padding: 12px;">${s.parcours || '-'}</td>
-                <td style="padding: 12px; font-size: 0.9em; color: #555;">${s.sujet || '-'}</td>
+                <td style="padding: 12px; font-size: 0.9em; color: #4b5254;">${s.sujet || '-'}</td>
                 <td style="padding: 12px;">
-                    <button onclick="openEditModal('${s.id}')" style="background: white; border: 1px solid #3498db; color: #3498db; padding: 5px 10px; border-radius: 4px; cursor:pointer;">Modifier</button>
+                    <button onclick="openEditModal('${s.id}')" style="background: white; border: 1px solid #1f3a5c; color: #1f3a5c; padding: 5px 10px; border-radius: 4px; cursor:pointer;">Modifier</button>
                 </td>
             `;
             body.appendChild(tr);
@@ -770,7 +770,7 @@ function refreshGroupDisplay(student) {
         const members = window.oralConfig.students.filter(s => s.groupId === student.groupId);
         members.forEach(m => {
             const span = document.createElement('span');
-            span.style.cssText = "background: #3498db; color: white; padding: 5px 12px; border-radius: 20px; font-size: 0.85em; display: flex; align-items: center; gap: 8px;";
+            span.style.cssText = "background: #1f3a5c; color: white; padding: 5px 12px; border-radius: 20px; font-size: 0.85em; display: flex; align-items: center; gap: 8px;";
             span.innerHTML = `<span>${m.nom} ${m.prenom} (${m.classe})</span>`;
 
             const delBtn = document.createElement('b');
@@ -782,7 +782,7 @@ function refreshGroupDisplay(student) {
             list.appendChild(span);
         });
     } else {
-        list.innerHTML = '<span style="color:#aaa; font-size:0.9em; padding:5px;">Individuel</span>';
+        list.innerHTML = '<span style="color:#9aa0a2; font-size:0.9em; padding:5px;">Individuel</span>';
     }
 
     const addSelect = document.getElementById('add-to-group-select');
@@ -912,7 +912,7 @@ function openTeacherImportModal() {
             grid-template-columns: 50px 250px 1fr;
             align-items: center;
             padding: 12px 15px;
-            border-bottom: 1px solid #f1f1f1;
+            border-bottom: 1px solid #ece9e0;
             cursor: pointer;
             transition: background 0.1s;
         `;
@@ -932,9 +932,9 @@ function openTeacherImportModal() {
         // Note : J'ai ajouté "p.matiere || p.matieres" pour gérer les deux orthographes selon l'import
         row.innerHTML = `
             <div><input type="checkbox" class="chk-import-prof" value="${p.id}" ${isAlreadyIn ? 'checked' : ''} style="width:18px; height:18px; cursor:pointer;"></div>
-            <div style="font-weight: 600; color: #2c3e50;">${p.nom.toUpperCase()} <span style="font-weight: 400;">${p.prenom}</span></div>
-            <div style="color: #7f8c8d; font-size: 0.9em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${p.matiere || p.matieres || ''}">
-                ${p.matiere || p.matieres || '<i style="color:#ccc">Non renseigné</i>'}
+            <div style="font-weight: 600; color: #1f3a5c;">${p.nom.toUpperCase()} <span style="font-weight: 400;">${p.prenom}</span></div>
+            <div style="color: #656d70; font-size: 0.9em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${p.matiere || p.matieres || ''}">
+                ${p.matiere || p.matieres || '<i style="color:#d8d4c8">Non renseigné</i>'}
             </div>
         `;
         listDiv.appendChild(row);
@@ -1041,7 +1041,7 @@ function renderOralTeachersTable() {
         if (t.nom.toLowerCase().includes(search) || (t.matiere && t.matiere.toLowerCase().includes(search))) {
 
             const tr = document.createElement('tr');
-            tr.style.borderBottom = "1px solid #eee";
+            tr.style.borderBottom = "1px solid #ece9e0";
             // Ligne légèrement colorée si le prof est de réserve
             tr.style.backgroundColor = t.isReserve ? "#fff3e0" : "white";
 
@@ -1058,10 +1058,10 @@ function renderOralTeachersTable() {
             tr.innerHTML = `
                 <td style="padding: 12px; width: 18%;"><b>${t.nom.toUpperCase()}</b> ${t.prenom || ""}</td>
 
-                <td style="padding: 12px; width: 14%; color: #7f8c8d; font-size: 0.85em;">${t.matiere || t.fonction || '-'}</td>
+                <td style="padding: 12px; width: 14%; color: #656d70; font-size: 0.85em;">${t.matiere || t.fonction || '-'}</td>
 
                 <td style="padding: 12px; width: 20%;">
-                    <div style="display: flex; align-items: center; gap: 4px; background: #f8f9fa; padding: 4px; border-radius: 4px; border: 1px solid #dee2e6; width: fit-content;">
+                    <div style="display: flex; align-items: center; gap: 4px; background: #faf9f6; padding: 4px; border-radius: 4px; border: 1px solid #e3dfd3; width: fit-content;">
                         <input type="time" value="${startTime}"
                                onchange="updateJuryTime('${t.id}', 'startTime', this.value)"
                                style="border:none; background:transparent; font-size: 0.85em; width:70px;">
@@ -1076,14 +1076,14 @@ function renderOralTeachersTable() {
                     <input type="checkbox"
                            ${t.isReserve ? 'checked' : ''}
                            onchange="updateTeacherReserve('${t.id}', this.checked)"
-                           style="width: 18px; height: 18px; cursor: pointer; accent-color: #e67e22;"
+                           style="width: 18px; height: 18px; cursor: pointer; accent-color: #9a7a2e;"
                            title="Définir comme professeur de réserve">
                 </td>
 
                 <td style="padding: 12px; width: 12%;">
                     <select onchange="updateTeacherField('${t.id}', 'langue', this.value)"
                             ${t.isReserve ? 'disabled' : ''}
-                            style="width: 100%; padding: 5px; border: 1px solid #eee; border-radius: 4px; font-size: 0.9em; ${t.isReserve ? 'background:#f2f2f2;' : ''}">
+                            style="width: 100%; padding: 5px; border: 1px solid #ece9e0; border-radius: 4px; font-size: 0.9em; ${t.isReserve ? 'background:#ece9e0;' : ''}">
                         ${langOptions}
                     </select>
                 </td>
@@ -1092,7 +1092,7 @@ function renderOralTeachersTable() {
                     <input type="text" value="${t.jury || ''}"
                            onchange="updateTeacherField('${t.id}', 'jury', this.value)"
                            ${t.isReserve ? 'disabled' : ''}
-                           style="width: 50px; padding: 5px; border: 1px solid #3498db; border-radius: 4px; font-weight: bold; text-align: center; color: #2980b9; ${t.isReserve ? 'background:#f2f2f2; border-color:#ccc;' : ''}">
+                           style="width: 50px; padding: 5px; border: 1px solid #1f3a5c; border-radius: 4px; font-weight: bold; text-align: center; color: #1f3a5c; ${t.isReserve ? 'background:#ece9e0; border-color:#d8d4c8;' : ''}">
                 </td>
 
                 <td style="padding: 12px; width: 8%;">
@@ -1100,12 +1100,12 @@ function renderOralTeachersTable() {
                            placeholder="Salle"
                            onchange="updateTeacherField('${t.id}', 'salle', this.value)"
                            ${t.isReserve ? 'disabled' : ''}
-                           style="width: 70px; padding: 5px; border: 1px solid #eee; border-radius: 4px; ${t.isReserve ? 'background:#f2f2f2;' : ''}">
+                           style="width: 70px; padding: 5px; border: 1px solid #ece9e0; border-radius: 4px; ${t.isReserve ? 'background:#ece9e0;' : ''}">
                 </td>
 
                 <td style="padding: 12px; width: 12%; text-align: center;">
                     <button onclick="deleteOralTeacher('${t.id}')"
-                            style="background: #fadbd8; color: #e74c3c; border: none; padding: 5px 10px; border-radius: 4px; cursor:pointer; font-size: 0.8em;">
+                            style="background: #fadbd8; color: #9a4a2e; border: none; padding: 5px 10px; border-radius: 4px; cursor:pointer; font-size: 0.8em;">
                         Supprimer
                     </button>
                 </td>
@@ -1308,7 +1308,7 @@ window.renderThemes = function() {
     // Vérification de la présence des données
     if (!DB.oral || !Array.isArray(DB.oral.themes) || DB.oral.themes.length === 0) {
         // Notification RGAA polie pour indiquer qu'il n'y a pas de données
-        container.innerHTML = `<p aria-live="polite" style="color: #7f8c8d; font-style: italic; padding: 10px;">Aucun parcours configuré pour le moment.</p>`;
+        container.innerHTML = `<p aria-live="polite" style="color: #656d70; font-style: italic; padding: 10px;">Aucun parcours configuré pour le moment.</p>`;
         return;
     }
 
@@ -1316,11 +1316,11 @@ window.renderThemes = function() {
     DB.oral.themes.forEach((theme, themeIndex) => {
         // Création de la ligne conteneur pour ce parcours
         const row = document.createElement('div');
-        row.style.cssText = "display: grid; grid-template-columns: 250px 1fr; gap: 20px; padding: 15px 10px; border-bottom: 1px solid #eee; align-items: start;";
+        row.style.cssText = "display: grid; grid-template-columns: 250px 1fr; gap: 20px; padding: 15px 10px; border-bottom: 1px solid #ece9e0; align-items: start;";
 
         // Colonne 1 : Le nom du parcours
         const colParcours = document.createElement('div');
-        colParcours.style.cssText = "font-weight: bold; color: #2c3e50;";
+        colParcours.style.cssText = "font-weight: bold; color: #1f3a5c;";
         colParcours.textContent = theme.name || "Parcours sans nom";
 
         // Colonne 2 : La liste des sujets associés
@@ -1331,14 +1331,14 @@ window.renderThemes = function() {
         if (Array.isArray(theme.subjects) && theme.subjects.length > 0) {
             theme.subjects.forEach((subject, subIndex) => {
                 const badge = document.createElement('span');
-                badge.style.cssText = "background: #ebf5fb; color: #2980b9; padding: 5px 10px; border-radius: 15px; border: 1px solid #bce8f1; font-size: 0.9em;";
+                badge.style.cssText = "background: #eef2f0; color: #1f3a5c; padding: 5px 10px; border-radius: 15px; border: 1px solid #ded9cc; font-size: 0.9em;";
                 badge.textContent = subject;
                 // RGAA : On indique vocalement qu'il s'agit d'un sujet appartenant à un parcours
                 badge.setAttribute('aria-label', `Sujet : ${subject}`);
                 colSujets.appendChild(badge);
             });
         } else {
-            colSujets.innerHTML = `<span style="color: #95a5a6; font-size: 0.9em;">Aucun sujet associé</span>`;
+            colSujets.innerHTML = `<span style="color: #9aa0a2; font-size: 0.9em;">Aucun sujet associé</span>`;
         }
 
         // Assemblage
@@ -1800,7 +1800,7 @@ function renderOralVisualDistribution() {
 
     // Sécurité : Si aucune répartition n'est générée
     if (Object.keys(dist).length === 0) {
-        container.innerHTML = `<p style="color:#7f8c8d; text-align:center; width:100%; padding:20px;">Aucune répartition pour le moment. Utilisez l'assistant de génération.</p>`;
+        container.innerHTML = `<p style="color:#656d70; text-align:center; width:100%; padding:20px;">Aucune répartition pour le moment. Utilisez l'assistant de génération.</p>`;
         return;
     }
 
@@ -1821,21 +1821,21 @@ function renderOralVisualDistribution() {
 
         // --- 2. Injection de l'en-tête (Design à 2 lignes) ---
         card.innerHTML = `
-            <div class="dd-room-header" style="background:#2c3e50; color:white; padding:12px; border-radius:8px 8px 0 0;">
+            <div class="dd-room-header" style="background:#1f3a5c; color:white; padding:12px; border-radius:8px 8px 0 0;">
                 <div style="display:flex; justify-content:center; align-items:center; gap:12px; margin-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px;">
                     <span style="font-weight:bold; font-size:1.1rem;">🧑‍⚖️ JURY ${juryName}</span>
-                    <span style="font-size:0.75rem; background:#3498db; color:white; padding:2px 10px; border-radius:12px; white-space:nowrap;">
+                    <span style="font-size:0.75rem; background:#1f3a5c; color:white; padding:2px 10px; border-radius:12px; white-space:nowrap;">
                         ${slots.length} passages
                     </span>
                 </div>
 
                 <div style="text-align:center;">
-                    <div style="font-size:0.85rem; font-weight:500; color:#ecf0f1; line-height:1.2; word-break:break-word;">
+                    <div style="font-size:0.85rem; font-weight:500; color:#f0eee8; line-height:1.2; word-break:break-word;">
                         ${teacherNames || 'Aucun prof assigné'}
                     </div>
                     ${juryLangs ? `
                         <div style="margin-top:5px;">
-                            <span style="font-size:0.7rem; background:#e67e22; color:white; padding:1px 6px; border-radius:4px; text-transform:uppercase; font-weight:bold;">
+                            <span style="font-size:0.7rem; background:#9a7a2e; color:white; padding:1px 6px; border-radius:4px; text-transform:uppercase; font-weight:bold;">
                                 🗣️ ${juryLangs}
                             </span>
                         </div>
@@ -1847,7 +1847,7 @@ function renderOralVisualDistribution() {
         let body = document.createElement('div');
         body.className = 'dd-room-body';
         body.style.padding = "10px";
-        body.style.backgroundColor = "#f8f9fa";
+        body.style.backgroundColor = "#faf9f6";
 
         // Helper pour créer les séparateurs bleus (Drag & Drop)
         const createSeparator = (insertIndex) => {
@@ -1858,7 +1858,7 @@ function renderOralVisualDistribution() {
             sep.style.cssText = "height: 8px; margin: -4px 0; border-radius: 4px; transition: all 0.2s ease; position: relative; z-index:10;";
             sep.addEventListener('dragover', (e) => {
                 e.preventDefault();
-                e.currentTarget.style.backgroundColor = "#3498db";
+                e.currentTarget.style.backgroundColor = "#1f3a5c";
                 e.currentTarget.style.height = "25px";
             });
             sep.addEventListener('dragleave', (e) => {
@@ -1878,7 +1878,7 @@ function renderOralVisualDistribution() {
             const pauseHere = pauses.find(p => p.end === slot.startTime);
             if (pauseHere) {
                 let pDiv = document.createElement('div');
-                pDiv.style.cssText = "background:#f1f2f6; border:2px dashed #bdc3c7; border-radius:5px; padding:8px; margin-bottom:8px; display:flex; align-items:center; color:#7f8c8d; font-size:0.85rem;";
+                pDiv.style.cssText = "background:#f3f1ea; border:2px dashed #c9c4b6; border-radius:5px; padding:8px; margin-bottom:8px; display:flex; align-items:center; color:#656d70; font-size:0.85rem;";
                 pDiv.innerHTML = `
                     <span style="font-size:1.2rem; margin-right:10px;">☕</span>
                     <div style="flex-grow:1;">
@@ -1891,12 +1891,12 @@ function renderOralVisualDistribution() {
 
             // --- 4. RENDU DU CRÉNEAU ÉLÈVE (SLOT) ---
             let slotDiv = document.createElement('div');
-            slotDiv.style.cssText = "border: 1px solid #ccc; border-radius: 5px; margin-bottom: 8px; background: white; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05);";
+            slotDiv.style.cssText = "border: 1px solid #d8d4c8; border-radius: 5px; margin-bottom: 8px; background: white; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05);";
 
             slotDiv.innerHTML = `
-                <div style="background:#e9ecef; padding:5px; font-size:0.85rem; font-weight:bold; border-bottom:1px solid #ccc; display:flex; justify-content:space-between;">
+                <div style="background:#ece9e0; padding:5px; font-size:0.85rem; font-weight:bold; border-bottom:1px solid #d8d4c8; display:flex; justify-content:space-between;">
                     <span>⏱️ ${slot.startTime} - ${slot.endTime}</span>
-                    <span style="color:#7f8c8d; font-size:0.75rem;">${slot.type === 'group' ? '👥 Groupe' : '👤 Indiv.'}</span>
+                    <span style="color:#656d70; font-size:0.75rem;">${slot.type === 'group' ? '👥 Groupe' : '👤 Indiv.'}</span>
                 </div>
             `;
 
@@ -1906,7 +1906,7 @@ function renderOralVisualDistribution() {
             dropZone.setAttribute('data-jury', juryName);
             dropZone.setAttribute('data-slot-index', index);
 
-            dropZone.addEventListener('dragover', (e) => { e.preventDefault(); e.currentTarget.style.backgroundColor = "#d4edda"; });
+            dropZone.addEventListener('dragover', (e) => { e.preventDefault(); e.currentTarget.style.backgroundColor = "#dcebe4"; });
             dropZone.addEventListener('dragleave', (e) => { e.currentTarget.style.backgroundColor = "transparent"; });
             dropZone.addEventListener('drop', handleOralDrop);
 
@@ -1916,8 +1916,8 @@ function renderOralVisualDistribution() {
                 stDiv.className = 'dd-student';
                 stDiv.draggable = true;
 
-                const langueBadge = student.langue ? `<span style="font-size:0.65rem; background:#95a5a6; color:white; padding:1px 4px; border-radius:3px; margin-left:4px;">${student.langue}</span>` : "";
-                const priorityStar = student.isPriority ? `<span style="color: #f1c40f; margin-right: 5px; font-size:1.1rem;" title="Élève Prioritaire">⭐</span>` : "";
+                const langueBadge = student.langue ? `<span style="font-size:0.65rem; background:#9aa0a2; color:white; padding:1px 4px; border-radius:3px; margin-left:4px;">${student.langue}</span>` : "";
+                const priorityStar = student.isPriority ? `<span style="color: #9a7a2e; margin-right: 5px; font-size:1.1rem;" title="Élève Prioritaire">⭐</span>` : "";
 
                 stDiv.innerHTML = `
                     <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
@@ -1928,7 +1928,7 @@ function renderOralVisualDistribution() {
                             </span>
                             ${langueBadge}
                         </div>
-                        <button style="background:transparent; border:none; cursor:pointer; color:#e74c3c; font-weight:bold; padding:0 5px;"
+                        <button style="background:transparent; border:none; cursor:pointer; color:#9a4a2e; font-weight:bold; padding:0 5px;"
                                 onclick="removeStudentFromSlot('${juryName}', ${index}, ${studentIndex})"
                                 title="Retirer l'élève">❌</button>
                     </div>
@@ -2057,7 +2057,7 @@ function handleOralDrop(e) {
 // --- LOGIQUE DRAG & DROP ORAL ---
 function handleOralDragOver(e) {
     e.preventDefault();
-    e.currentTarget.style.backgroundColor = "#d4edda"; // Feedback visuel vert
+    e.currentTarget.style.backgroundColor = "#dcebe4"; // Feedback visuel vert
 }
 
 function handleOralDragLeave(e) {
@@ -2231,7 +2231,7 @@ function renderOralGrilleConfig() {
             critere.niveaux.forEach((pts, lvlIndex) => {
                 niveauxHtml += `
                     <div style="display:flex; flex-direction:column; align-items:center; flex:1;">
-                        <label style="font-size:0.75rem; color:#7f8c8d;">Niv. ${lvlIndex + 1} (pts)</label>
+                        <label style="font-size:0.75rem; color:#656d70;">Niv. ${lvlIndex + 1} (pts)</label>
                         <input type="number" step="0.5" min="0" value="${pts}" class="form-control" style="width:100%; text-align:center;"
                                onchange="updateOralCriterionLvl('${typeId}', ${index}, ${lvlIndex}, this.value)">
                     </div>
@@ -2240,7 +2240,7 @@ function renderOralGrilleConfig() {
 
             // Carte du critère
             const critDiv = document.createElement("div");
-            critDiv.style.cssText = "background:white; border:1px solid #ddd; padding:15px; border-radius:6px; box-shadow:0 2px 4px rgba(0,0,0,0.02);";
+            critDiv.style.cssText = "background:white; border:1px solid #ded9cc; padding:15px; border-radius:6px; box-shadow:0 2px 4px rgba(0,0,0,0.02);";
             critDiv.innerHTML = `
                 <div style="display:flex; justify-content:space-between; gap:15px; margin-bottom:10px;">
                     <div style="flex:2;">
@@ -2258,7 +2258,7 @@ function renderOralGrilleConfig() {
                         <button class="btn btn-danger btn-sm" onclick="removeOralCriterion('${typeId}', ${index})" title="Supprimer ce critère" aria-label="Supprimer le critère ${critere.label || ''}">🗑️</button>
                     </div>
                 </div>
-                <div style="display:flex; gap:10px; background:#f9f9f9; padding:10px; border-radius:4px; border:1px dashed #ccc;">
+                <div style="display:flex; gap:10px; background:#faf9f6; padding:10px; border-radius:4px; border:1px dashed #d8d4c8;">
                     ${niveauxHtml}
                 </div>
             `;
@@ -2271,12 +2271,12 @@ function renderOralGrilleConfig() {
             totalSpan.innerText = `${currentTotal} / ${typeData.maxPoints} pts`;
 
             if (currentTotal === typeData.maxPoints) {
-                totalSpan.style.backgroundColor = "#d4edda";
-                totalSpan.style.color = "#155724";
+                totalSpan.style.backgroundColor = "#dcebe4";
+                totalSpan.style.color = "#1f4a3a";
                 totalSpan.style.border = "1px solid #c3e6cb";
             } else {
-                totalSpan.style.backgroundColor = "#f8d7da";
-                totalSpan.style.color = "#721c24";
+                totalSpan.style.backgroundColor = "#f3ddd3";
+                totalSpan.style.color = "#5c2e1c";
                 totalSpan.style.border = "1px solid #f5c6cb";
             }
         }
@@ -3448,7 +3448,7 @@ function initOralNotesMenu() {
     const dist = DB.oralConfig.distribution;
 
     if (!dist || Object.keys(dist).length === 0) {
-        listCont.innerHTML = '<p style="font-size: 0.8rem; color: #e74c3c; text-align: center;">Aucune répartition générée.</p>';
+        listCont.innerHTML = '<p style="font-size: 0.8rem; color: #9a4a2e; text-align: center;">Aucune répartition générée.</p>';
         return;
     }
 
@@ -3462,9 +3462,9 @@ function initOralNotesMenu() {
 
         html += `
             <div class="jury-item" onclick="selectJuryForNotes('${juryId}')"
-                 style="padding: 12px; margin-bottom: 8px; background: white; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; transition: 0.2s;">
+                 style="padding: 12px; margin-bottom: 8px; background: white; border: 1px solid #ded9cc; border-radius: 6px; cursor: pointer; transition: 0.2s;">
                 <div style="font-weight: bold; color: var(--secondary);">Jury ${juryId}</div>
-                <div style="font-size: 0.75rem; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${profs || 'Membres non définis'}</div>
+                <div style="font-size: 0.75rem; color: #656d70; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${profs || 'Membres non définis'}</div>
             </div>
         `;
     });
@@ -3479,14 +3479,14 @@ function initOralNotesMenu() {
 window.selectJuryForNotes = function(juryId) {
     // UI : Mise en évidence visuelle du jury actif
     document.querySelectorAll('.jury-item').forEach(el => {
-        el.style.borderColor = "#ddd";
+        el.style.borderColor = "#ded9cc";
         el.style.backgroundColor = "white";
     });
 
     const currentEl = event.currentTarget;
     if (currentEl) {
         currentEl.style.borderColor = "var(--secondary)";
-        currentEl.style.backgroundColor = "#ebf5fb";
+        currentEl.style.backgroundColor = "#eef2f0";
     }
 
     const container = document.getElementById('oral-notes-table-container');
@@ -3516,17 +3516,17 @@ window.selectJuryForNotes = function(juryId) {
             const savedNote = (studentData && studentData.noteOral !== undefined) ? studentData.noteOral : "";
 
             // On n'affiche l'heure que pour la première ligne du groupe pour plus de lisibilité
-            const timeDisplay = (sIdx === 0) ? `<b>${p.startTime}</b>` : `<span style="color:#ccc">${p.startTime}</span>`;
+            const timeDisplay = (sIdx === 0) ? `<b>${p.startTime}</b>` : `<span style="color:#d8d4c8">${p.startTime}</span>`;
 
             // Style visuel pour marquer le regroupement (bordure plus épaisse entre les créneaux)
-            const rowStyle = (sIdx === 0 && rowCounter > 0) ? "border-top: 2px solid #34495e;" : "";
+            const rowStyle = (sIdx === 0 && rowCounter > 0) ? "border-top: 2px solid #23282a;" : "";
 
             tbody.innerHTML += `
                 <tr style="${rowStyle}">
                     <td style="font-family: monospace; vertical-align: middle;">${timeDisplay}</td>
                     <td style="vertical-align: middle;">
                         <b>${student.nom.toUpperCase()}</b> ${student.prenom}
-                        <br><small style="color:#7f8c8d;">${student.parcours || student.sujet || 'Individuel'}</small>
+                        <br><small style="color:#656d70;">${student.parcours || student.sujet || 'Individuel'}</small>
                     </td>
                     <td style="text-align: center; vertical-align: middle;">
                         <input type="number" step="0.5" min="0" max="20"
@@ -3628,9 +3628,9 @@ window.renderOralResultsTable = function() {
                 <td><b>${s.nom.toUpperCase()}</b> ${s.prenom}</td>
                 <td>${s.classe || "N/C"}</td>
                 <td><small>${s.parcours || "Général"}</small></td>
-                <td style="text-align: center;"><span class="badge" style="background:#eee; color:#333;">${juryId}</span></td>
+                <td style="text-align: center;"><span class="badge" style="background:#ece9e0; color:#23282a;">${juryId}</span></td>
                 <td style="text-align: center; font-weight: bold; color: var(--primary);" id="note-cell-${s.id}">
-                    ${note !== "" ? note : '<span style="color:#ccc; font-weight:normal;">-</span>'}
+                    ${note !== "" ? note : '<span style="color:#d8d4c8; font-weight:normal;">-</span>'}
                 </td>
             </tr>
         `;
@@ -3842,13 +3842,13 @@ window.renderOralHarmonisation = function() {
 
     cohortBanner.style.marginBottom = "15px"; // Moins de marge sous la bannière
     cohortBanner.innerHTML = `
-        <article aria-label="Statistiques de la cohorte" style="background: linear-gradient(135deg, #2c3e50, #34495e); color: white; padding: 12px 20px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <article aria-label="Statistiques de la cohorte" style="background: linear-gradient(135deg, #1f3a5c, #23282a); color: white; padding: 12px 20px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
             <div>
-                <h4 style="margin: 0 0 2px 0; font-size: 1rem; color: #ecf0f1;">COHORTE GLOBALE (${cohortStats.count} candidats)</h4>
-                <div style="font-size: 0.8rem; color: #bdc3c7;">Min : <b>${cohortStats.min}</b> | Max : <b>${cohortStats.max}</b></div>
+                <h4 style="margin: 0 0 2px 0; font-size: 1rem; color: #f0eee8;">COHORTE GLOBALE (${cohortStats.count} candidats)</h4>
+                <div style="font-size: 0.8rem; color: #c9c4b6;">Min : <b>${cohortStats.min}</b> | Max : <b>${cohortStats.max}</b></div>
             </div>
             <div style="text-align: right; font-size: 1.8rem; font-weight: bold; line-height: 1;">
-                ${cohortStats.avg} <span style="font-size: 0.9rem; color: #bdc3c7; font-weight: normal;">/ 20</span>
+                ${cohortStats.avg} <span style="font-size: 0.9rem; color: #c9c4b6; font-weight: normal;">/ 20</span>
             </div>
         </article>
     `;
@@ -3867,22 +3867,22 @@ window.renderOralHarmonisation = function() {
         const stats = calculateGradeStats(juryStudents);
 
         let alertBadge = "";
-        let cardBorder = "border: 1px solid #e0e0e0;";
+        let cardBorder = "border: 1px solid #e3dfd3;";
         let avgColor = "var(--primary)";
 
         // Analyse de l'écart (Miniaturisation des badges)
         if (cohortStats.avg !== "-" && stats.avg !== "-") {
             const diff = parseFloat(stats.avg) - parseFloat(cohortStats.avg);
             if (diff >= 1.5) {
-                alertBadge = `<span title="Sur-notation potentielle" aria-label="Sur-noté de ${diff.toFixed(2)}" style="background: #e8f8f5; color: #27ae60; padding: 2px 6px; border-radius: 8px; font-size: 0.7rem; font-weight: bold;">+${diff.toFixed(2)}</span>`;
-                cardBorder = "border: 2px solid #27ae60;";
-                avgColor = "#27ae60";
+                alertBadge = `<span title="Sur-notation potentielle" aria-label="Sur-noté de ${diff.toFixed(2)}" style="background: #eef3f0; color: #2f6f5e; padding: 2px 6px; border-radius: 8px; font-size: 0.7rem; font-weight: bold;">+${diff.toFixed(2)}</span>`;
+                cardBorder = "border: 2px solid #2f6f5e;";
+                avgColor = "#2f6f5e";
             } else if (diff <= -1.5) {
-                alertBadge = `<span title="Sous-notation potentielle" aria-label="Sous-noté de ${diff.toFixed(2)}" style="background: #fdedec; color: #e74c3c; padding: 2px 6px; border-radius: 8px; font-size: 0.7rem; font-weight: bold;">${diff.toFixed(2)}</span>`;
-                cardBorder = "border: 2px solid #e74c3c;";
-                avgColor = "#e74c3c";
+                alertBadge = `<span title="Sous-notation potentielle" aria-label="Sous-noté de ${diff.toFixed(2)}" style="background: #fbf3ef; color: #9a4a2e; padding: 2px 6px; border-radius: 8px; font-size: 0.7rem; font-weight: bold;">${diff.toFixed(2)}</span>`;
+                cardBorder = "border: 2px solid #9a4a2e;";
+                avgColor = "#9a4a2e";
             } else {
-                alertBadge = `<span title="Notation dans la norme" aria-label="Dans la norme" style="background: #f8f9fa; color: #7f8c8d; padding: 2px 6px; border-radius: 8px; font-size: 0.7rem;">≈</span>`;
+                alertBadge = `<span title="Notation dans la norme" aria-label="Dans la norme" style="background: #faf9f6; color: #656d70; padding: 2px 6px; border-radius: 8px; font-size: 0.7rem;">≈</span>`;
             }
         }
 
@@ -3890,7 +3890,7 @@ window.renderOralHarmonisation = function() {
             <article aria-label="Jury ${juryId}" style="background: white; border-radius: 8px; padding: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.04); ${cardBorder} display: flex; flex-direction: column;">
 
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <h4 style="margin: 0; font-size: 0.95rem; color: var(--secondary);">Jury ${juryId} <span style="font-size: 0.8rem; color: #7f8c8d; font-weight: normal;">(${stats.count})</span></h4>
+                    <h4 style="margin: 0; font-size: 0.95rem; color: var(--secondary);">Jury ${juryId} <span style="font-size: 0.8rem; color: #656d70; font-weight: normal;">(${stats.count})</span></h4>
                     <div>${alertBadge}</div>
                 </div>
 
@@ -3900,7 +3900,7 @@ window.renderOralHarmonisation = function() {
                     </div>
                 </div>
 
-                <div style="border-top: 1px solid #eee; padding-top: 8px; display: flex; justify-content: space-between; font-size: 0.75rem; color: #34495e;">
+                <div style="border-top: 1px solid #ece9e0; padding-top: 8px; display: flex; justify-content: space-between; font-size: 0.75rem; color: #23282a;">
                     <div>Min: <b>${stats.min}</b></div>
                     <div>Max: <b>${stats.max}</b></div>
                 </div>
@@ -3908,7 +3908,7 @@ window.renderOralHarmonisation = function() {
         `;
     });
 
-    cardsGrid.innerHTML = cardsHtml || "<p style='grid-column: 1 / -1; text-align: center; color: #7f8c8d;'>Aucune donnée de jury disponible.</p>";
+    cardsGrid.innerHTML = cardsHtml || "<p style='grid-column: 1 / -1; text-align: center; color: #656d70;'>Aucune donnée de jury disponible.</p>";
 };
 
 /**
@@ -3926,7 +3926,7 @@ window.renderOralDataViz = function() {
     const cohortStats = calculateGradeStats(students);
 
     if (cohortStats.count === 0) {
-        kpiBanner.innerHTML = "<p style='color: #7f8c8d;'>Aucune donnée saisie pour le moment.</p>";
+        kpiBanner.innerHTML = "<p style='color: #656d70;'>Aucune donnée saisie pour le moment.</p>";
         demoCharts.innerHTML = ""; parcoursCharts.innerHTML = "";
         return;
     }
@@ -3934,16 +3934,16 @@ window.renderOralDataViz = function() {
     // --- 1. BANDEAU KPI (Indicateurs clés) ---
     kpiBanner.innerHTML = `
         <div style="flex: 1; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border-left: 5px solid var(--primary);">
-            <div style="font-size: 0.9rem; color: #7f8c8d; text-transform: uppercase;">Moyenne Globale</div>
-            <div style="font-size: 2.5rem; font-weight: bold; color: var(--primary);">${cohortStats.avg} <span style="font-size: 1.2rem; color: #bdc3c7;">/ 20</span></div>
+            <div style="font-size: 0.9rem; color: #656d70; text-transform: uppercase;">Moyenne Globale</div>
+            <div style="font-size: 2.5rem; font-weight: bold; color: var(--primary);">${cohortStats.avg} <span style="font-size: 1.2rem; color: #c9c4b6;">/ 20</span></div>
         </div>
-        <div style="flex: 1; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border-left: 5px solid #27ae60;">
-            <div style="font-size: 0.9rem; color: #7f8c8d; text-transform: uppercase;">Note Maximale</div>
-            <div style="font-size: 2.5rem; font-weight: bold; color: #27ae60;">${cohortStats.max}</div>
+        <div style="flex: 1; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border-left: 5px solid #2f6f5e;">
+            <div style="font-size: 0.9rem; color: #656d70; text-transform: uppercase;">Note Maximale</div>
+            <div style="font-size: 2.5rem; font-weight: bold; color: #2f6f5e;">${cohortStats.max}</div>
         </div>
-        <div style="flex: 1; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border-left: 5px solid #e74c3c;">
-            <div style="font-size: 0.9rem; color: #7f8c8d; text-transform: uppercase;">Note Minimale</div>
-            <div style="font-size: 2.5rem; font-weight: bold; color: #e74c3c;">${cohortStats.min}</div>
+        <div style="flex: 1; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border-left: 5px solid #9a4a2e;">
+            <div style="font-size: 0.9rem; color: #656d70; text-transform: uppercase;">Note Minimale</div>
+            <div style="font-size: 2.5rem; font-weight: bold; color: #9a4a2e;">${cohortStats.min}</div>
         </div>
     `;
 
@@ -3956,23 +3956,23 @@ window.renderOralDataViz = function() {
 
         // Colorimétrie sémantique douce
         let barColor = "var(--primary)";
-        if (avgNum >= 15) barColor = "#27ae60"; // Vert (Très bien)
-        else if (avgNum < 10) barColor = "#e74c3c"; // Rouge (Fragile)
+        if (avgNum >= 15) barColor = "#2f6f5e"; // Vert (Très bien)
+        else if (avgNum < 10) barColor = "#9a4a2e"; // Rouge (Fragile)
 
         return `
             <div style="margin-bottom: 20px;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                    <span style="font-weight: bold; color: #2c3e50;">${label} <span style="font-size: 0.8rem; color: #7f8c8d; font-weight: normal;">(${stats.count})</span></span>
+                    <span style="font-weight: bold; color: #1f3a5c;">${label} <span style="font-size: 0.8rem; color: #656d70; font-weight: normal;">(${stats.count})</span></span>
                     <span style="font-weight: bold; color: ${barColor};">${stats.avg}</span>
                 </div>
                 <!-- Jauge accessible RGAA -->
                 <div style="display: flex; align-items: center; gap: 15px;">
-                    <div style="flex: 1; background: #ecf0f1; border-radius: 6px; height: 14px; overflow: hidden;"
+                    <div style="flex: 1; background: #f0eee8; border-radius: 6px; height: 14px; overflow: hidden;"
                          role="progressbar" aria-valuenow="${avgNum}" aria-valuemin="0" aria-valuemax="20" aria-label="Moyenne ${label}">
                         <div style="width: ${percentage}%; background: ${barColor}; height: 100%; border-radius: 6px; transition: width 0.8s ease-out;"></div>
                     </div>
-                    <div style="font-size: 0.75rem; color: #95a5a6; width: 85px; text-align: right; font-family: monospace;">
-                        ${stats.min} <span style="color:#ccc;">↔</span> ${stats.max}
+                    <div style="font-size: 0.75rem; color: #9aa0a2; width: 85px; text-align: right; font-family: monospace;">
+                        ${stats.min} <span style="color:#d8d4c8;">↔</span> ${stats.max}
                     </div>
                 </div>
             </div>
@@ -3987,7 +3987,7 @@ window.renderOralDataViz = function() {
     htmlDemo += createVisualBar("👧 Filles", calculateGradeStats(girls));
     htmlDemo += createVisualBar("👦 Garçons", calculateGradeStats(boys));
 
-    htmlDemo += `<div style="height: 1px; background: #eee; margin: 25px 0;"></div>`; // Séparateur
+    htmlDemo += `<div style="height: 1px; background: #ece9e0; margin: 25px 0;"></div>`; // Séparateur
 
     const classes = [...new Set(students.map(s => s.classe || "N/C"))].sort();
     classes.forEach(c => {
@@ -4003,7 +4003,7 @@ window.renderOralDataViz = function() {
         const parcoursStudents = students.filter(s => (s.parcours || "Général") === p);
         htmlParcours += createVisualBar(`📍 ${p}`, calculateGradeStats(parcoursStudents));
     });
-    parcoursCharts.innerHTML = htmlParcours || "<p style='color: #7f8c8d;'>Aucun parcours défini.</p>";
+    parcoursCharts.innerHTML = htmlParcours || "<p style='color: #656d70;'>Aucun parcours défini.</p>";
 };
 
 /**
@@ -5302,7 +5302,7 @@ window.findStudentInOralDistrib = function(searchTerm) {
         document.querySelectorAll('#oral-visual-distrib .dd-student').forEach(el => {
             el.style.boxShadow = 'none';
             el.style.transform = 'none';
-            el.style.border = '1px solid #eee';
+            el.style.border = '1px solid #ece9e0';
         });
         return;
     }
@@ -5317,10 +5317,10 @@ window.findStudentInOralDistrib = function(searchTerm) {
                     const fullName = `${s.nom} ${s.prenom}`.toLowerCase();
                     if (fullName.includes(search)) {
                         foundHtml += `
-                        <div style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed #bce8f1;">
+                        <div style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed #ded9cc;">
                             🎓 <strong>${s.nom.toUpperCase()} ${s.prenom}</strong>
-                            est assigné(e) au jury N° <strong style="color: #2980b9;">${juryName}</strong>
-                            <span style="color:#e67e22; font-weight:bold; margin-left: 10px;">
+                            est assigné(e) au jury N° <strong style="color: #1f3a5c;">${juryName}</strong>
+                            <span style="color:#9a7a2e; font-weight:bold; margin-left: 10px;">
                                 ⏱️ Passage : ${passage.startTime} - ${passage.endTime}
                             </span>
                         </div>`;
@@ -5333,13 +5333,13 @@ window.findStudentInOralDistrib = function(searchTerm) {
     // Affichage du bandeau selon le résultat
     if (foundHtml === "") {
         resultBox.style.display = 'block';
-        resultBox.style.background = '#fdedec';
-        resultBox.style.borderColor = '#e74c3c';
+        resultBox.style.background = '#fbf3ef';
+        resultBox.style.borderColor = '#9a4a2e';
         resultBox.innerHTML = `❌ Aucun élève trouvé avec "<b>${searchTerm}</b>" dans la répartition actuelle.`;
     } else {
         resultBox.style.display = 'block';
         resultBox.style.background = '#e8f4fd';
-        resultBox.style.borderColor = '#3498db';
+        resultBox.style.borderColor = '#1f3a5c';
         resultBox.innerHTML = `✅ <strong>Résultat(s) de la recherche :</strong><br><br>${foundHtml}`;
     }
 
@@ -5347,7 +5347,7 @@ window.findStudentInOralDistrib = function(searchTerm) {
     document.querySelectorAll('#oral-visual-distrib .dd-student').forEach(el => {
         // On vérifie le texte de l'élément visuel
         if (el.innerText.toLowerCase().includes(search)) {
-            el.style.boxShadow = '0 0 0 3px #f1c40f'; // Épaisse bordure jaune
+            el.style.boxShadow = '0 0 0 3px #9a7a2e'; // Épaisse bordure jaune
             el.style.border = 'none';
             el.style.transform = 'scale(1.03)'; // Léger zoom
             el.style.transition = 'all 0.2s ease';
@@ -5357,7 +5357,7 @@ window.findStudentInOralDistrib = function(searchTerm) {
         } else {
             // On remet normal ceux qui ne correspondent pas
             el.style.boxShadow = 'none';
-            el.style.border = '1px solid #eee';
+            el.style.border = '1px solid #ece9e0';
             el.style.transform = 'none';
         }
     });

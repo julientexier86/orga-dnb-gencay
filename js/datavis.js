@@ -163,12 +163,12 @@ function getEmptyMentionCounts() {
 
 function getMentionDisplayData(mentions) {
     return [
-        { label: 'Félicitations du jury', short: 'Félicitations', count: mentions['Félicitations du jury'] || 0, color: '#2c3e50', pdfColor: [44, 62, 80] },
-        { label: 'Très Bien', short: 'TB', count: mentions['Très Bien'] || 0, color: '#8e44ad', pdfColor: [142, 68, 173] },
-        { label: 'Bien', short: 'B', count: mentions['Bien'] || 0, color: '#3498db', pdfColor: [52, 152, 219] },
-        { label: 'Assez Bien', short: 'AB', count: mentions['Assez Bien'] || 0, color: '#f39c12', pdfColor: [243, 156, 18] },
-        { label: 'Admis', short: 'Admis', count: mentions['Admis'] || 0, color: '#27ae60', pdfColor: [39, 174, 96] },
-        { label: 'Refusé', short: 'Refusé', count: mentions['Refusé'] || 0, color: '#e74c3c', pdfColor: [231, 76, 60] }
+        { label: 'Félicitations du jury', short: 'Félicitations', count: mentions['Félicitations du jury'] || 0, color: '#1f3a5c', pdfColor: [44, 62, 80] },
+        { label: 'Très Bien', short: 'TB', count: mentions['Très Bien'] || 0, color: '#6b4a72', pdfColor: [142, 68, 173] },
+        { label: 'Bien', short: 'B', count: mentions['Bien'] || 0, color: '#1f3a5c', pdfColor: [52, 152, 219] },
+        { label: 'Assez Bien', short: 'AB', count: mentions['Assez Bien'] || 0, color: '#9a7a2e', pdfColor: [243, 156, 18] },
+        { label: 'Admis', short: 'Admis', count: mentions['Admis'] || 0, color: '#2f6f5e', pdfColor: [39, 174, 96] },
+        { label: 'Refusé', short: 'Refusé', count: mentions['Refusé'] || 0, color: '#9a4a2e', pdfColor: [231, 76, 60] }
     ];
 }
 
@@ -492,23 +492,23 @@ function buildMentionsHtml(students) {
     const pct = (n) => total > 0 ? (n / total * 100).toFixed(1) : '0';
     const data = getMentionDisplayData(mentions);
 
-    let html = `<div style="margin-bottom:25px; padding:20px; background:#f8f9fa; border-radius:12px; border:1px solid #eee;">
-        <h4 style="margin:0 0 15px 0; color:#2c3e50;">🏅 Répartition des Mentions (${total} élèves)</h4>
+    let html = `<div style="margin-bottom:25px; padding:20px; background:#faf9f6; border-radius:12px; border:1px solid #ece9e0;">
+        <h4 style="margin:0 0 15px 0; color:#1f3a5c;">🏅 Répartition des Mentions (${total} élèves)</h4>
         <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center;">`;
 
     data.forEach(d => {
         const isRefuse = d.label === 'Refusé';
-        const borderStyle = isRefuse ? 'border:2px solid #e74c3c;' : 'border:1px solid #eee;';
-        const bgStyle = isRefuse ? 'background:#fff5f5;' : 'background:white;';
+        const borderStyle = isRefuse ? 'border:2px solid #9a4a2e;' : 'border:1px solid #ece9e0;';
+        const bgStyle = isRefuse ? 'background:#fbf3ef;' : 'background:white;';
         html += `<div style="flex:1; min-width:120px; padding:15px; border-radius:10px; text-align:center; ${borderStyle} ${bgStyle}">
             <div style="font-size:2rem; font-weight:bold; color:${d.color};">${pct(d.count)}%</div>
             <div style="font-size:0.85rem; font-weight:bold; color:${d.color};">${d.label}</div>
-            <div style="font-size:0.8rem; color:${isRefuse ? '#e74c3c' : '#999'}; font-weight:${isRefuse ? 'bold' : 'normal'};">${d.count} élève${d.count > 1 ? 's' : ''}</div>
+            <div style="font-size:0.8rem; color:${isRefuse ? '#9a4a2e' : '#9aa0a2'}; font-weight:${isRefuse ? 'bold' : 'normal'};">${d.count} élève${d.count > 1 ? 's' : ''}</div>
         </div>`;
     });
 
     // Barre de progression
-    html += `</div><div style="margin-top:15px; height:24px; border-radius:12px; overflow:hidden; display:flex; background:#eee;">`;
+    html += `</div><div style="margin-top:15px; height:24px; border-radius:12px; overflow:hidden; display:flex; background:#ece9e0;">`;
     data.forEach(d => {
         const w = total > 0 ? (d.count / total * 100) : 0;
         if (w > 0) html += `<div style="width:${w}%; background:${d.color}; display:flex; align-items:center; justify-content:center; color:white; font-size:0.7rem; font-weight:bold;">${w >= 5 ? pct(d.count) + '%' : ''}</div>`;
@@ -584,7 +584,7 @@ function renderDatavisStats() {
         const container = document.getElementById('res-datavis')?.querySelector('.card');
         if (container) {
             container.innerHTML = `${buildResultsWorkspaceNav(workspace)}<h3>Tableau de Bord Statistiques</h3>
-                <p style="color:#7f8c8d;">Aucune donnée disponible pour ${getDatavisSourceLabel()}.</p>
+                <p style="color:#656d70;">Aucune donnée disponible pour ${getDatavisSourceLabel()}.</p>
                 <button class="btn btn-secondary" onclick="DB.config.datavisSource='blank'; renderDatavisStats();">Voir DNB blanc</button>
                 <button class="btn btn-primary" onclick="DB.config.datavisSource='official'; renderDatavisStats();" style="margin-left:8px;">Voir DNB officiel</button>`;
         }
@@ -612,7 +612,7 @@ function renderDatavisStats() {
                     </div>
                 </div>
                 <div style="display:${workspace === 'annual' ? 'none' : 'flex'}; gap:8px; align-items:center; flex-wrap:wrap;">
-                    <select id="datavisSourceSelect" onchange="DB.config.datavisSource=this.value; if(typeof autoSave==='function') autoSave(); renderDatavisStats();" style="padding:8px; border:1px solid #ccc; border-radius:6px; font-weight:bold;">
+                    <select id="datavisSourceSelect" onchange="DB.config.datavisSource=this.value; if(typeof autoSave==='function') autoSave(); renderDatavisStats();" style="padding:8px; border:1px solid #d8d4c8; border-radius:6px; font-weight:bold;">
                         <option value="blank" ${getDatavisSource() === 'blank' ? 'selected' : ''}>DNB blanc</option>
                         <option value="official" ${getDatavisSource() === 'official' ? 'selected' : ''}>DNB officiel</option>
                     </select>
@@ -625,7 +625,7 @@ function renderDatavisStats() {
                     <button class="btn btn-primary" onclick="exportOfficialComparisonXLSX()" style="${hasOfficial ? '' : 'display:none;'}">🔁 Excel comparaison</button>
                 </div>
             </div>
-            <div style="margin:-8px 0 18px; padding:10px 12px; background:#f8f9fa; border:1px solid #e5e7eb; border-radius:8px; color:#34495e;">
+            <div style="margin:-8px 0 18px; padding:10px 12px; background:#faf9f6; border:1px solid #e3dfd3; border-radius:8px; color:#23282a;">
                 Jeu de données affiché : <strong>${getDatavisSourceLabel()}</strong> · ${dataStudents.length} élève(s)
                 ${hasOfficial ? ` · Résultats officiels importés : ${(DB.officialResults || []).length}` : ''}
             </div>
@@ -671,14 +671,14 @@ function renderDatavisStats() {
         const { mentions: cMentions, total: cTotal } = calculateMentions(classStudents);
         if (cTotal === 0) return;
         const pct = (n) => cTotal > 0 ? (n / cTotal * 100).toFixed(1) : '0';
-        viewChartsHtml += `<div style="margin-bottom:15px; padding:12px 18px; background:#f8f9fa; border-radius:10px; border:1px solid #eee;">
+        viewChartsHtml += `<div style="margin-bottom:15px; padding:12px 18px; background:#faf9f6; border-radius:10px; border:1px solid #ece9e0;">
             <b>${cls}</b> — ${cTotal} élèves :
-            <span style="color:#2c3e50; font-weight:bold;">Félicitations ${pct(cMentions['Félicitations du jury'])}%</span> ·
-            <span style="color:#8e44ad;">TB ${pct(cMentions['Très Bien'])}%</span> ·
-            <span style="color:#3498db;">B ${pct(cMentions['Bien'])}%</span> ·
-            <span style="color:#f39c12;">AB ${pct(cMentions['Assez Bien'])}%</span> ·
-            <span style="color:#27ae60;">Admis ${pct(cMentions['Admis'])}%</span> ·
-            <span style="color:#e74c3c; font-weight:bold;">Refusé ${cMentions['Refusé']} (${pct(cMentions['Refusé'])}%)</span>
+            <span style="color:#1f3a5c; font-weight:bold;">Félicitations ${pct(cMentions['Félicitations du jury'])}%</span> ·
+            <span style="color:#6b4a72;">TB ${pct(cMentions['Très Bien'])}%</span> ·
+            <span style="color:#1f3a5c;">B ${pct(cMentions['Bien'])}%</span> ·
+            <span style="color:#9a7a2e;">AB ${pct(cMentions['Assez Bien'])}%</span> ·
+            <span style="color:#2f6f5e;">Admis ${pct(cMentions['Admis'])}%</span> ·
+            <span style="color:#9a4a2e; font-weight:bold;">Refusé ${cMentions['Refusé']} (${pct(cMentions['Refusé'])}%)</span>
         </div>`;
     });
 
@@ -703,12 +703,12 @@ function renderDatavisStats() {
                     <thead>
                         <tr>
                             <th rowspan="2">Groupe</th>
-                            <th colspan="5" style="text-align:center; background:#e8f6f3;">Total Points / Moyenne</th>
-                            <th colspan="5" style="text-align:center; background:#fef9e7;">Français</th>
-                            <th colspan="5" style="text-align:center; background:#fef9e7;">Maths</th>
-                            <th colspan="5" style="text-align:center; background:#fef9e7;">Hist-Géo</th>
-                            <th colspan="5" style="text-align:center; background:#fef9e7;">Sciences</th>
-                            <th colspan="5" style="text-align:center; background:#f5eef8;">Oral</th>
+                            <th colspan="5" style="text-align:center; background:#eef3f0;">Total Points / Moyenne</th>
+                            <th colspan="5" style="text-align:center; background:#fbf6ef;">Français</th>
+                            <th colspan="5" style="text-align:center; background:#fbf6ef;">Maths</th>
+                            <th colspan="5" style="text-align:center; background:#fbf6ef;">Hist-Géo</th>
+                            <th colspan="5" style="text-align:center; background:#fbf6ef;">Sciences</th>
+                            <th colspan="5" style="text-align:center; background:#f1ebf0;">Oral</th>
                         </tr>
                         <tr style="font-size:0.8rem">
                             <th>Min</th><th>Moy</th><th>Max</th><th>Med</th><th>Ec-T</th>
@@ -732,12 +732,12 @@ function renderDatavisStats() {
         viewTableHtml += `
             <tr>
                 <td class="row-header" style="font-weight:bold;">${g.name}</td>
-                <td>${stats.total.min}</td><td style="font-weight:bold">${stats.total.moy}</td><td>${stats.total.max}</td><td>${stats.total.med}</td><td style="color:#777">${stats.total.ecart}</td>
-                <td>${stats.fr.min}</td><td style="font-weight:bold">${stats.fr.moy}</td><td>${stats.fr.max}</td><td>${stats.fr.med}</td><td style="color:#777">${stats.fr.ecart}</td>
-                <td>${stats.math.min}</td><td style="font-weight:bold">${stats.math.moy}</td><td>${stats.math.max}</td><td>${stats.math.med}</td><td style="color:#777">${stats.math.ecart}</td>
-                <td>${stats.hg.min}</td><td style="font-weight:bold">${stats.hg.moy}</td><td>${stats.hg.max}</td><td>${stats.hg.med}</td><td style="color:#777">${stats.hg.ecart}</td>
-                <td>${stats.sci.min}</td><td style="font-weight:bold">${stats.sci.moy}</td><td>${stats.sci.max}</td><td>${stats.sci.med}</td><td style="color:#777">${stats.sci.ecart}</td>
-                <td>${stats.oral.min}</td><td style="font-weight:bold">${stats.oral.moy}</td><td>${stats.oral.max}</td><td>${stats.oral.med}</td><td style="color:#777">${stats.oral.ecart}</td>
+                <td>${stats.total.min}</td><td style="font-weight:bold">${stats.total.moy}</td><td>${stats.total.max}</td><td>${stats.total.med}</td><td style="color:#656d70">${stats.total.ecart}</td>
+                <td>${stats.fr.min}</td><td style="font-weight:bold">${stats.fr.moy}</td><td>${stats.fr.max}</td><td>${stats.fr.med}</td><td style="color:#656d70">${stats.fr.ecart}</td>
+                <td>${stats.math.min}</td><td style="font-weight:bold">${stats.math.moy}</td><td>${stats.math.max}</td><td>${stats.math.med}</td><td style="color:#656d70">${stats.math.ecart}</td>
+                <td>${stats.hg.min}</td><td style="font-weight:bold">${stats.hg.moy}</td><td>${stats.hg.max}</td><td>${stats.hg.med}</td><td style="color:#656d70">${stats.hg.ecart}</td>
+                <td>${stats.sci.min}</td><td style="font-weight:bold">${stats.sci.moy}</td><td>${stats.sci.max}</td><td>${stats.sci.med}</td><td style="color:#656d70">${stats.sci.ecart}</td>
+                <td>${stats.oral.min}</td><td style="font-weight:bold">${stats.oral.moy}</td><td>${stats.oral.max}</td><td>${stats.oral.med}</td><td style="color:#656d70">${stats.oral.ecart}</td>
             </tr>`;
     });
     viewTableHtml += `</tbody></table></div>`;
@@ -745,18 +745,18 @@ function renderDatavisStats() {
     // --- Tableau des mentions par groupe ---
     viewTableHtml += `
         <div style="margin-top:30px;">
-            <h4 style="color:#2c3e50; margin-bottom:15px;">🏅 Répartition des Mentions par Groupe</h4>
+            <h4 style="color:#1f3a5c; margin-bottom:15px;">🏅 Répartition des Mentions par Groupe</h4>
             <div style="overflow-x:auto;">
                 <table class="table-striped">
                     <thead>
                         <tr>
                             <th>Groupe</th>
-                            <th style="text-align:center; background:#2c3e50; color:white;">Félicitations</th>
-                            <th style="text-align:center; background:#8e44ad; color:white;">Très Bien</th>
-                            <th style="text-align:center; background:#3498db; color:white;">Bien</th>
-                            <th style="text-align:center; background:#f39c12; color:white;">Assez Bien</th>
-                            <th style="text-align:center; background:#27ae60; color:white;">Admis</th>
-                            <th style="text-align:center; background:#e74c3c; color:white;">Refusé</th>
+                            <th style="text-align:center; background:#1f3a5c; color:white;">Félicitations</th>
+                            <th style="text-align:center; background:#6b4a72; color:white;">Très Bien</th>
+                            <th style="text-align:center; background:#1f3a5c; color:white;">Bien</th>
+                            <th style="text-align:center; background:#9a7a2e; color:white;">Assez Bien</th>
+                            <th style="text-align:center; background:#2f6f5e; color:white;">Admis</th>
+                            <th style="text-align:center; background:#9a4a2e; color:white;">Refusé</th>
                         </tr>
                     </thead>
                     <tbody>`;
@@ -766,8 +766,8 @@ function renderDatavisStats() {
         const { mentions: gMentions, total: gTotal } = calculateMentions(groupStudents);
         const pct = (n) => gTotal > 0 ? (n / gTotal * 100).toFixed(1) : '0';
         const mentionCell = (n, isRefuse) => {
-            const style = isRefuse ? 'color:#e74c3c; font-weight:bold;' : '';
-            return `<td style="text-align:center; ${style}">${n} <span style="font-size:0.8rem; color:${isRefuse ? '#e74c3c' : '#999'};">(${pct(n)}%)</span></td>`;
+            const style = isRefuse ? 'color:#9a4a2e; font-weight:bold;' : '';
+            return `<td style="text-align:center; ${style}">${n} <span style="font-size:0.8rem; color:${isRefuse ? '#9a4a2e' : '#9aa0a2'};">(${pct(n)}%)</span></td>`;
         };
         viewTableHtml += `
             <tr>
@@ -805,7 +805,7 @@ function buildOfficialComparisonHtml() {
     const rows = getComparisonRows();
     if ((DB.officialResults || []).length === 0) {
         return `<div id="view-comparison" class="datavis-view">
-            <p style="color:#7f8c8d;">Importez les résultats officiels pour activer la comparaison.</p>
+            <p style="color:#656d70;">Importez les résultats officiels pour activer la comparaison.</p>
         </div>`;
     }
     const comparable = rows.filter(row => row.blankAvg !== null && row.officialAvg !== null);
@@ -822,10 +822,10 @@ function buildOfficialComparisonHtml() {
         <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin-bottom:18px;">
             <div class="stat-card"><h4>Élèves comparables</h4><div class="stat-footer">${comparable.length}</div></div>
             <div class="stat-card"><h4>Écart moyen</h4><div class="stat-footer">${formatDelta(avgDelta)} pt</div></div>
-            <div class="stat-card"><h4>Progressions</h4><div class="stat-footer" style="color:#27ae60;">${positive}</div></div>
-            <div class="stat-card"><h4>Baisses</h4><div class="stat-footer" style="color:#c0392b;">${negative}</div></div>
+            <div class="stat-card"><h4>Progressions</h4><div class="stat-footer" style="color:#2f6f5e;">${positive}</div></div>
+            <div class="stat-card"><h4>Baisses</h4><div class="stat-footer" style="color:#9a4a2e;">${negative}</div></div>
         </div>
-        <div style="color:#7f8c8d; margin-bottom:10px;">
+        <div style="color:#656d70; margin-bottom:10px;">
             Stables : ${stable}. Non rapprochés : ${officialOnly} officiel(s) uniquement, ${blankOnly} DNB blanc uniquement.
             Les écarts sont calculés sur la moyenne finale /20.
         </div>
@@ -844,7 +844,7 @@ function buildOfficialComparisonHtml() {
                 </thead>
                 <tbody>
                     ${sortComparisonRows(rows).map(row => {
-                        const color = row.diff === null ? '#7f8c8d' : row.diff >= 0 ? '#27ae60' : '#c0392b';
+                        const color = row.diff === null ? '#656d70' : row.diff >= 0 ? '#2f6f5e' : '#9a4a2e';
                         return `<tr>
                             <td><strong>${escapeHTML(getComparisonDisplayName(row, 'nom'))}</strong> ${escapeHTML(getComparisonDisplayName(row, 'prenom'))}</td>
                             <td>${escapeHTML(getComparisonDisplayName(row, 'classe'))}</td>
@@ -1672,7 +1672,7 @@ window.addEventListener('load', function () {
         if (backup) {
             let btn = document.createElement('button');
             btn.innerHTML = "⚠️ <strong>Une sauvegarde existe</strong> : Restaurer la session ?";
-            btn.style.cssText = "position:fixed; top:10px; left:50%; transform:translateX(-50%); background:#e74c3c; color:white; padding:12px 25px; border:none; border-radius:50px; z-index:10000; cursor:pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-size:1rem; animation: slideDown 0.5s;";
+            btn.style.cssText = "position:fixed; top:10px; left:50%; transform:translateX(-50%); background:#9a4a2e; color:white; padding:12px 25px; border:none; border-radius:50px; z-index:10000; cursor:pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-size:1rem; animation: slideDown 0.5s;";
 
             btn.onclick = function () {
                 showConfirm("Attention : Cela va écraser les données actuelles par la sauvegarde automatique. Continuer ?", () => {

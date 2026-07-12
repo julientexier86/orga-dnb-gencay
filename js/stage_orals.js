@@ -110,7 +110,7 @@ function renderJuriesList() {
 
         let div = document.createElement('div');
         div.className = "jury-card";
-        div.innerHTML = `<strong>${j.name}</strong><br><small>${roomName}</small><br><span style="font-size:0.8rem; color:#555;">${membersNames}</span>`;
+        div.innerHTML = `<strong>${j.name}</strong><br><small>${roomName}</small><br><span style="font-size:0.8rem; color:#4b5254;">${membersNames}</span>`;
         div.style.cursor = "pointer";
         div.onclick = () => loadJuryDetail(idx);
         list.appendChild(div);
@@ -730,7 +730,7 @@ window.printStageSignSheets = function () {
 function switchPochetteJuryTab(zoneId, element) {
     document.querySelectorAll('.pochette-jury-zone').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.pochette-jury-zone').forEach(el => {
-        el.style.border = "none"; el.style.background = "#fff"; el.style.color = "#555"; el.style.fontWeight = "normal";
+        el.style.border = "none"; el.style.background = "#fff"; el.style.color = "#4b5254"; el.style.fontWeight = "normal";
         if (el.innerText.includes('P1')) { el.style.background = "#fff"; }
     });
 

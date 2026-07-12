@@ -270,7 +270,7 @@ function renderDashboard() {
 
     const status = getDashboardStatus();
     const m = status.metrics;
-    const readinessColor = status.readyErrors > 0 ? '#e74c3c' : status.readyWarnings > 0 ? '#f39c12' : '#27ae60';
+    const readinessColor = status.readyErrors > 0 ? '#9a4a2e' : status.readyWarnings > 0 ? '#9a7a2e' : '#2f6f5e';
     const readinessText = status.readyErrors > 0
         ? 'À corriger avant impression'
         : status.readyWarnings > 0
@@ -292,10 +292,10 @@ function renderDashboard() {
     ];
 
     kpis.innerHTML = cards.map(([label, value, hint]) => `
-        <div class="card" style="margin:0; padding:16px; border-left:5px solid ${value === status.issues.length && status.readyErrors > 0 ? '#e74c3c' : '#3498db'};">
-            <div style="font-size:0.78rem; color:#7f8c8d; text-transform:uppercase; font-weight:bold;">${escapeHTML(label)}</div>
-            <div style="font-size:2rem; font-weight:bold; color:#2c3e50; line-height:1.2;">${escapeHTML(value)}</div>
-            <div style="font-size:0.82rem; color:#7f8c8d;">${escapeHTML(hint)}</div>
+        <div class="card" style="margin:0; padding:16px; border-left:5px solid ${value === status.issues.length && status.readyErrors > 0 ? '#9a4a2e' : '#1f3a5c'};">
+            <div style="font-size:0.78rem; color:#656d70; text-transform:uppercase; font-weight:bold;">${escapeHTML(label)}</div>
+            <div style="font-size:2rem; font-weight:bold; color:#1f3a5c; line-height:1.2;">${escapeHTML(value)}</div>
+            <div style="font-size:0.82rem; color:#656d70;">${escapeHTML(hint)}</div>
         </div>
     `).join('');
 
@@ -304,17 +304,17 @@ function renderDashboard() {
         workflow.innerHTML = `
             <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); gap:12px;">
                 ${steps.map((step, idx) => {
-                    const color = step.done ? '#27ae60' : step.warning ? '#f39c12' : '#95a5a6';
-                    const bg = step.done ? '#eafaf1' : step.warning ? '#fef9e7' : '#f8f9fa';
+                    const color = step.done ? '#2f6f5e' : step.warning ? '#9a7a2e' : '#9aa0a2';
+                    const bg = step.done ? '#eef3f0' : step.warning ? '#fbf6ef' : '#faf9f6';
                     const icon = step.done ? 'fa-check-circle' : step.warning ? 'fa-triangle-exclamation' : 'fa-circle';
                     return `
                         <div style="border:1px solid ${color}; background:${bg}; border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:8px; min-height:132px;">
                             <div style="display:flex; gap:9px; align-items:center;">
                                 <i class="fas ${icon}" style="color:${color};"></i>
-                                <div style="font-size:0.78rem; color:#7f8c8d; font-weight:bold;">Étape ${idx + 1}</div>
+                                <div style="font-size:0.78rem; color:#656d70; font-weight:bold;">Étape ${idx + 1}</div>
                             </div>
-                            <div style="font-weight:bold; color:#2c3e50;">${escapeHTML(step.label)}</div>
-                            <div style="font-size:0.86rem; color:#566573; flex:1;">${escapeHTML(step.detail)}</div>
+                            <div style="font-weight:bold; color:#1f3a5c;">${escapeHTML(step.label)}</div>
+                            <div style="font-size:0.86rem; color:#656d70; flex:1;">${escapeHTML(step.detail)}</div>
                             <button class="btn btn-secondary" style="align-self:flex-start; padding:6px 10px; font-size:0.8rem;" onclick="${step.target === 'dashboard' ? 'openExamFinalPack()' : `goDashboardTarget('${step.target}')`}">${step.target === 'dashboard' ? 'Pack final' : 'Ouvrir'}</button>
                         </div>
                     `;
@@ -324,10 +324,10 @@ function renderDashboard() {
     }
 
     readiness.innerHTML = `
-        <div style="border:1px solid ${readinessColor}; background:${status.readyErrors > 0 ? '#fdedec' : status.readyWarnings > 0 ? '#fef9e7' : '#eafaf1'}; border-radius:8px; padding:14px 16px; display:flex; justify-content:space-between; gap:15px; align-items:center; flex-wrap:wrap;">
+        <div style="border:1px solid ${readinessColor}; background:${status.readyErrors > 0 ? '#fbf3ef' : status.readyWarnings > 0 ? '#fbf6ef' : '#eef3f0'}; border-radius:8px; padding:14px 16px; display:flex; justify-content:space-between; gap:15px; align-items:center; flex-wrap:wrap;">
             <div>
                 <div style="font-weight:bold; color:${readinessColor}; font-size:1.05rem;">${escapeHTML(readinessText)}</div>
-                <div style="color:#566573; font-size:0.9rem;">${status.issues.length === 0 ? 'Aucune anomalie détectée sur les contrôles principaux.' : 'Traitez les points ci-dessous avant de générer le pack final.'}</div>
+                <div style="color:#656d70; font-size:0.9rem;">${status.issues.length === 0 ? 'Aucune anomalie détectée sur les contrôles principaux.' : 'Traitez les points ci-dessous avant de générer le pack final.'}</div>
             </div>
             <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
                 <button class="btn btn-primary" onclick="openExamFinalPack()"><i class="fas fa-box-open"></i> Pack final</button>
@@ -338,17 +338,17 @@ function renderDashboard() {
     `;
 
     if (status.issues.length === 0) {
-        issuesContainer.innerHTML = '<div style="padding:18px; text-align:center; color:#27ae60; font-weight:bold;">Tout est cohérent sur les contrôles principaux.</div>';
+        issuesContainer.innerHTML = '<div style="padding:18px; text-align:center; color:#2f6f5e; font-weight:bold;">Tout est cohérent sur les contrôles principaux.</div>';
     } else {
         issuesContainer.innerHTML = status.issues.map(issue => {
-            const color = issue.severity === 'error' ? '#e74c3c' : '#f39c12';
+            const color = issue.severity === 'error' ? '#9a4a2e' : '#9a7a2e';
             const icon = issue.severity === 'error' ? 'fa-circle-exclamation' : 'fa-triangle-exclamation';
             return `
-                <div style="display:grid; grid-template-columns:28px 1fr auto; gap:10px; align-items:start; padding:12px 0; border-bottom:1px solid #ecf0f1;">
+                <div style="display:grid; grid-template-columns:28px 1fr auto; gap:10px; align-items:start; padding:12px 0; border-bottom:1px solid #f0eee8;">
                     <i class="fas ${icon}" style="color:${color}; margin-top:3px;"></i>
                     <div>
-                        <div style="font-weight:bold; color:#2c3e50;">${escapeHTML(issue.title)}</div>
-                        <div style="font-size:0.88rem; color:#7f8c8d;">${escapeHTML(issue.detail)}</div>
+                        <div style="font-weight:bold; color:#1f3a5c;">${escapeHTML(issue.title)}</div>
+                        <div style="font-size:0.88rem; color:#656d70;">${escapeHTML(issue.detail)}</div>
                     </div>
                     <button class="btn btn-secondary" style="font-size:0.78rem; padding:6px 10px; white-space:nowrap;" onclick="goDashboardTarget('${escapeHTML(issue.target)}')">${escapeHTML(issue.action)}</button>
                 </div>
@@ -365,7 +365,7 @@ function dashboardSearch(query) {
     if (!container) return;
     const q = (query || '').toLowerCase().trim();
     if (!q) {
-        container.innerHTML = '<div style="color:#95a5a6; padding:10px;">Saisissez au moins quelques lettres pour chercher.</div>';
+        container.innerHTML = '<div style="color:#9aa0a2; padding:10px;">Saisissez au moins quelques lettres pour chercher.</div>';
         return;
     }
 
@@ -411,16 +411,16 @@ function dashboardSearch(query) {
     });
 
     if (results.length === 0) {
-        container.innerHTML = '<div style="color:#95a5a6; padding:10px;">Aucun résultat.</div>';
+        container.innerHTML = '<div style="color:#9aa0a2; padding:10px;">Aucun résultat.</div>';
         return;
     }
 
     container.innerHTML = results.slice(0, 30).map(result => `
-        <div style="display:grid; grid-template-columns:110px 1fr auto; gap:12px; padding:10px 0; border-bottom:1px solid #ecf0f1; align-items:center;">
-            <span style="font-size:0.75rem; color:#2980b9; font-weight:bold; text-transform:uppercase;">${escapeHTML(result.type)}</span>
+        <div style="display:grid; grid-template-columns:110px 1fr auto; gap:12px; padding:10px 0; border-bottom:1px solid #f0eee8; align-items:center;">
+            <span style="font-size:0.75rem; color:#1f3a5c; font-weight:bold; text-transform:uppercase;">${escapeHTML(result.type)}</span>
             <div>
-                <div style="font-weight:bold; color:#2c3e50;">${escapeHTML(result.title)}</div>
-                <div style="font-size:0.86rem; color:#7f8c8d;">${escapeHTML(result.detail)}</div>
+                <div style="font-weight:bold; color:#1f3a5c;">${escapeHTML(result.title)}</div>
+                <div style="font-size:0.86rem; color:#656d70;">${escapeHTML(result.detail)}</div>
             </div>
             <button class="btn btn-secondary" style="padding:6px 10px; font-size:0.8rem;" onclick="openDashboardEntityCard('${escapeHTML(result.entityType)}', '${escapeHTML(result.id)}')">Fiche</button>
         </div>
@@ -527,11 +527,11 @@ function getTeacherDashboardDuties(teacher) {
 }
 
 function renderMiniTable(head, rows) {
-    if (!rows || rows.length === 0) return '<div style="color:#7f8c8d; padding:10px 0;">Aucune donnée.</div>';
+    if (!rows || rows.length === 0) return '<div style="color:#656d70; padding:10px 0;">Aucune donnée.</div>';
     return `
-        <div style="overflow:auto; border:1px solid #e5e7eb; border-radius:8px;">
+        <div style="overflow:auto; border:1px solid #e3dfd3; border-radius:8px;">
             <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
-                <thead><tr>${head.map(h => `<th style="text-align:left; padding:8px; background:#f4f6f7; border-bottom:1px solid #e5e7eb;">${escapeHTML(h)}</th>`).join('')}</tr></thead>
+                <thead><tr>${head.map(h => `<th style="text-align:left; padding:8px; background:#f3f1ea; border-bottom:1px solid #e3dfd3;">${escapeHTML(h)}</th>`).join('')}</tr></thead>
                 <tbody>
                     ${rows.map(row => `<tr>${row.map(cell => `<td style="padding:8px; border-bottom:1px solid #f0f2f4;">${escapeHTML(cell)}</td>`).join('')}</tr>`).join('')}
                 </tbody>
@@ -596,10 +596,10 @@ function openDashboardEntityCard(type, id) {
     overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:99999; display:flex; align-items:center; justify-content:center; padding:20px;';
     overlay.innerHTML = `
         <div style="background:white; width:min(760px, 96vw); max-height:88vh; overflow:auto; border-radius:10px; box-shadow:0 15px 40px rgba(0,0,0,0.25); padding:22px;">
-            <div style="display:flex; justify-content:space-between; gap:15px; align-items:start; border-bottom:1px solid #ecf0f1; padding-bottom:12px; margin-bottom:14px;">
+            <div style="display:flex; justify-content:space-between; gap:15px; align-items:start; border-bottom:1px solid #f0eee8; padding-bottom:12px; margin-bottom:14px;">
                 <div>
-                    <h3 style="margin:0; color:#2c3e50;">${escapeHTML(title)}</h3>
-                    <div style="color:#7f8c8d; margin-top:4px;">Fiche ${escapeHTML(type === 'student' ? 'élève' : type === 'teacher' ? 'professeur' : 'salle')}</div>
+                    <h3 style="margin:0; color:#1f3a5c;">${escapeHTML(title)}</h3>
+                    <div style="color:#656d70; margin-top:4px;">Fiche ${escapeHTML(type === 'student' ? 'élève' : type === 'teacher' ? 'professeur' : 'salle')}</div>
                 </div>
                 <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
                     <button class="btn btn-dark" onclick="exportDashboardEntityPDF('${escapeHTML(type)}', '${escapeHTML(id)}')">PDF</button>
@@ -878,18 +878,18 @@ function renderExamAttendance() {
     const attendance = getFilteredExamAttendance();
     renderAttendanceSummaryLine();
     if (attendance.length === 0) {
-        container.innerHTML = '<div style="color:#7f8c8d; padding:10px 0;">Aucune absence ou retard enregistré.</div>';
+        container.innerHTML = '<div style="color:#656d70; padding:10px 0;">Aucune absence ou retard enregistré.</div>';
         return;
     }
     container.innerHTML = attendance.map(entry => {
         const display = getAttendanceDisplay(entry);
-        const color = entry.status === 'Absent' ? '#c0392b' : entry.status === 'Retard' ? '#e67e22' : '#2980b9';
+        const color = entry.status === 'Absent' ? '#9a4a2e' : entry.status === 'Retard' ? '#9a7a2e' : '#1f3a5c';
         return `
-            <div style="display:grid; grid-template-columns:1.2fr 1fr 100px 1fr auto; gap:10px; align-items:start; padding:10px 0; border-bottom:1px solid #ecf0f1;">
-                <div style="font-weight:bold; color:#2c3e50;">${escapeHTML(display.examLabel)}</div>
-                <div>${escapeHTML(display.studentLabel)}<br><span style="font-size:0.82rem; color:#7f8c8d;">${escapeHTML(display.classLabel)} - ${escapeHTML(display.roomName)}</span></div>
+            <div style="display:grid; grid-template-columns:1.2fr 1fr 100px 1fr auto; gap:10px; align-items:start; padding:10px 0; border-bottom:1px solid #f0eee8;">
+                <div style="font-weight:bold; color:#1f3a5c;">${escapeHTML(display.examLabel)}</div>
+                <div>${escapeHTML(display.studentLabel)}<br><span style="font-size:0.82rem; color:#656d70;">${escapeHTML(display.classLabel)} - ${escapeHTML(display.roomName)}</span></div>
                 <div><span style="font-size:0.78rem; color:white; background:${color}; padding:3px 7px; border-radius:999px; font-weight:bold;">${escapeHTML(entry.status)}</span></div>
-                <div style="font-size:0.88rem; color:#566573;">${escapeHTML(entry.note || '')}</div>
+                <div style="font-size:0.88rem; color:#656d70;">${escapeHTML(entry.note || '')}</div>
                 <button class="btn btn-danger" style="padding:5px 8px; font-size:0.75rem;" onclick="deleteExamAttendanceEntry('${entry.id}')">Supprimer</button>
             </div>
         `;
@@ -993,7 +993,7 @@ function renderExamDayLog() {
     if (!container) return;
     const log = ensureExamDayLog();
     if (log.length === 0) {
-        container.innerHTML = '<div style="color:#7f8c8d; padding:10px 0;">Aucun événement enregistré.</div>';
+        container.innerHTML = '<div style="color:#656d70; padding:10px 0;">Aucun événement enregistré.</div>';
         renderExamDayChecklist();
         renderExamAttendance();
         return;
@@ -1002,12 +1002,12 @@ function renderExamDayLog() {
         const date = new Date(entry.createdAt);
         const time = date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
         return `
-            <div style="display:grid; grid-template-columns:82px 135px 1fr auto; gap:10px; align-items:start; padding:10px 0; border-bottom:1px solid #ecf0f1;">
-                <div style="font-weight:bold; color:#7f8c8d;">${escapeHTML(time)}</div>
-                <div><span style="font-size:0.78rem; color:#2980b9; font-weight:bold; text-transform:uppercase;">${escapeHTML(entry.type)}</span></div>
+            <div style="display:grid; grid-template-columns:82px 135px 1fr auto; gap:10px; align-items:start; padding:10px 0; border-bottom:1px solid #f0eee8;">
+                <div style="font-weight:bold; color:#656d70;">${escapeHTML(time)}</div>
+                <div><span style="font-size:0.78rem; color:#1f3a5c; font-weight:bold; text-transform:uppercase;">${escapeHTML(entry.type)}</span></div>
                 <div>
-                    <div style="font-weight:bold; color:#2c3e50;">${escapeHTML(entry.subject || '-')}</div>
-                    <div style="font-size:0.88rem; color:#566573;">${escapeHTML(entry.note || '')}</div>
+                    <div style="font-weight:bold; color:#1f3a5c;">${escapeHTML(entry.subject || '-')}</div>
+                    <div style="font-size:0.88rem; color:#656d70;">${escapeHTML(entry.note || '')}</div>
                 </div>
                 <button class="btn btn-danger" style="padding:5px 8px; font-size:0.75rem;" onclick="deleteExamDayLogEntry('${entry.id}')">Supprimer</button>
             </div>
@@ -1314,11 +1314,11 @@ function openExamFinalPack() {
         const actionLabel = isNav ? 'Ouvrir' : 'Générer';
         const action = isNav ? `onclick="runFinalPackExport('${fnName}')"` : `onclick="runFinalPackExport('${fnName}')"`;
         return `
-            <div style="display:grid; grid-template-columns:34px 1fr auto; gap:12px; align-items:center; padding:10px 0; border-bottom:1px solid #ecf0f1;">
-                <i class="fas ${icon}" style="color:${enabled ? '#2980b9' : ready ? '#95a5a6' : '#f39c12'};"></i>
+            <div style="display:grid; grid-template-columns:34px 1fr auto; gap:12px; align-items:center; padding:10px 0; border-bottom:1px solid #f0eee8;">
+                <i class="fas ${icon}" style="color:${enabled ? '#1f3a5c' : ready ? '#9aa0a2' : '#9a7a2e'};"></i>
                 <div>
-                    <div style="font-weight:bold; color:#2c3e50;">${escapeHTML(label)}</div>
-                    <div style="font-size:0.84rem; color:#7f8c8d;">${escapeHTML(detail)}${!ready ? ` - ${escapeHTML(missingReason)}` : ''}</div>
+                    <div style="font-weight:bold; color:#1f3a5c;">${escapeHTML(label)}</div>
+                    <div style="font-size:0.84rem; color:#656d70;">${escapeHTML(detail)}${!ready ? ` - ${escapeHTML(missingReason)}` : ''}</div>
                 </div>
                 <button class="btn ${enabled ? 'btn-primary' : 'btn-secondary'}" ${enabled ? action : 'disabled'} style="padding:7px 12px;">${actionLabel}</button>
             </div>
@@ -1327,14 +1327,14 @@ function openExamFinalPack() {
 
     overlay.innerHTML = `
         <div style="background:white; width:min(760px, 96vw); max-height:88vh; overflow:auto; border-radius:10px; box-shadow:0 15px 40px rgba(0,0,0,0.25); padding:22px;">
-            <div style="display:flex; justify-content:space-between; gap:15px; align-items:start; border-bottom:1px solid #ecf0f1; padding-bottom:12px;">
+            <div style="display:flex; justify-content:space-between; gap:15px; align-items:start; border-bottom:1px solid #f0eee8; padding-bottom:12px;">
                 <div>
-                    <h3 style="margin:0; color:#2c3e50;">Pack final d’examen</h3>
-                    <div style="color:#7f8c8d; margin-top:4px;">${escapeHTML(typeof getExamSessionLabel === 'function' ? getExamSessionLabel() : 'Session')}</div>
+                    <h3 style="margin:0; color:#1f3a5c;">Pack final d’examen</h3>
+                    <div style="color:#656d70; margin-top:4px;">${escapeHTML(typeof getExamSessionLabel === 'function' ? getExamSessionLabel() : 'Session')}</div>
                 </div>
                 <button class="btn btn-secondary" onclick="this.closest('.modal-overlay-custom').remove()">Fermer</button>
             </div>
-            <div style="margin:14px 0; padding:12px; border-radius:8px; background:${status.readyErrors > 0 ? '#fdedec' : status.readyWarnings > 0 ? '#fef9e7' : '#eafaf1'}; color:#2c3e50;">
+            <div style="margin:14px 0; padding:12px; border-radius:8px; background:${status.readyErrors > 0 ? '#fbf3ef' : status.readyWarnings > 0 ? '#fbf6ef' : '#eef3f0'}; color:#1f3a5c;">
                 ${status.readyErrors > 0 ? `${status.readyErrors} anomalie(s) critique(s) à corriger avant impression.` : status.readyWarnings > 0 ? `${status.readyWarnings} point(s) de vigilance détecté(s).` : 'Contrôles principaux au vert.'}
             </div>
             ${rows}
